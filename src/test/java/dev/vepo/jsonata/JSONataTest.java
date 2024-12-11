@@ -68,4 +68,12 @@ class JSONataTest {
             assertThat(JSONata.of("Other.Nothing").evaluate(content).isEmpty()).isTrue();
         }
     }
+
+    @Nested
+    class NavigatingJsonArrays{ 
+        @Test
+        void simpleTest() {
+            assertThat(JSONata.of("Phone[0]").evaluate(content).asText()).isEqualTo("{\"type\":\"home\",\"number\":\"0203 544 1234\"}");
+        }
+    }
 }

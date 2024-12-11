@@ -1,8 +1,7 @@
 package dev.vepo.jsonata;
 
-import java.util.function.IntPredicate;
-
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 public class Node {
 
@@ -17,7 +16,11 @@ public class Node {
     }
 
     public String asText() {
-        return element.asText();
+        if (element.isTextual()) {
+            return element.asText();
+        } else {
+            return element.toString();
+        }
     }
 
     public Integer asInt() {
@@ -38,6 +41,18 @@ public class Node {
 
     public boolean isNull() {
         return element.isNull();
+    }
+
+    public boolean isArray() {
+        return element.isArray();
+    }
+
+    public int lenght() {
+        return element.isArray() ? ((ArrayNode) element).size() : 1;
+    }
+
+    public Node at(Integer index) {
+        return element.isArray() ? new Node(((ArrayNode) element).get(index)) : Node.empty();
     }
 
 }

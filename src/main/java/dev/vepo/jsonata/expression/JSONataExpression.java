@@ -13,6 +13,7 @@ import dev.vepo.jsonata.JSONata.Expression;
 import dev.vepo.jsonata.expression.generated.JSONataQueriesBaseListener;
 import dev.vepo.jsonata.expression.generated.JSONataQueriesLexer;
 import dev.vepo.jsonata.expression.generated.JSONataQueriesParser;
+import dev.vepo.jsonata.expression.generated.JSONataQueriesParser.ArrayQueryContext;
 import dev.vepo.jsonata.expression.generated.JSONataQueriesParser.FieldQueryContext;
 
 public class JSONataExpression {
@@ -22,6 +23,29 @@ public class JSONataExpression {
 
         ExpressionBuilder() {
             expressions = new ArrayList<>();
+        }
+
+        @Override
+        public void exitArrayQuery(ArrayQueryContext ctx) {
+            var index = Integer.valueOf(ctx.NUMBER().getText());
+            var field = ctx.IDENTIFIER().getText();
+            expressions.add(n -> {
+                if (!n.hasField(field)) {
+                    return Node.empty();
+                }
+                var arr = n.get(field);
+                if (!arr.isArray()) {
+                    return Node.empty();
+                } else {
+                    if (index >= 0 && index < arr.lenght()) {
+                        return arr.at(index);
+                    } else if (index < 0 && -index < arr.lenght()) {
+                        return arr.at(arr.lenght() - index);
+                    } else {
+                        return Node.empty();
+                    }
+                }
+            });
         }
 
         @Override
