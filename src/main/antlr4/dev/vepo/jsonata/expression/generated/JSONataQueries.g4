@@ -2,12 +2,15 @@ grammar JSONataQueries;
 
 queries: (fieldQuery | arrayQuery)+;
 
-fieldQuery: IDENTIFIER  (DOT IDENTIFIER )*;
+fieldQuery: fieldName  (DOT fieldName )*;
 
-arrayQuery: IDENTIFIER '[' NUMBER ']';
+arrayQuery: fieldName '[' NUMBER ']';
+
+fieldName: IDENTIFIER |  QUOTED_VALUE;
 
 NUMBER: '-'? [0-9]+;
 IDENTIFIER: [A-Za-z_][A-Za-z_0-9]*;
+QUOTED_VALUE: '`' (~'`')* '`';
 
 DOT: '.';
 

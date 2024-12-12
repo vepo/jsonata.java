@@ -1,5 +1,7 @@
 package dev.vepo.jsonata;
 
+import java.util.Objects;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
@@ -23,7 +25,13 @@ public class Node {
         }
     }
 
-    public Integer asInt() {
+    public boolean asBoolean() {
+        Objects.requireNonNull(element, "Element is null!!");
+        return element.asBoolean();
+    }
+
+    public int asInt() {
+        Objects.requireNonNull(element, "Element is null!!");
         return element.asInt();
     }
 
@@ -40,18 +48,22 @@ public class Node {
     }
 
     public boolean isNull() {
-        return element.isNull();
+        // For null value, the element should exists
+        return Objects.nonNull(element) && element.isNull();
     }
 
     public boolean isArray() {
+        Objects.requireNonNull(element, "Element is null!!");
         return element.isArray();
     }
 
     public int lenght() {
+        Objects.requireNonNull(element, "Element is null!!");
         return element.isArray() ? ((ArrayNode) element).size() : 1;
     }
 
     public Node at(Integer index) {
+        Objects.requireNonNull(element, "Element is null!!");
         return element.isArray() ? new Node(((ArrayNode) element).get(index)) : Node.empty();
     }
 

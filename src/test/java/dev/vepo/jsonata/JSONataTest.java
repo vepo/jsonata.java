@@ -66,6 +66,7 @@ class JSONataTest {
             assertThat(JSONata.of("Address.City").evaluate(content).asText()).isEqualTo("Winchester");
             assertThat(JSONata.of("Other.Misc").evaluate(content).isNull()).isTrue();
             assertThat(JSONata.of("Other.Nothing").evaluate(content).isEmpty()).isTrue();
+            assertThat(JSONata.of("Other.`Over 18 ?`").evaluate(content).asBoolean()).isTrue();
         }
     }
 
