@@ -28,7 +28,7 @@ public class JSONata {
 
     public Node evaluate(String content) {
         try {
-            var currNode = new Node(mapper.readTree(content));
+            Node currNode = new NodeObject(mapper.readTree(content));
             for (var exp : expressions) {
                 currNode = exp.map(currNode);
             }

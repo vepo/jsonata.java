@@ -1,5 +1,7 @@
 package dev.vepo.jsonata.expression;
 
+import static dev.vepo.jsonata.Node.emptyNode;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -9,7 +11,6 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import dev.vepo.jsonata.JSONata;
-import dev.vepo.jsonata.Node;
 import dev.vepo.jsonata.JSONata.Expression;
 import dev.vepo.jsonata.expression.generated.JSONataQueriesBaseListener;
 import dev.vepo.jsonata.expression.generated.JSONataQueriesLexer;
@@ -41,18 +42,18 @@ public class JSONataExpression {
             var field = fieldName2Text(ctx.fieldName());
             expressions.add(n -> {
                 if (!n.hasField(field)) {
-                    return Node.empty();
+                    return emptyNode();
                 }
                 var arr = n.get(field);
                 if (!arr.isArray()) {
-                    return Node.empty();
+                    return emptyNode();
                 } else {
                     if (index >= 0 && index < arr.lenght()) {
                         return arr.at(index);
                     } else if (index < 0 && -index < arr.lenght()) {
-                        return arr.at(arr.lenght() - index);
+                        return arr.at(arr.lenght() + index);
                     } else {
-                        return Node.empty();
+                        return emptyNode();
                     }
                 }
             });
@@ -69,7 +70,7 @@ public class JSONataExpression {
                     } else if (currNode.hasField(field)) {
                         currNode = currNode.get(field);
                     } else {
-                        currNode = Node.empty();
+                        currNode = emptyNode();
                     }
                 }
                 return currNode;
@@ -82,8 +83,8 @@ public class JSONataExpression {
     }
 
     public static JSONata parse(String expression) {
-        var parser =
-                new JSONataQueriesParser(new CommonTokenStream(new JSONataQueriesLexer(CharStreams.fromString(expression))));
+        var parser = new JSONataQueriesParser(
+                new CommonTokenStream(new JSONataQueriesLexer(CharStreams.fromString(expression))));
         var walker = new ParseTreeWalker();
 
         var builder = new ExpressionBuilder();

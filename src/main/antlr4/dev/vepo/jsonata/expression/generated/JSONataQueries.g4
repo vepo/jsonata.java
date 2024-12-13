@@ -2,7 +2,7 @@ grammar JSONataQueries;
 
 queries: (fieldQuery | arrayQuery)+;
 
-fieldQuery: fieldName  (DOT fieldName )*;
+fieldQuery: DOT? fieldName  (DOT fieldName )*;
 
 arrayQuery: fieldName '[' NUMBER ']';
 
