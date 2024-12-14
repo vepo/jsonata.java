@@ -1,26 +1,27 @@
 package dev.vepo.jsonata;
 
+import java.util.List;
+
 public interface Node {
 
-    public static Node emptyNode() {
-        return NodeEmpty.EMPTY;
-    }
+    String asText();
 
-    boolean isEmpty();
+    int asInt();
 
-    boolean hasField(String field);
-
-    Node get(String field);
+    boolean asBoolean();
 
     boolean isNull();
 
-    boolean isArray();
+    boolean isEmpty();
 
-    int lenght();
+    Multi multi();
 
-    Node at(int index);
+    public interface Multi {
+        List<String> asText();
 
-    NodeList asList();
+        List<Integer> asInt();
 
-    NodeObject asObject();
+        List<Boolean> asBoolean();
+
+    }
 }

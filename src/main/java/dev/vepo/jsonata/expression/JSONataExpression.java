@@ -1,6 +1,6 @@
 package dev.vepo.jsonata.expression;
 
-import static dev.vepo.jsonata.Node.emptyNode;
+import static dev.vepo.jsonata.expression.JsonValue.empty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +11,6 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import dev.vepo.jsonata.JSONata;
-import dev.vepo.jsonata.JSONata.Expression;
 import dev.vepo.jsonata.expression.generated.JSONataQueriesBaseListener;
 import dev.vepo.jsonata.expression.generated.JSONataQueriesLexer;
 import dev.vepo.jsonata.expression.generated.JSONataQueriesParser;
@@ -42,18 +41,18 @@ public class JSONataExpression {
             var field = fieldName2Text(ctx.fieldName());
             expressions.add(n -> {
                 if (!n.hasField(field)) {
-                    return emptyNode();
+                    return empty();
                 }
                 var arr = n.get(field);
                 if (!arr.isArray()) {
-                    return emptyNode();
+                    return empty();
                 } else {
                     if (index >= 0 && index < arr.lenght()) {
                         return arr.at(index);
                     } else if (index < 0 && -index < arr.lenght()) {
                         return arr.at(arr.lenght() + index);
                     } else {
-                        return emptyNode();
+                        return empty();
                     }
                 }
             });
@@ -70,7 +69,7 @@ public class JSONataExpression {
                     } else if (currNode.hasField(field)) {
                         currNode = currNode.get(field);
                     } else {
-                        currNode = emptyNode();
+                        currNode = empty();
                     }
                 }
                 return currNode;

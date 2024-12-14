@@ -2,10 +2,9 @@ package dev.vepo.jsonata;
 
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+import dev.vepo.jsonata.expression.Expression;
 import dev.vepo.jsonata.expression.JSONataExpression;
+import dev.vepo.jsonata.expression.JsonValue;
 
 public class JSONata {
 
@@ -15,27 +14,13 @@ public class JSONata {
         this.expressions = expressions;
     }
 
-    @FunctionalInterface
-    public interface Expression {
-        Node map(Node node);
-    }
-
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     public static JSONata of(String content) {
         return JSONataExpression.parse(content);
     }
 
     public Node evaluate(String content) {
-        try {
-            Node currNode = new NodeObject(mapper.readTree(content));
-            for (var exp : expressions) {
-                currNode = exp.map(currNode);
-            }
-            return currNode;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException();
-        }
+        return new JsonValue(content).apply(expressions);
     }
 
 }
