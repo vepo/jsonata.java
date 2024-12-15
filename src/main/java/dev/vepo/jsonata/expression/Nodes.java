@@ -65,11 +65,11 @@ public abstract class Nodes {
         }
     }
 
-    private static class _ArrayNode implements Node {
+    private static class JsonArrayNode implements Node {
 
         private final ArrayNode element;
 
-        private _ArrayNode(ArrayNode element) {
+        private JsonArrayNode(ArrayNode element) {
             this.element = element;
         }
 
@@ -105,25 +105,25 @@ public abstract class Nodes {
                 @Override
                 public List<String> asText() {
                     return IntStream.range(0, element.size())
-                            .mapToObj(i -> element.get(i))
-                            .map(JsonNode::asText)
-                            .toList();
+                                    .mapToObj(element::get)
+                                    .map(JsonNode::asText)
+                                    .toList();
                 }
 
                 @Override
                 public List<Integer> asInt() {
                     return IntStream.range(0, element.size())
-                            .mapToObj(i -> element.get(i))
-                            .map(JsonNode::asInt)
-                            .toList();
+                                    .mapToObj(element::get)
+                                    .map(JsonNode::asInt)
+                                    .toList();
                 }
 
                 @Override
                 public List<Boolean> asBoolean() {
                     return IntStream.range(0, element.size())
-                            .mapToObj(i -> element.get(i))
-                            .map(JsonNode::asBoolean)
-                            .toList();
+                                    .mapToObj(element::get)
+                                    .map(JsonNode::asBoolean)
+                                    .toList();
                 }
 
             };
@@ -256,10 +256,13 @@ public abstract class Nodes {
     }
 
     public static Node array(ArrayNode element) {
-        return new _ArrayNode(element);
+        return new JsonArrayNode(element);
     }
 
     public static Node group(List<Node> elements) {
         return new GroupNode(elements);
+    }
+
+    private Nodes() {
     }
 }

@@ -42,9 +42,9 @@ public class JsonValue {
         requireNonNull(expressions, "Expressions cannot be null!");
         return expressions.stream()
                           .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                          .get()
-                          .map(actual, actual)
-                          .toNode();
+                          .map(f -> f.map(actual, actual)
+                                     .toNode())
+                          .orElse(actual.toNode());
     }
 
 }

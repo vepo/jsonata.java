@@ -139,4 +139,7 @@ public class Expressions {
         return new JSONata(builder.getExpressions());
     }
 
+    private Expressions() {
+    }
+
 }

@@ -16,7 +16,6 @@ public class JSONata {
 
 
     public static JSONata of(String content) {
-        // return JSONataExpression.parse(content);
         return Expressions.parse(content);
     }
 
