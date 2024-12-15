@@ -3,20 +3,22 @@ grammar Expressions;
 expressions: expression+;
 
 expression:
-      DOT? fieldName (DOT fieldName)* # queryPath 
-    | ROOT                            # rootPath
-    | fieldPredicate                  # fieldPredicateArray
-    | indexPredicate                  # indexPredicateArray 
-    | rangePredicate                  # rangePredicateArray
-    | arrayCastTransformer            # transformerArrayCast
-    | '(' expressions ')'             # innerExpression
+      DOT? fieldName (DOT fieldName)* DOT? # queryPath 
+    | ROOT                                 # rootPath
+    | fieldPredicate                       # fieldPredicateArray
+    | indexPredicate                       # indexPredicateArray 
+    | rangePredicate                       # rangePredicateArray
+    | arrayCast                            # transformerArrayCast
+    | wildcard                             # transformerWildcard
+    | '(' expressions ')'                  # innerExpression
     ;
 
 fieldName: IDENTIFIER |  QUOTED_VALUE;
 fieldPredicate: '[' IDENTIFIER '=' STRING ']';
 rangePredicate: '[[' NUMBER '..' NUMBER  ']]';
 indexPredicate: '[' NUMBER ']';
-arrayCastTransformer: '[]';
+arrayCast: '[]';
+wildcard: '*';
 
 STRING: 
     '\'' (ESC | ~['\\])* '\''

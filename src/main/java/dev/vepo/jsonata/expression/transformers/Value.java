@@ -1,8 +1,11 @@
 package dev.vepo.jsonata.expression.transformers;
 
+import static java.util.Spliterators.spliteratorUnknownSize;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -64,6 +67,11 @@ public interface Value {
         public JsonNode toJson() {
             return element;
         }
+
+        @Override
+        public Value all() {
+            return this;
+        }
     }
 
     public class GroupedValue implements Value {
@@ -87,8 +95,9 @@ public interface Value {
         @Override
         public Value get(String fieldName) {
             return new GroupedValue(elements.stream()
+                                            .filter(v -> v.hasField(fieldName))
                                             .map(e -> e.get(fieldName))
-                                            .filter(Objects::nonNull)
+                                            .filter(v -> !v.isEmpty())
                                             .toList());
         }
 
@@ -119,6 +128,11 @@ public interface Value {
             var array = JsonValue.mapper.createArrayNode();
             elements.forEach(e -> array.add(e.toJson()));
             return array;
+        }
+
+        @Override
+        public Value all() {
+            return this;
         }
     }
 
@@ -169,6 +183,14 @@ public interface Value {
         public JsonNode toJson() {
             return element;
         }
+
+        @Override
+        public Value all() {
+            return new GroupedValue(StreamSupport.stream(spliteratorUnknownSize(element.fields(), 0), false)
+                                                 .map(e -> e.getValue())
+                                                 .map(ObjectValue::new)
+                                                 .map(v -> (Value) v).toList());
+        }
     }
 
     public class EmptyValue implements Value {
@@ -212,6 +234,11 @@ public interface Value {
         public JsonNode toJson() {
             return null;
         }
+
+        @Override
+        public Value all() {
+            return this;
+        }
     }
 
     public static Value empty() {
@@ -241,4 +268,6 @@ public interface Value {
     Node toNode();
 
     JsonNode toJson();
+
+    Value all();
 }

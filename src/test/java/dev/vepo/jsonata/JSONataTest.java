@@ -118,6 +118,15 @@ class JSONataTest {
     }
 
     @Nested
+    class Wildcard {
+        @Test
+        void wildCardTest() {
+            assertThat(JSONata.of("Address.*").evaluate(objectContent).multi().asText()).containsExactly("Hursley Park", "Winchester", "SO21 2JN");
+            assertThat(JSONata.of("*.Postcode").evaluate(objectContent).multi().asText()).containsExactly("SO21 2JN");
+        }
+    }
+
+    @Nested
     class Predicates {
         @Test
         void queriesTest() {

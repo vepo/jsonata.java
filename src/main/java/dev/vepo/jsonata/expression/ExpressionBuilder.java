@@ -15,7 +15,6 @@ import java.util.stream.IntStream;
 import org.apache.commons.text.StringEscapeUtils;
 
 import dev.vepo.jsonata.expression.generated.ExpressionsBaseListener;
-import dev.vepo.jsonata.expression.generated.ExpressionsParser.ArrayCastTransformerContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldNameContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldPredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.IndexPredicateArrayContext;
@@ -23,6 +22,8 @@ import dev.vepo.jsonata.expression.generated.ExpressionsParser.InnerExpressionCo
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.QueryPathContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RangePredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RootPathContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerArrayCastContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerWildcardContext;
 import dev.vepo.jsonata.expression.transformers.Value;
 import dev.vepo.jsonata.expression.transformers.Value.GroupedValue;
 
@@ -94,8 +95,19 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
                                                                              .toJson()));
     }
 
+    public void exitTransformerWildcard(TransformerWildcardContext ctx) {
+        expressions.peek()
+                   .add((original, value) -> {
+                    if (!value.isEmpty() && !value.isArray() && value.lenght() == 1) {
+                        return value.all();
+                    } else {
+                        return value;
+                    }
+                   });
+    };
+
     @Override
-    public void exitArrayCastTransformer(ArrayCastTransformerContext ctx) {
+    public void exitTransformerArrayCast(TransformerArrayCastContext ctx) {
         expressions.peek()
                    .add((original, value) -> {
                        if (!value.isEmpty() && !value.isArray() && value.lenght() == 1) {
