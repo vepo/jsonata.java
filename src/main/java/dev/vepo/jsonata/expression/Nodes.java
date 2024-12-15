@@ -11,11 +11,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
 public abstract class Nodes {
-    private static RuntimeException emptyValueException() {
-        return new IllegalStateException("Value is empty");
-    }
 
     private static class EmptyNode implements Node {
+        private static RuntimeException emptyValueException() {
+            return new IllegalStateException("Value is empty");
+        }
+
         private EmptyNode() {
         }
 

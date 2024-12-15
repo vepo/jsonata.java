@@ -1,13 +1,12 @@
 package dev.vepo.jsonata.expression.transformers;
 
+import static dev.vepo.jsonata.expression.transformers.ValueFactory.json2Value;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.expression.Expression;
@@ -16,23 +15,11 @@ import dev.vepo.jsonata.expression.Node;
 public class JsonValue {
     static final ObjectMapper mapper = new ObjectMapper();
 
-    public static Value empty() {
-        return new EmptyValue();
-    }
-
-    public static Value toValue(JsonNode node) {
-        if (node.isArray()) {
-            return new ArrayValue((ArrayNode) node);
-        } else {
-            return new ObjectValue(node);
-        }
-    }
-
     private Value actual;
 
     public JsonValue(String value) {
         try {
-            actual = toValue(mapper.readTree(value));
+            actual = json2Value(mapper.readTree(value));
         } catch (JsonProcessingException e) {
             throw new JSONataException("Could not load JSON!", e);
         }

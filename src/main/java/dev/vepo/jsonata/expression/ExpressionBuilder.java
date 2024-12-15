@@ -1,6 +1,7 @@
 package dev.vepo.jsonata.expression;
 
-import static dev.vepo.jsonata.expression.transformers.JsonValue.empty;
+import static dev.vepo.jsonata.expression.transformers.ValueFactory.empty;
+import static dev.vepo.jsonata.expression.transformers.ValueFactory.json2Value;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -18,7 +19,6 @@ import dev.vepo.jsonata.expression.generated.ExpressionsParser.QueryPathContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RangePredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RootPathContext;
 import dev.vepo.jsonata.expression.transformers.GroupedValue;
-import dev.vepo.jsonata.expression.transformers.JsonValue;
 
 public class ExpressionBuilder extends ExpressionsBaseListener {
     private static String fieldName2Text(FieldNameContext ctx) {
@@ -69,11 +69,11 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
     public void exitInnerExpression(InnerExpressionContext ctx) {
         var innerExpressions = this.expressions.poll();
         this.expressions.peek()
-                        .add((original, value) -> JsonValue.toValue(innerExpressions.stream()
-                                                                                    .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                                                                                    .get()
-                                                                                    .map(original, original)
-                                                                                    .toJson()));
+                        .add((original, value) -> json2Value(innerExpressions.stream()
+                                                                             .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                                                                             .get()
+                                                                             .map(original, original)
+                                                                             .toJson()));
     }
 
     @Override

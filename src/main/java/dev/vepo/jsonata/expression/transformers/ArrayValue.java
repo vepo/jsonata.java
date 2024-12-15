@@ -1,5 +1,7 @@
 package dev.vepo.jsonata.expression.transformers;
 
+import static dev.vepo.jsonata.expression.transformers.ValueFactory.json2Value;
+
 import java.util.Objects;
 import java.util.stream.IntStream;
 
@@ -34,7 +36,7 @@ public class ArrayValue implements Value {
                                          .mapToObj(element::get)
                                          .map(node -> node.get(fieldName))
                                          .filter(Objects::nonNull)
-                                         .map(JsonValue::toValue)
+                                         .map(ValueFactory::json2Value)
                                          .toList());
     }
 
@@ -45,7 +47,7 @@ public class ArrayValue implements Value {
 
     @Override
     public Value at(int index) {
-        return JsonValue.toValue(element.get(index));
+        return json2Value(element.get(index));
     }
 
     @Override

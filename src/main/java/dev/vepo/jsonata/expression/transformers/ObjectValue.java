@@ -1,5 +1,8 @@
 package dev.vepo.jsonata.expression.transformers;
 
+import static dev.vepo.jsonata.expression.transformers.ValueFactory.empty;
+import static dev.vepo.jsonata.expression.transformers.ValueFactory.json2Value;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.expression.Node;
@@ -25,7 +28,7 @@ public class ObjectValue implements Value {
 
     @Override
     public Value get(String fieldName) {
-        return JsonValue.toValue(element.get(fieldName));
+        return json2Value(element.get(fieldName));
     }
 
     @Override
@@ -35,7 +38,7 @@ public class ObjectValue implements Value {
 
     @Override
     public Value at(int index) {
-        return JsonValue.empty();
+        return empty();
     }
 
     @Override
