@@ -1,14 +1,11 @@
 package dev.vepo.jsonata.expression.transformers;
 
-import static dev.vepo.jsonata.expression.transformers.Value.json2Value;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.expression.Expression;
 import dev.vepo.jsonata.expression.Node;
 
@@ -18,11 +15,7 @@ public class JsonValue {
     private Value actual;
 
     public JsonValue(String value) {
-        try {
-            actual = json2Value(mapper.readTree(value));
-        } catch (JsonProcessingException e) {
-            throw new JSONataException("Could not load JSON!", e);
-        }
+        actual = JsonFactory.fromString(value);        
     }
 
     public Node apply(List<Expression> expressions) {

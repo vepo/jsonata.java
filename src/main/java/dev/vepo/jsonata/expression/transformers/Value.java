@@ -1,5 +1,6 @@
 package dev.vepo.jsonata.expression.transformers;
 
+import static dev.vepo.jsonata.expression.transformers.JsonFactory.json2Value;
 import static java.util.Spliterators.spliteratorUnknownSize;
 
 import java.util.List;
@@ -40,7 +41,7 @@ public interface Value {
                                              .mapToObj(element::get)
                                              .map(node -> node.get(fieldName))
                                              .filter(Objects::nonNull)
-                                             .map(Value::json2Value)
+                                             .map(JsonFactory::json2Value)
                                              .toList());
         }
 
@@ -157,7 +158,7 @@ public interface Value {
 
         @Override
         public Value get(String fieldName) {
-            return json2Value(element.get(fieldName));
+            return  json2Value(element.get(fieldName));
         }
 
         @Override
@@ -244,14 +245,6 @@ public interface Value {
 
     public static Value empty() {
         return new EmptyValue();
-    }
-
-    public static Value json2Value(JsonNode node) {
-        if (node.isArray()) {
-            return new ArrayValue((ArrayNode) node);
-        } else {
-            return new ObjectValue(node);
-        }
     }
 
     boolean isArray();

@@ -68,7 +68,7 @@ class JSONataTest {
     @Nested
     class SimpleQuery {
         @Test
-        void queryTests() {
+        void queryTest() {
             assertThat(JSONata.of("Surname").evaluate(objectContent).asText()).isEqualTo("Smith");
             assertThat(JSONata.of("Age").evaluate(objectContent).asInt()).isEqualTo(28);
             assertThat(JSONata.of("Address.City").evaluate(objectContent).asText()).isEqualTo("Winchester");
@@ -96,7 +96,7 @@ class JSONataTest {
     @Nested
     class NavigatingJsonArrays {
         @Test
-        void arrayTests() {
+        void arrayTest() {
             assertThat(JSONata.of("Phone[0]").evaluate(objectContent).asText()).isEqualTo("{\"type\":\"home\",\"number\":\"0203 544 1234\"}");
             assertThat(JSONata.of("Phone[1]").evaluate(objectContent).asText()).isEqualTo("{\"type\":\"office\",\"number\":\"01962 001234\"}");
             assertThat(JSONata.of("Phone[-1]").evaluate(objectContent).asText()).isEqualTo("{\"type\":\"mobile\",\"number\":\"077 7700 1234\"}");
@@ -152,6 +152,16 @@ class JSONataTest {
             assertThat(JSONata.of("$[0].ref").evaluate(arrayContent).multi().asInt()).containsExactly(1, 2);
             assertThat(JSONata.of("$[0].ref[0]").evaluate(arrayContent).asInt()).isEqualTo(1);
             assertThat(JSONata.of("$.ref").evaluate(arrayContent).multi().asInt()).containsExactly(1, 2, 3, 4);
+        }
+    }
+
+    @Nested
+    class Expressions {
+        @Test
+        void stringTest() {
+            assertThat(JSONata.of("FirstName & ' ' & Surname").evaluate(objectContent).asText()).isEqualTo("Fred Smith");
+            assertThat(JSONata.of("Address.(Street & ', ' & City)").evaluate(objectContent).asText()).isEqualTo("Hursley Park, Winchester");
+            assertThat(JSONata.of("5&0&true").evaluate(objectContent).asText()).isEqualTo("50true");
         }
     }
 }

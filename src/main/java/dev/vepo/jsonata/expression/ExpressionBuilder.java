@@ -1,19 +1,25 @@
 package dev.vepo.jsonata.expression;
 
+import static dev.vepo.jsonata.expression.transformers.JsonFactory.json2Value;
+import static dev.vepo.jsonata.expression.transformers.JsonFactory.stringValue;
 import static dev.vepo.jsonata.expression.transformers.Value.empty;
-import static dev.vepo.jsonata.expression.transformers.Value.json2Value;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import org.apache.commons.text.StringEscapeUtils;
 
+import dev.vepo.jsonata.expression.Expression.ArrayCastTransformerExpression;
+import dev.vepo.jsonata.expression.Expression.FieldPathExpression;
+import dev.vepo.jsonata.expression.Expression.FieldPredicateExpression;
+import dev.vepo.jsonata.expression.Expression.StringConcatExpression;
+import dev.vepo.jsonata.expression.Expression.WildcardExpression;
 import dev.vepo.jsonata.expression.generated.ExpressionsBaseListener;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldNameContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldPredicateArrayContext;
@@ -22,7 +28,9 @@ import dev.vepo.jsonata.expression.generated.ExpressionsParser.InnerExpressionCo
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.QueryPathContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RangePredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RootPathContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.StringOrFieldContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerArrayCastContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerStringConcatContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerWildcardContext;
 import dev.vepo.jsonata.expression.transformers.Value;
 import dev.vepo.jsonata.expression.transformers.Value.GroupedValue;
@@ -62,21 +70,11 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
 
     @Override
     public void exitQueryPath(QueryPathContext ctx) {
-        var fieldNames = ctx.fieldName().stream().map(ExpressionBuilder::fieldName2Text).toList();
         expressions.peek()
-                   .add((original, value) -> {
-                       var currNode = value;
-                       for (var field : fieldNames) {
-                           if (currNode.isEmpty()) {
-                               break;
-                           } else if (currNode.hasField(field)) {
-                               currNode = currNode.get(field);
-                           } else {
-                               currNode = empty();
-                           }
-                       }
-                       return currNode;
-                   });
+                   .add(new FieldPathExpression(ctx.fieldName()
+                                                   .stream()
+                                                   .map(ExpressionBuilder::fieldName2Text)
+                                                   .toList()));
     }
 
     @Override
@@ -96,52 +94,46 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
     }
 
     @Override
+    public void exitTransformerStringConcat(TransformerStringConcatContext ctx) {
+        this.expressions.peek()
+                        .add(new StringConcatExpression(ctx.stringConcat()
+                                                           .stringOrField()
+                                                           .stream()
+                                                           .map(this::toStringProvider)
+                                                           .toList()));
+
+    }
+
+    private Function<Value, Value> toStringProvider(StringOrFieldContext sCtx) {
+        if (Objects.nonNull(sCtx.STRING())) {
+            return value -> stringValue(sanitise(sCtx.getText()));
+        } else if (Objects.nonNull(sCtx.NUMBER())) {
+            return value -> stringValue(Integer.valueOf(sCtx.NUMBER().getText()).toString());
+        } else if (Objects.nonNull(sCtx.BOOLEAN())) {
+            return value -> stringValue(sCtx.BOOLEAN().getText());
+        } else {
+            var transform = new FieldPathExpression(sCtx.fieldName().stream().map(ExpressionBuilder::fieldName2Text).toList());
+            return value -> transform.map(value, value);
+        }
+    }
+
+    @Override
     public void exitTransformerWildcard(TransformerWildcardContext ctx) {
         expressions.peek()
-                   .add((original, value) -> {
-                    if (!value.isEmpty() && !value.isArray() && value.lenght() == 1) {
-                        return value.all();
-                    } else {
-                        return value;
-                    }
-                   });
+                   .add(new WildcardExpression());
     }
 
     @Override
     public void exitTransformerArrayCast(TransformerArrayCastContext ctx) {
         expressions.peek()
-                   .add((original, value) -> {
-                       if (!value.isEmpty() && !value.isArray() && value.lenght() == 1) {
-                           return new GroupedValue(Collections.singletonList(value));
-                       } else {
-                           return value;
-                       }
-                   });
+                   .add(new ArrayCastTransformerExpression());
     }
 
     @Override
     public void exitFieldPredicateArray(FieldPredicateArrayContext ctx) {
-        var fieldName = ctx.fieldPredicate().IDENTIFIER().getText();
-        var content = sanitise(ctx.fieldPredicate().STRING().getText());
         expressions.peek()
-                   .add((original, value) -> {
-                       if (!value.isArray()) {
-                           return value;
-                       }
-                       if (value.hasField(fieldName)) {
-                           var matched = new ArrayList<Value>();
-                           for (int i = 0; i < value.lenght(); ++i) {
-                               var inner = value.at(i);
-                               var innerContent = inner.get(fieldName).toJson();
-                               if (innerContent.asText().equals(content)) {
-                                   matched.add(inner);
-                               }
-                           }
-                           return new GroupedValue(matched);
-                       } else {
-                           return empty();
-                       }
-                   });
+                   .add(new FieldPredicateExpression(ctx.fieldPredicate().IDENTIFIER().getText(),
+                                                     sanitise(ctx.fieldPredicate().STRING().getText())));
     }
 
     @Override

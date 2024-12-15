@@ -10,6 +10,7 @@ expression:
     | rangePredicate                       # rangePredicateArray
     | arrayCast                            # transformerArrayCast
     | wildcard                             # transformerWildcard
+    | stringConcat                         # transformerStringConcat
     | '(' expressions ')'                  # innerExpression
     ;
 
@@ -19,6 +20,11 @@ rangePredicate: '[[' NUMBER '..' NUMBER  ']]';
 indexPredicate: '[' NUMBER ']';
 arrayCast: '[]';
 wildcard: '*';
+stringConcat: stringOrField ('&' stringOrField)+;
+
+stringOrField: (fieldName (DOT fieldName)*) | STRING | NUMBER | BOOLEAN;
+
+BOOLEAN: 'true' | 'false';
 
 STRING: 
     '\'' (ESC | ~['\\])* '\''
