@@ -13,18 +13,22 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import dev.vepo.jsonata.Node;
 
 public abstract class Nodes {
+    private static RuntimeException emptyValueException() {
+        return new IllegalStateException("Value is empty");
+    }
+
     private static class EmptyNode implements Node {
         private EmptyNode() {
         }
 
         @Override
         public String asText() {
-            throw new IllegalStateException("Value is empty");
+            throw emptyValueException();
         }
 
         @Override
         public int asInt() {
-            throw new IllegalStateException("Value is empty");
+            throw emptyValueException();
         }
 
         @Override
@@ -39,7 +43,7 @@ public abstract class Nodes {
 
         @Override
         public boolean asBoolean() {
-            throw new IllegalStateException("Value is empty");
+            throw emptyValueException();
         }
 
         @Override

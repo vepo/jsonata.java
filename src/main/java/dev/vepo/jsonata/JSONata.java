@@ -14,9 +14,8 @@ public class JSONata {
         this.expressions = expressions;
     }
 
-
     public static JSONata of(String content) {
-        return Expressions.parse(content);
+        return new JSONata(Expressions.parse(content));
     }
 
     public Node evaluate(String content) {

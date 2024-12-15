@@ -14,7 +14,6 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-import dev.vepo.jsonata.JSONata;
 import dev.vepo.jsonata.expression.generated.ExpressionsBaseListener;
 import dev.vepo.jsonata.expression.generated.ExpressionsLexer;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser;
@@ -130,13 +129,13 @@ public class Expressions {
         }
     }
 
-    public static JSONata parse(String content) {
+    public static List<Expression> parse(String content) {
         var parser = new ExpressionsParser(new CommonTokenStream(new ExpressionsLexer(CharStreams.fromString(content))));
         var walker = new ParseTreeWalker();
 
         var builder = new ExpressionBuilder();
         walker.walk(builder, parser.expressions());
-        return new JSONata(builder.getExpressions());
+        return builder.getExpressions();
     }
 
     private Expressions() {
