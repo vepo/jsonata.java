@@ -95,6 +95,7 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
                                                                              .toJson()));
     }
 
+    @Override
     public void exitTransformerWildcard(TransformerWildcardContext ctx) {
         expressions.peek()
                    .add((original, value) -> {
@@ -104,7 +105,7 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
                         return value;
                     }
                    });
-    };
+    }
 
     @Override
     public void exitTransformerArrayCast(TransformerArrayCastContext ctx) {

@@ -4,6 +4,7 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Map.Entry;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
@@ -187,7 +188,7 @@ public interface Value {
         @Override
         public Value all() {
             return new GroupedValue(StreamSupport.stream(spliteratorUnknownSize(element.fields(), 0), false)
-                                                 .map(e -> e.getValue())
+                                                 .map(Entry::getValue)
                                                  .map(ObjectValue::new)
                                                  .map(v -> (Value) v).toList());
         }
