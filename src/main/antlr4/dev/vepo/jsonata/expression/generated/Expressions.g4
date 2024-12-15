@@ -4,12 +4,14 @@ expressions: expression+;
 
 expression:
       DOT? fieldName (DOT fieldName)* # queryPath 
-    | predicate                       # predicateArray 
+    | indexPredicate                  # indexPredicateArray 
+    | rangePredicate                  # rangePredicateArray
     | '(' expressions ')'             # innerExpression
     ;
 
 fieldName: IDENTIFIER |  QUOTED_VALUE;
-predicate: '[' NUMBER ']';
+rangePredicate: '[[' NUMBER '..' NUMBER  ']]';
+indexPredicate: '[' NUMBER ']';
 
 NUMBER: '-'? [0-9]+;
 IDENTIFIER: [A-Za-z_][A-Za-z_0-9]*;

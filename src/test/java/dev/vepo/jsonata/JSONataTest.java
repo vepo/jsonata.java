@@ -1,6 +1,7 @@
 package dev.vepo.jsonata;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -71,7 +72,17 @@ class JSONataTest {
     }
 
     @Nested
-    class NavigatingJsonArrays{ 
+    class ArrayRangeValidation {
+        @Test
+        void checkRuleValidation() {
+            assertThatThrownBy(() -> JSONata.of("Phone[[-1..1]]")).hasMessage("Start index should be greather than 0!");
+            assertThatThrownBy(() -> JSONata.of("Phone[[0..-1]]")).hasMessage("End index should be greather than 0!");
+            assertThatThrownBy(() -> JSONata.of("Phone[[999..99]]")).hasMessage("End index should be greather than start index!");
+        }
+    }
+
+    @Nested
+    class NavigatingJsonArrays {
         @Test
         void arrayTests() {
             assertThat(JSONata.of("Phone[0]").evaluate(content).asText()).isEqualTo("{\"type\":\"home\",\"number\":\"0203 544 1234\"}");
@@ -80,9 +91,17 @@ class JSONataTest {
             assertThat(JSONata.of("Phone[-2]").evaluate(content).asText()).isEqualTo("{\"type\":\"office\",\"number\":\"01962 001235\"}");
             assertThat(JSONata.of("Phone[8]").evaluate(content).isEmpty()).isTrue();
             assertThat(JSONata.of("Phone[0].number").evaluate(content).asText()).isEqualTo("0203 544 1234");
-            assertThat(JSONata.of("Phone.number").evaluate(content).multi().asText()).containsExactly("0203 544 1234", "01962 001234", "01962 001235", "077 7700 1234");
-            assertThat(JSONata.of("Phone.number[0]").evaluate(content).multi().asText()).containsExactly("0203 544 1234", "01962 001234", "01962 001235", "077 7700 1234");
+            assertThat(JSONata.of("Phone.number").evaluate(content).multi().asText()).containsExactly("0203 544 1234",
+                                                                                                      "01962 001234",
+                                                                                                      "01962 001235",
+                                                                                                      "077 7700 1234");
+            assertThat(JSONata.of("Phone.number[0]").evaluate(content).multi().asText()).containsExactly("0203 544 1234",
+                                                                                                         "01962 001234",
+                                                                                                         "01962 001235",
+                                                                                                         "077 7700 1234");
             assertThat(JSONata.of("(Phone.number)[0]").evaluate(content).asText()).isEqualTo("0203 544 1234");
+            assertThat(JSONata.of("Phone[[0..1]]").evaluate(content).multi().asText()).containsExactly("{\"type\":\"home\",\"number\":\"0203 544 1234\"}",
+                                                                                                       "{\"type\":\"office\",\"number\":\"01962 001234\"}");
         }
     }
 }

@@ -2,11 +2,13 @@ package dev.vepo.jsonata.expression;
 
 import static dev.vepo.jsonata.expression.transformers.JsonValue.empty;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.stream.IntStream;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -17,9 +19,11 @@ import dev.vepo.jsonata.expression.generated.ExpressionsBaseListener;
 import dev.vepo.jsonata.expression.generated.ExpressionsLexer;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldNameContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.IndexPredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.InnerExpressionContext;
-import dev.vepo.jsonata.expression.generated.ExpressionsParser.PredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.QueryPathContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.RangePredicateArrayContext;
+import dev.vepo.jsonata.expression.transformers.GroupedValue;
 import dev.vepo.jsonata.expression.transformers.JsonValue;
 
 public class Expressions {
@@ -76,8 +80,36 @@ public class Expressions {
         }
 
         @Override
-        public void exitPredicateArray(PredicateArrayContext ctx) {
-            var index = Integer.valueOf(ctx.predicate().NUMBER().getText());
+        public void exitRangePredicateArray(RangePredicateArrayContext ctx) {
+            var startIndex = Integer.valueOf(ctx.rangePredicate().NUMBER(0).getText());
+            var endIndex = Integer.valueOf(ctx.rangePredicate().NUMBER(1).getText());
+            if (startIndex < 0) {
+                throw new InvalidParameterException("Start index should be greather than 0!");
+            }
+            if (endIndex < 0) {
+                throw new InvalidParameterException("End index should be greather than 0!");
+            }
+            if (endIndex < startIndex) {
+                throw new InvalidParameterException("End index should be greather than start index!");
+            }
+            expressions.peek()
+                       .add((original, value) -> {
+                           if (!value.isArray()) {
+                               return value;
+                           }
+                           if (startIndex < value.lenght()) {
+                               return new GroupedValue(IntStream.range(startIndex, Math.min(endIndex + 1, value.lenght()))
+                                                                .mapToObj(value::at)
+                                                                .toList());
+                           } else {
+                               return empty();
+                           }
+                       });
+        }
+
+        @Override
+        public void exitIndexPredicateArray(IndexPredicateArrayContext ctx) {
+            var index = Integer.valueOf(ctx.indexPredicate().NUMBER().getText());
             expressions.peek()
                        .add((original, value) -> {
                            if (!value.isArray()) {
