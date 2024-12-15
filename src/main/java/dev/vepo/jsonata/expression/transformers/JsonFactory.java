@@ -10,6 +10,7 @@ import dev.vepo.jsonata.expression.transformers.Value.ArrayValue;
 import dev.vepo.jsonata.expression.transformers.Value.ObjectValue;
 
 public class JsonFactory {
+
     private static final ObjectMapper mapper = new ObjectMapper();
 
     public static Value json2Value(JsonNode node) {
@@ -30,5 +31,8 @@ public class JsonFactory {
 
     public static Value stringValue(String value) {
         return new ObjectValue(mapper.getNodeFactory().textNode(value));
+    }
+
+    private JsonFactory() {
     }
 }
