@@ -3,8 +3,8 @@ package dev.vepo.jsonata;
 import java.util.List;
 
 import dev.vepo.jsonata.expression.Expression;
-import dev.vepo.jsonata.expression.JSONataExpression;
-import dev.vepo.jsonata.expression.JsonValue;
+import dev.vepo.jsonata.expression.Expressions;
+import dev.vepo.jsonata.expression.transformers.JsonValue;
 
 public class JSONata {
 
@@ -16,7 +16,8 @@ public class JSONata {
 
 
     public static JSONata of(String content) {
-        return JSONataExpression.parse(content);
+        // return JSONataExpression.parse(content);
+        return Expressions.parse(content);
     }
 
     public Node evaluate(String content) {
