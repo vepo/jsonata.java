@@ -1,7 +1,7 @@
 package dev.vepo.jsonata.expression;
 
-import static dev.vepo.jsonata.expression.transformers.ValueFactory.empty;
-import static dev.vepo.jsonata.expression.transformers.ValueFactory.json2Value;
+import static dev.vepo.jsonata.expression.transformers.Value.empty;
+import static dev.vepo.jsonata.expression.transformers.Value.json2Value;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ import dev.vepo.jsonata.expression.generated.ExpressionsParser.InnerExpressionCo
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.QueryPathContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RangePredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RootPathContext;
-import dev.vepo.jsonata.expression.transformers.GroupedValue;
+import dev.vepo.jsonata.expression.transformers.Value.GroupedValue;
 
 public class ExpressionBuilder extends ExpressionsBaseListener {
     private static String fieldName2Text(FieldNameContext ctx) {

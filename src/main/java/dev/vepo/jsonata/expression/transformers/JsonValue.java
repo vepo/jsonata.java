@@ -1,6 +1,6 @@
 package dev.vepo.jsonata.expression.transformers;
 
-import static dev.vepo.jsonata.expression.transformers.ValueFactory.json2Value;
+import static dev.vepo.jsonata.expression.transformers.Value.json2Value;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
