@@ -2,7 +2,7 @@ package dev.vepo.jsonata.expression.transformers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.vepo.jsonata.Node;
+import dev.vepo.jsonata.expression.Node;
 
 public interface Value {
     boolean isArray();

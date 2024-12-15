@@ -1,16 +1,14 @@
 package dev.vepo.jsonata.expression;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-
-import dev.vepo.jsonata.Node;
 
 public abstract class Nodes {
     private static RuntimeException emptyValueException() {
@@ -173,17 +171,23 @@ public abstract class Nodes {
 
                 @Override
                 public List<String> asText() {
-                    return elements.stream().map(Node::asText).toList();
+                    return elements.stream()
+                                   .flatMap(n -> n.multi().asText().stream())
+                                   .toList();
                 }
 
                 @Override
                 public List<Integer> asInt() {
-                    return elements.stream().map(Node::asInt).toList();
+                    return elements.stream()
+                                   .flatMap(n -> n.multi().asInt().stream())
+                                   .toList();
                 }
 
                 @Override
                 public List<Boolean> asBoolean() {
-                    return elements.stream().map(Node::asBoolean).toList();
+                    return elements.stream()
+                                   .flatMap(n -> n.multi().asBoolean().stream())
+                                   .toList();
                 }
 
             };
@@ -233,17 +237,17 @@ public abstract class Nodes {
 
                 @Override
                 public List<String> asText() {
-                    return Collections.singletonList(element.asText());
+                    return singletonList(ObjectNode.this.asText());
                 }
 
                 @Override
                 public List<Integer> asInt() {
-                    return Collections.singletonList(element.asInt());
+                    return singletonList(ObjectNode.this.asInt());
                 }
 
                 @Override
                 public List<Boolean> asBoolean() {
-                    return Collections.singletonList(element.asBoolean());
+                    return singletonList(ObjectNode.this.asBoolean());
                 }
 
             };

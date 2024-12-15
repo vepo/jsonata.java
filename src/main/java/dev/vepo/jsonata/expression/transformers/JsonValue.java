@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
-import dev.vepo.jsonata.Node;
 import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.expression.Expression;
+import dev.vepo.jsonata.expression.Node;
 
 public class JsonValue {
     static final ObjectMapper mapper = new ObjectMapper();

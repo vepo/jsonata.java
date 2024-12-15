@@ -5,7 +5,7 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.vepo.jsonata.Node;
+import dev.vepo.jsonata.expression.Node;
 import dev.vepo.jsonata.expression.Nodes;
 
 public class GroupedValue implements Value {

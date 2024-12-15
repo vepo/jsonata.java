@@ -4,6 +4,7 @@ import java.util.List;
 
 import dev.vepo.jsonata.expression.Expression;
 import dev.vepo.jsonata.expression.Expressions;
+import dev.vepo.jsonata.expression.Node;
 import dev.vepo.jsonata.expression.transformers.JsonValue;
 
 public class JSONata {

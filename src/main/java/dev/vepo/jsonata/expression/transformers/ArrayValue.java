@@ -6,7 +6,7 @@ import java.util.stream.IntStream;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
-import dev.vepo.jsonata.Node;
+import dev.vepo.jsonata.expression.Node;
 import dev.vepo.jsonata.expression.Nodes;
 
 public class ArrayValue implements Value {

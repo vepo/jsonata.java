@@ -1,4 +1,4 @@
-package dev.vepo.jsonata;
+package dev.vepo.jsonata.expression;
 
 import java.util.List;
 
