@@ -5,6 +5,7 @@ import static dev.vepo.jsonata.expression.transformers.Value.json2Value;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -14,6 +15,7 @@ import java.util.stream.IntStream;
 import org.apache.commons.text.StringEscapeUtils;
 
 import dev.vepo.jsonata.expression.generated.ExpressionsBaseListener;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.ArrayCastTransformerContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldNameContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldPredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.IndexPredicateArrayContext;
@@ -35,7 +37,7 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
 
     private static String sanitise(String str) {
         if (str.length() > 1 && ((str.startsWith("`") && str.endsWith("`")) || (str.startsWith("\"") && str.endsWith("\""))
-            || (str.startsWith("'") && str.endsWith("'")))) {
+                || (str.startsWith("'") && str.endsWith("'")))) {
             str = str.substring(1, str.length() - 1);
         }
 
@@ -90,6 +92,18 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
                                                                              .get()
                                                                              .map(original, original)
                                                                              .toJson()));
+    }
+
+    @Override
+    public void exitArrayCastTransformer(ArrayCastTransformerContext ctx) {
+        expressions.peek()
+                   .add((original, value) -> {
+                       if (!value.isEmpty() && !value.isArray() && value.lenght() == 1) {
+                           return new GroupedValue(Collections.singletonList(value));
+                       } else {
+                           return value;
+                       }
+                   });
     }
 
     @Override

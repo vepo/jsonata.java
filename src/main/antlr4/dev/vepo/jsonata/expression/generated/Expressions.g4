@@ -8,6 +8,7 @@ expression:
     | fieldPredicate                  # fieldPredicateArray
     | indexPredicate                  # indexPredicateArray 
     | rangePredicate                  # rangePredicateArray
+    | arrayCastTransformer            # transformerArrayCast
     | '(' expressions ')'             # innerExpression
     ;
 
@@ -15,6 +16,7 @@ fieldName: IDENTIFIER |  QUOTED_VALUE;
 fieldPredicate: '[' IDENTIFIER '=' STRING ']';
 rangePredicate: '[[' NUMBER '..' NUMBER  ']]';
 indexPredicate: '[' NUMBER ']';
+arrayCastTransformer: '[]';
 
 STRING: 
     '\'' (ESC | ~['\\])* '\''

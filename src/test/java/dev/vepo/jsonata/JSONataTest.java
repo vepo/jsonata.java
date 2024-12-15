@@ -125,6 +125,14 @@ class JSONataTest {
             assertThat(JSONata.of("Phone[type='mobile'].number").evaluate(objectContent).asText()).isEqualTo("077 7700 1234");
             assertThat(JSONata.of("Phone[type='office'].number").evaluate(objectContent).multi().asText()).containsExactly("01962 001234", "01962 001235");
         }
+
+        @Test
+        void arrayCastTest() {
+            assertThat(JSONata.of("Address[].City").evaluate(objectContent).multi().asText()).containsExactly("Winchester");
+            assertThat(JSONata.of("Phone[0][].number").evaluate(objectContent).multi().asText()).containsExactly("0203 544 1234");
+            assertThat(JSONata.of("Phone[][type='home'].number").evaluate(objectContent).multi().asText()).containsExactly("0203 544 1234");
+            assertThat(JSONata.of("Phone[type='office'].number[]").evaluate(objectContent).multi().asText()).containsExactly("01962 001234", "01962 001235");
+        }
     }
 
     @Nested

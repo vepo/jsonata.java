@@ -147,7 +147,7 @@ public interface Value {
 
         @Override
         public int lenght() {
-            return 0;
+            return 1;
         }
 
         @Override
