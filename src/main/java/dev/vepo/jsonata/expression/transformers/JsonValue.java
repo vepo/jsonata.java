@@ -1,5 +1,7 @@
 package dev.vepo.jsonata.expression.transformers;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -37,6 +39,7 @@ public class JsonValue {
     }
 
     public Node apply(List<Expression> expressions) {
+        requireNonNull(expressions, "Expressions cannot be null!");
         return expressions.stream()
                           .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
                           .get()
