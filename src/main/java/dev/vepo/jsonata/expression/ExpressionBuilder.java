@@ -11,13 +11,17 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.stream.IntStream;
 
+import org.apache.commons.text.StringEscapeUtils;
+
 import dev.vepo.jsonata.expression.generated.ExpressionsBaseListener;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldNameContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldPredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.IndexPredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.InnerExpressionContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.QueryPathContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RangePredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RootPathContext;
+import dev.vepo.jsonata.expression.transformers.Value;
 import dev.vepo.jsonata.expression.transformers.Value.GroupedValue;
 
 public class ExpressionBuilder extends ExpressionsBaseListener {
@@ -27,6 +31,18 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
         } else {
             return ctx.getText().substring(1, ctx.getText().length() - 1);
         }
+    }
+
+    private static String sanitise(String str) {
+        if (str.length() > 1 && ((str.startsWith("`") && str.endsWith("`")) || (str.startsWith("\"") && str.endsWith("\""))
+            || (str.startsWith("'") && str.endsWith("'")))) {
+            str = str.substring(1, str.length() - 1);
+        }
+
+        // unescape any special chars
+        str = StringEscapeUtils.unescapeJson(str);
+
+        return str;
     }
 
     private final Queue<List<Expression>> expressions;
@@ -74,6 +90,31 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
                                                                              .get()
                                                                              .map(original, original)
                                                                              .toJson()));
+    }
+
+    @Override
+    public void exitFieldPredicateArray(FieldPredicateArrayContext ctx) {
+        var fieldName = ctx.fieldPredicate().IDENTIFIER().getText();
+        var content = sanitise(ctx.fieldPredicate().STRING().getText());
+        expressions.peek()
+                   .add((original, value) -> {
+                       if (!value.isArray()) {
+                           return value;
+                       }
+                       if (value.hasField(fieldName)) {
+                           var matched = new ArrayList<Value>();
+                           for (int i = 0; i < value.lenght(); ++i) {
+                               var inner = value.at(i);
+                               var innerContent = inner.get(fieldName).toJson();
+                               if (innerContent.asText().equals(content)) {
+                                   matched.add(inner);
+                               }
+                           }
+                           return new GroupedValue(matched);
+                       } else {
+                           return empty();
+                       }
+                   });
     }
 
     @Override
