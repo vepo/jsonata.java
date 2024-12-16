@@ -15,8 +15,10 @@ expression:
     | WILDCARD                             # transformerWildcard
     | stringConcat                         # transformerStringConcat
     | '(' expressionGroup ')'              # innerExpression
+    | booleanExpression                    # expressionBooleanSentence
     | booleanCompare                       # expressionBooleanPredicate
     | STRING                               # stringValue
+    | NUMBER                               # numberValue
     ;
 
 fieldName: IDENTIFIER |  QUOTED_VALUE;
@@ -27,6 +29,7 @@ stringConcat: stringOrField ('&' stringOrField)+;
 stringOrField: (fieldName (DOT fieldName)*) | STRING | NUMBER | BOOLEAN;
 
 booleanCompare: op=('<' | '<=' | '>' | '>=' | '!=' | '=' | 'in') expressionGroup;
+booleanExpression: op=('and' | 'or') expressionGroup;
 
 // BOOLEAN_OPERATOR: ;
 ARRAY_CAST: '[]';

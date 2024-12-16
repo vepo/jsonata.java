@@ -44,8 +44,8 @@ public interface Expression {
                 return current;
             }
             if (start < current.lenght()) {
-                return new GroupedValue(range(start, min(end + 1, current.lenght())).mapToObj(current::at)
-                        .toList());
+                return new GroupedValue(range(start, min(end + 1, current.lenght())).mapToObj(current::at) 
+                                                                                    .toList());
             } else {
                 return empty();
             }
@@ -87,23 +87,17 @@ public interface Expression {
             }
             return currNode;
         }
-
     }
 
     public enum BooleanOperator {
-        EQUAL("="),
-        EQUAL_NOT("!="),
-        GREATER_THAN(">="),
-        GREATER(">"),
-        LESS_THAN("<="),
-        LESS("<"),
-        IN("in");
+        AND("and"),
+        OR("or");
 
         public static BooleanOperator get(String value) {
             return Stream.of(values())
-                    .filter(op -> op.value.compareTo(value) == 0)
-                    .findAny()
-                    .orElseThrow(() -> new IllegalStateException(String.format("Invalid operator!! operator=%s", value)));
+                         .filter(op -> op.value.compareTo(value) == 0)
+                         .findAny()
+                         .orElseThrow(() -> new IllegalStateException(String.format("Invalid operator!! operator=%s", value)));
         }
 
         private String value;
@@ -113,28 +107,71 @@ public interface Expression {
         }
     }
 
+    public enum CompareOperator {
+        EQUAL("="),
+        EQUAL_NOT("!="),
+        GREATER_THAN(">="),
+        GREATER(">"),
+        LESS_THAN("<="),
+        LESS("<"),
+        IN("in");
+
+        public static CompareOperator get(String value) {
+            return Stream.of(values())
+                         .filter(op -> op.value.compareTo(value) == 0)
+                         .findAny()
+                         .orElseThrow(() -> new IllegalStateException(String.format("Invalid operator!! operator=%s", value)));
+        }
+
+        private String value;
+
+        CompareOperator(String value) {
+            this.value = value;
+        }
+    }
+
     public static record InnerExpressions(List<Expression> inner) implements Expression {
 
         @Override
         public Value map(Value original, Value current) {
-            return json2Value(inner.stream()
-                    .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                    .map(f -> f.map(original, current)
-                            .toJson())
-                    .orElse(current.toJson()));
+            return json2Value(inner.stream().reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                                            .map(f -> f.map(original, current)
+                                                       .toJson())
+                                            .orElse(current.toJson()));
         }
     }
 
-    public static record BooleanCompareExpression(BooleanOperator operator, List<Expression> rightExpressions) implements Expression {
+    public static record BoleanExpression(BooleanOperator operator, List<Expression> rightExpressions) implements Expression {
 
         @Override
         public Value map(Value original, Value current) {
             return booleanValue(compare(current.toJson(),
-                    rightExpressions.stream()
-                            .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                            .map(f -> f.map(original, original)
-                                    .toJson())
-                            .orElse(current.toJson())));
+                                rightExpressions.stream()
+                                        .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                                        .map(f -> f.map(original, original)
+                                                .toJson())
+                                        .orElse(current.toJson())));
+        }
+
+        private boolean compare(JsonNode left, JsonNode right) {
+            return switch (operator) {
+                case AND -> left.asBoolean() && right.asBoolean();
+                case OR -> left.asBoolean() || right.asBoolean();
+            };
+        }
+
+    }
+
+    public static record CompareExpression(CompareOperator operator, List<Expression> rightExpressions) implements Expression {
+
+        @Override
+        public Value map(Value original, Value current) {
+            return booleanValue(compare(current.toJson(),
+                                rightExpressions.stream()
+                                                .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                                                .map(f -> f.map(original, original)
+                                                           .toJson())
+                                                .orElse(current.toJson())));
         }
 
         private boolean compare(JsonNode left, JsonNode right) {

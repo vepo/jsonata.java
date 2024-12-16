@@ -120,6 +120,12 @@ class JSONataTest {
             assertThat(JSONata.of("Numbers[2] >= Numbers[4]").evaluate(NUMBERS).asBoolean()).isFalse();
             assertThat(JSONata.of("\"01962 001234\" in Phone.number").evaluate(OBJECT).asBoolean()).isTrue();
         }
+
+        @Test
+        void booleanTest() {
+            assertThat(JSONata.of("(Numbers[2] != 0) and (Numbers[5] != Numbers[1])").evaluate(NUMBERS).asBoolean()).isTrue();
+            assertThat(JSONata.of("(Numbers[2] != 0) or (Numbers[5] = Numbers[1])").evaluate(NUMBERS).asBoolean()).isTrue();
+        }
     }
 
     private static final String NUMBERS = """

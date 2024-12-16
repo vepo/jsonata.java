@@ -34,17 +34,16 @@ public interface Value {
         @Override
         public boolean hasField(String fieldName) {
             return IntStream.range(0, element.size())
-                    .anyMatch(i -> element.get(i).has(fieldName));
+                            .anyMatch(i -> element.get(i).has(fieldName));
         }
 
         @Override
         public Value get(String fieldName) {
-            return new GroupedValue(IntStream.range(0, element.size())
-                    .mapToObj(element::get)
-                    .map(node -> node.get(fieldName))
-                    .filter(Objects::nonNull)
-                    .map(JsonFactory::json2Value)
-                    .toList());
+            return new GroupedValue(IntStream.range(0, element.size()).mapToObj(element::get)
+                                                                                     .map(node -> node.get(fieldName))
+                                                                                     .filter(Objects::nonNull)
+                                                                                     .map(JsonFactory::json2Value)
+                                                                                     .toList());
         }
 
         @Override
@@ -111,10 +110,10 @@ public interface Value {
         @Override
         public Value get(String fieldName) {
             return new GroupedValue(elements.stream()
-                    .filter(v -> v.hasField(fieldName))
-                    .map(e -> e.get(fieldName))
-                    .filter(v -> !v.isEmpty())
-                    .toList());
+                                            .filter(v -> v.hasField(fieldName))
+                                            .map(e -> e.get(fieldName))
+                                            .filter(v -> !v.isEmpty())
+                                            .toList());
         }
 
         @Override

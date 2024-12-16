@@ -1,5 +1,6 @@
 package dev.vepo.jsonata.expression;
 
+import static dev.vepo.jsonata.expression.transformers.JsonFactory.numberValue;
 import static dev.vepo.jsonata.expression.transformers.JsonFactory.stringValue;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJson;
 
@@ -14,8 +15,10 @@ import java.util.function.Function;
 import dev.vepo.jsonata.expression.Expression.ArrayCastTransformerExpression;
 import dev.vepo.jsonata.expression.Expression.ArrayIndexExpression;
 import dev.vepo.jsonata.expression.Expression.ArrayRangeExpression;
-import dev.vepo.jsonata.expression.Expression.BooleanCompareExpression;
+import dev.vepo.jsonata.expression.Expression.BoleanExpression;
 import dev.vepo.jsonata.expression.Expression.BooleanOperator;
+import dev.vepo.jsonata.expression.Expression.CompareExpression;
+import dev.vepo.jsonata.expression.Expression.CompareOperator;
 import dev.vepo.jsonata.expression.Expression.DeepFindByFieldNameExpression;
 import dev.vepo.jsonata.expression.Expression.FieldPathExpression;
 import dev.vepo.jsonata.expression.Expression.FieldPredicateExpression;
@@ -24,10 +27,12 @@ import dev.vepo.jsonata.expression.Expression.StringConcatExpression;
 import dev.vepo.jsonata.expression.Expression.WildcardExpression;
 import dev.vepo.jsonata.expression.generated.ExpressionsBaseListener;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.ExpressionBooleanPredicateContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.ExpressionBooleanSentenceContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldNameContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldPredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.IndexPredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.InnerExpressionContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.NumberValueContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.QueryPathContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RangePredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RootPathContext;
@@ -128,6 +133,18 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
     }
 
     @Override
+    public void enterExpressionBooleanSentence(ExpressionBooleanSentenceContext ctx) {
+        this.expressions.offerFirst(new ArrayList<>()); // new stack
+    }
+
+    @Override
+    public void exitExpressionBooleanSentence(ExpressionBooleanSentenceContext ctx) {
+        var rightExpressions = this.expressions.pollFirst();
+        this.expressions.peekFirst()
+                        .add(new BoleanExpression(BooleanOperator.get(ctx.booleanExpression().op.getText()), rightExpressions));
+    }
+
+    @Override
     public void exitRangePredicateArray(RangePredicateArrayContext ctx) {
         var startIndex = Integer.valueOf(ctx.rangePredicate().NUMBER(0).getText());
         var endIndex = Integer.valueOf(ctx.rangePredicate().NUMBER(1).getText());
@@ -146,7 +163,14 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
 
     @Override
     public void exitStringValue(StringValueContext ctx) {
-        expressions.peekFirst().add((original, current) -> stringValue(sanitise(ctx.getText())));
+        expressions.peekFirst()
+                   .add((original, current) -> stringValue(sanitise(ctx.getText())));
+    }
+
+    @Override
+    public void exitNumberValue(NumberValueContext ctx) {
+        expressions.peekFirst()
+                   .add((original, current) -> numberValue(Integer.valueOf(ctx.getText())));
     }
 
     @Override
@@ -158,7 +182,7 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
     public void exitExpressionBooleanPredicate(ExpressionBooleanPredicateContext ctx) {
         var rightExpressions = this.expressions.pollFirst();
         this.expressions.peekFirst()
-                        .add(new BooleanCompareExpression(BooleanOperator.get(ctx.booleanCompare().op.getText()), rightExpressions));
+                        .add(new CompareExpression(CompareOperator.get(ctx.booleanCompare().op.getText()), rightExpressions));
     }
 
     @Override

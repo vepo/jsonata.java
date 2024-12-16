@@ -34,6 +34,11 @@ public class JsonFactory {
     public static Value stringValue(String value) {
         return new ObjectValue(mapper.getNodeFactory().textNode(value));
     }
+   
+
+    public static Value numberValue(Integer value) {
+        return new ObjectValue(mapper.getNodeFactory().numberNode(value));
+    }
 
     public static Value booleanValue(boolean value) {
         return new ObjectValue(mapper.getNodeFactory().booleanNode(value));
