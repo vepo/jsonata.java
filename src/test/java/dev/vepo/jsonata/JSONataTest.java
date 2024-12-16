@@ -9,62 +9,6 @@ import org.junit.jupiter.api.Test;
 
 class JSONataTest {
 
-    String arrayContent = """
-                          [
-                            { "ref": [ 1,2 ] },
-                            { "ref": [ 3,4 ] }
-                          ]
-                            """;
-    String objectContent = """
-                           {
-                               "FirstName": "Fred",
-                               "Surname": "Smith",
-                               "Age": 28,
-                               "Address": {
-                                   "Street": "Hursley Park",
-                                   "City": "Winchester",
-                                   "Postcode": "SO21 2JN"
-                               },
-                               "Phone": [
-                                   {
-                                        "type": "home",
-                                        "number": "0203 544 1234"
-                                   },
-                                   {
-                                        "type": "office",
-                                        "number": "01962 001234"
-                                   },
-                                   {
-                                        "type": "office",
-                                        "number": "01962 001235"
-                                   },
-                                   {
-                                        "type": "mobile",
-                                        "number": "077 7700 1234"
-                                   }
-                               ],
-                               "Email": [
-                                   {
-                                        "type": "work",
-                                        "address": ["fred.smith@my-work.com", "fsmith@my-work.com"]
-                                   },
-                                   {
-                                        "type": "home",
-                                        "address": ["freddy@my-social.com", "frederic.smith@very-serious.com"]
-                                   }
-                               ],
-                               "Other": {
-                                   "Over 18 ?": true,
-                                   "Misc": null,
-                                   "Alternative.Address": {
-                                   "Street": "Brick Lane",
-                                   "City": "London",
-                                   "Postcode": "E1 6RF"
-                                   }
-                               }
-                            }
-                           """;
-
     @Nested
     class SimpleQuery {
         @Test
@@ -163,5 +107,79 @@ class JSONataTest {
             assertThat(JSONata.of("Address.(Street & ', ' & City)").evaluate(objectContent).asText()).isEqualTo("Hursley Park, Winchester");
             assertThat(JSONata.of("5&0&true").evaluate(objectContent).asText()).isEqualTo("50true");
         }
+
+        @Test
+        void numberTest() {
+            assertThat(JSONata.of("Numbers[0] = Numbers[5]").evaluate(numbersContent).asBoolean()).isFalse();
+            assertThat(JSONata.of("Numbers[0] != Numbers[4]").evaluate(numbersContent).asBoolean()).isTrue();
+            assertThat(JSONata.of("Numbers[1] < Numbers[5]").evaluate(numbersContent).asBoolean()).isTrue();
+            assertThat(JSONata.of("Numbers[1] <= Numbers[5]").evaluate(numbersContent).asBoolean()).isTrue();
+            assertThat(JSONata.of("Numbers[2] > Numbers[4]").evaluate(numbersContent).asBoolean()).isFalse();
+            assertThat(JSONata.of("Numbers[2] >= Numbers[4]").evaluate(numbersContent).asBoolean()).isFalse();
+            assertThat(JSONata.of("\"01962 001234\" in Phone.number").evaluate(objectContent).asBoolean()).isTrue();
+        }
     }
+
+    private static final String numbersContent = """
+                                                 {
+                                                   "Numbers": [1, 2.4, 3.5, 10, 20.9, 30]
+                                                 }
+                                                 """;
+
+    private static final String arrayContent = """
+                                               [
+                                                 { "ref": [ 1,2 ] },
+                                                 { "ref": [ 3,4 ] }
+                                               ]
+                                                 """;
+
+    private static final String objectContent = """
+                                                {
+                                                    "FirstName": "Fred",
+                                                    "Surname": "Smith",
+                                                    "Age": 28,
+                                                    "Address": {
+                                                        "Street": "Hursley Park",
+                                                        "City": "Winchester",
+                                                        "Postcode": "SO21 2JN"
+                                                    },
+                                                    "Phone": [
+                                                        {
+                                                             "type": "home",
+                                                             "number": "0203 544 1234"
+                                                        },
+                                                        {
+                                                             "type": "office",
+                                                             "number": "01962 001234"
+                                                        },
+                                                        {
+                                                             "type": "office",
+                                                             "number": "01962 001235"
+                                                        },
+                                                        {
+                                                             "type": "mobile",
+                                                             "number": "077 7700 1234"
+                                                        }
+                                                    ],
+                                                    "Email": [
+                                                        {
+                                                             "type": "work",
+                                                             "address": ["fred.smith@my-work.com", "fsmith@my-work.com"]
+                                                        },
+                                                        {
+                                                             "type": "home",
+                                                             "address": ["freddy@my-social.com", "frederic.smith@very-serious.com"]
+                                                        }
+                                                    ],
+                                                    "Other": {
+                                                        "Over 18 ?": true,
+                                                        "Misc": null,
+                                                        "Alternative.Address": {
+                                                        "Street": "Brick Lane",
+                                                        "City": "London",
+                                                        "Postcode": "E1 6RF"
+                                                        }
+                                                    }
+                                                 }
+                                                """;
 }

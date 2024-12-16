@@ -1,39 +1,76 @@
 package dev.vepo.jsonata.expression;
 
+import static dev.vepo.jsonata.expression.transformers.JsonFactory.booleanValue;
+import static dev.vepo.jsonata.expression.transformers.JsonFactory.json2Value;
+import static dev.vepo.jsonata.expression.transformers.JsonFactory.stringValue;
 import static dev.vepo.jsonata.expression.transformers.Value.empty;
+import static java.lang.Math.min;
+import static java.util.Collections.singletonList;
+import static java.util.Spliterators.spliteratorUnknownSize;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.IntStream.range;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
-import dev.vepo.jsonata.expression.transformers.JsonFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import dev.vepo.jsonata.expression.transformers.Value;
 import dev.vepo.jsonata.expression.transformers.Value.GroupedValue;
 
 @FunctionalInterface
 public interface Expression {
-    Value map(Value original, Value current);
-
     public static class ArrayCastTransformerExpression implements Expression {
 
         @Override
         public Value map(Value original, Value current) {
             if (!current.isEmpty() && !current.isArray() && current.lenght() == 1) {
-                return new GroupedValue(Collections.singletonList(current));
+                return new GroupedValue(singletonList(current));
             } else {
                 return current;
             }
         }
     }
 
-    public static class FieldPathExpression implements Expression {
-        private final List<String> fields;
+    public static record ArrayRangeExpression(int start, int end) implements Expression {
 
-        public FieldPathExpression(List<String> fields) {
-            this.fields = fields;
+        @Override
+        public Value map(Value original, Value current) {
+            if (!current.isArray()) {
+                return current;
+            }
+            if (start < current.lenght()) {
+                return new GroupedValue(range(start, min(end + 1, current.lenght())).mapToObj(current::at)
+                                                                                    .toList());
+            } else {
+                return empty();
+            }
         }
+
+    }
+
+    public static record ArrayIndexExpression(int index) implements Expression {
+
+        @Override
+        public Value map(Value original, Value current) {
+            if (!current.isArray()) {
+                return current;
+            }
+            if (index >= 0 && index < current.lenght()) {
+                return current.at(index);
+            } else if (index < 0 && -index < current.lenght()) {
+                return current.at(current.lenght() + index);
+            } else {
+                return empty();
+            }
+        }
+
+    }
+
+    public static record FieldPathExpression(List<String> fields) implements Expression {
 
         @Override
         public Value map(Value original, Value current) {
@@ -52,28 +89,78 @@ public interface Expression {
 
     }
 
-    public static class StringConcatExpression implements Expression {
-        private final List<Function<Value, Value>> sources;
+    public enum BooleanOperator {
+        EQUAL("="),
+        EQUAL_NOT("!="),
+        GREATER_THAN(">="),
+        GREATER(">"),
+        LESS_THAN("<="),
+        LESS("<"),
+        IN("in");
 
-        public StringConcatExpression(List<Function<Value, Value>> sources) {
-            this.sources = sources;
+        public static BooleanOperator get(String value) {
+            return Stream.of(values())
+                         .filter(op -> op.value.compareTo(value) == 0)
+                         .findAny()
+                         .orElseThrow(() -> new IllegalStateException(String.format("Invalid operator!! operator=%s", value)));
         }
 
-        @Override
-        public Value map(Value original, Value current) {
-            return JsonFactory.stringValue(sources.stream().map(fn -> fn.apply(current).toJson().asText()).collect(Collectors.joining()));
+        private String value;
+
+        BooleanOperator(String value) {
+            this.value = value;
         }
     }
 
-    public static class FieldPredicateExpression implements Expression {
+    public static record InnerExpressions(List<Expression> inner) implements Expression {
 
-        private final String fieldName;
-        private final String content;
-
-        public FieldPredicateExpression(String fieldName, String content) {
-            this.fieldName = fieldName;
-            this.content = content;
+        @Override
+        public Value map(Value original, Value current) {
+            return json2Value(inner.stream()
+                                   .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                                   .get()
+                                   .map(original, current)
+                                   .toJson());
         }
+    }
+
+    public static record BooleanCompareExpression(BooleanOperator operator, List<Expression> rightExpressions) implements Expression {
+
+        @Override
+        public Value map(Value original, Value current) {
+            return booleanValue(compare(current.toJson(),
+                                        rightExpressions.stream()
+                                                        .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                                                        .get()
+                                                        .map(original, original)
+                                                        .toJson()));
+        }
+
+        private boolean compare(JsonNode left, JsonNode right) {
+            return switch (operator) {
+                case EQUAL -> left.equals(right);
+                case EQUAL_NOT -> !left.equals(right);
+                case GREATER -> left.asInt() > right.asInt();
+                case GREATER_THAN -> left.asInt() >= right.asInt();
+                case LESS -> left.asInt() < right.asInt();
+                case LESS_THAN -> left.asInt() <= right.asInt();
+                case IN -> right.isArray() ? StreamSupport.stream(spliteratorUnknownSize(right.elements(), 0), false).anyMatch(el -> el.equals(left))
+                                           : false;
+            };
+        }
+    }
+
+    public static record StringConcatExpression(List<Function<Value, Value>> sources) implements Expression {
+
+        @Override
+        public Value map(Value original, Value current) {
+            return stringValue(sources.stream()
+                                      .map(fn -> fn.apply(current).toJson().asText())
+                                      .collect(joining()));
+        }
+    }
+
+    public static record FieldPredicateExpression(String fieldName, String content) implements Expression {
 
         @Override
         public Value map(Value original, Value current) {
@@ -109,4 +196,6 @@ public interface Expression {
         }
 
     }
+
+    Value map(Value original, Value current);
 }

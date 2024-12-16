@@ -1,6 +1,8 @@
 grammar Expressions;
 
-expressions: expression+;
+expressions: expression+ EOF;
+
+expressionGroup: expression+;
 
 expression:
       DOT? fieldName (DOT fieldName)* DOT? # queryPath 
@@ -8,21 +10,26 @@ expression:
     | fieldPredicate                       # fieldPredicateArray
     | indexPredicate                       # indexPredicateArray 
     | rangePredicate                       # rangePredicateArray
-    | arrayCast                            # transformerArrayCast
-    | wildcard                             # transformerWildcard
+    | ARRAY_CAST                           # transformerArrayCast
+    | WILDCARD                             # transformerWildcard
     | stringConcat                         # transformerStringConcat
-    | '(' expressions ')'                  # innerExpression
+    | '(' expressionGroup ')'              # innerExpression
+    | booleanCompare                       # expressionBooleanPredicate
+    | STRING                               # stringValue
     ;
 
 fieldName: IDENTIFIER |  QUOTED_VALUE;
 fieldPredicate: '[' IDENTIFIER '=' STRING ']';
 rangePredicate: '[[' NUMBER '..' NUMBER  ']]';
 indexPredicate: '[' NUMBER ']';
-arrayCast: '[]';
-wildcard: '*';
 stringConcat: stringOrField ('&' stringOrField)+;
-
 stringOrField: (fieldName (DOT fieldName)*) | STRING | NUMBER | BOOLEAN;
+
+booleanCompare: op=('<' | '<=' | '>' | '>=' | '!=' | '=' | 'in') expressionGroup;
+
+// BOOLEAN_OPERATOR: ;
+ARRAY_CAST: '[]';
+WILDCARD: '*';
 
 BOOLEAN: 'true' | 'false';
 

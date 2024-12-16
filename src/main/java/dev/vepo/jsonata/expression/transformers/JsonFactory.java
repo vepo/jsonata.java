@@ -33,6 +33,10 @@ public class JsonFactory {
         return new ObjectValue(mapper.getNodeFactory().textNode(value));
     }
 
+    public static Value booleanValue(boolean value) {
+        return new ObjectValue(mapper.getNodeFactory().booleanNode(value));
+    }
+
     private JsonFactory() {
     }
 }

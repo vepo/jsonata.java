@@ -1,26 +1,28 @@
 package dev.vepo.jsonata.expression;
 
-import static dev.vepo.jsonata.expression.transformers.JsonFactory.json2Value;
 import static dev.vepo.jsonata.expression.transformers.JsonFactory.stringValue;
-import static dev.vepo.jsonata.expression.transformers.Value.empty;
+import static org.apache.commons.text.StringEscapeUtils.unescapeJson;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.function.Function;
-import java.util.stream.IntStream;
-
-import org.apache.commons.text.StringEscapeUtils;
 
 import dev.vepo.jsonata.expression.Expression.ArrayCastTransformerExpression;
+import dev.vepo.jsonata.expression.Expression.ArrayIndexExpression;
+import dev.vepo.jsonata.expression.Expression.ArrayRangeExpression;
+import dev.vepo.jsonata.expression.Expression.BooleanCompareExpression;
+import dev.vepo.jsonata.expression.Expression.BooleanOperator;
 import dev.vepo.jsonata.expression.Expression.FieldPathExpression;
 import dev.vepo.jsonata.expression.Expression.FieldPredicateExpression;
+import dev.vepo.jsonata.expression.Expression.InnerExpressions;
 import dev.vepo.jsonata.expression.Expression.StringConcatExpression;
 import dev.vepo.jsonata.expression.Expression.WildcardExpression;
 import dev.vepo.jsonata.expression.generated.ExpressionsBaseListener;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.ExpressionBooleanPredicateContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldNameContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldPredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.IndexPredicateArrayContext;
@@ -29,11 +31,11 @@ import dev.vepo.jsonata.expression.generated.ExpressionsParser.QueryPathContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RangePredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RootPathContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.StringOrFieldContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.StringValueContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerArrayCastContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerStringConcatContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerWildcardContext;
 import dev.vepo.jsonata.expression.transformers.Value;
-import dev.vepo.jsonata.expression.transformers.Value.GroupedValue;
 
 public class ExpressionBuilder extends ExpressionsBaseListener {
     private static String fieldName2Text(FieldNameContext ctx) {
@@ -47,30 +49,28 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
     private static String sanitise(String str) {
         if (str.length() > 1 && ((str.startsWith("`") && str.endsWith("`")) || (str.startsWith("\"") && str.endsWith("\""))
                 || (str.startsWith("'") && str.endsWith("'")))) {
-            str = str.substring(1, str.length() - 1);
+            return unescapeJson(str.substring(1, str.length() - 1));
+        } else {
+            return unescapeJson(str);
         }
-
-        // unescape any special chars
-        str = StringEscapeUtils.unescapeJson(str);
-
-        return str;
     }
 
-    private final Queue<List<Expression>> expressions;
+    private final Deque<List<Expression>> expressions;
 
     public ExpressionBuilder() {
         this.expressions = new LinkedList<>();
-        this.expressions.add(new ArrayList<>()); // root
+        this.expressions.offerFirst(new ArrayList<>()); // root
     }
 
     @Override
     public void exitRootPath(RootPathContext ctx) {
-        expressions.peek().add((original, value) -> original);
+        expressions.peekFirst()
+                   .add((original, value) -> original);
     }
 
     @Override
     public void exitQueryPath(QueryPathContext ctx) {
-        expressions.peek()
+        expressions.peekFirst()
                    .add(new FieldPathExpression(ctx.fieldName()
                                                    .stream()
                                                    .map(ExpressionBuilder::fieldName2Text)
@@ -79,23 +79,19 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
 
     @Override
     public void enterInnerExpression(InnerExpressionContext ctx) {
-        this.expressions.add(new ArrayList<>()); // new stack
+        this.expressions.offerFirst(new ArrayList<>()); // new stack
     }
 
     @Override
     public void exitInnerExpression(InnerExpressionContext ctx) {
-        var innerExpressions = this.expressions.poll();
-        this.expressions.peek()
-                        .add((original, value) -> json2Value(innerExpressions.stream()
-                                                                             .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                                                                             .get()
-                                                                             .map(original, original)
-                                                                             .toJson()));
+        var inner = this.expressions.pollFirst();
+        this.expressions.peekFirst()
+                        .add(new InnerExpressions(inner));
     }
 
     @Override
     public void exitTransformerStringConcat(TransformerStringConcatContext ctx) {
-        this.expressions.peek()
+        this.expressions.peekFirst()
                         .add(new StringConcatExpression(ctx.stringConcat()
                                                            .stringOrField()
                                                            .stream()
@@ -104,34 +100,21 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
 
     }
 
-    private Function<Value, Value> toStringProvider(StringOrFieldContext sCtx) {
-        if (Objects.nonNull(sCtx.STRING())) {
-            return value -> stringValue(sanitise(sCtx.getText()));
-        } else if (Objects.nonNull(sCtx.NUMBER())) {
-            return value -> stringValue(Integer.valueOf(sCtx.NUMBER().getText()).toString());
-        } else if (Objects.nonNull(sCtx.BOOLEAN())) {
-            return value -> stringValue(sCtx.BOOLEAN().getText());
-        } else {
-            var transform = new FieldPathExpression(sCtx.fieldName().stream().map(ExpressionBuilder::fieldName2Text).toList());
-            return value -> transform.map(value, value);
-        }
-    }
-
     @Override
     public void exitTransformerWildcard(TransformerWildcardContext ctx) {
-        expressions.peek()
+        expressions.peekFirst()
                    .add(new WildcardExpression());
     }
 
     @Override
     public void exitTransformerArrayCast(TransformerArrayCastContext ctx) {
-        expressions.peek()
+        expressions.peekFirst()
                    .add(new ArrayCastTransformerExpression());
     }
 
     @Override
     public void exitFieldPredicateArray(FieldPredicateArrayContext ctx) {
-        expressions.peek()
+        expressions.peekFirst()
                    .add(new FieldPredicateExpression(ctx.fieldPredicate().IDENTIFIER().getText(),
                                                      sanitise(ctx.fieldPredicate().STRING().getText())));
     }
@@ -150,39 +133,46 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
             throw new InvalidParameterException("End index should be greather than start index!");
         }
         expressions.peek()
-                   .add((original, value) -> {
-                       if (!value.isArray()) {
-                           return value;
-                       }
-                       if (startIndex < value.lenght()) {
-                           return new GroupedValue(IntStream.range(startIndex, Math.min(endIndex + 1, value.lenght()))
-                                                            .mapToObj(value::at)
-                                                            .toList());
-                       } else {
-                           return empty();
-                       }
-                   });
+                   .add(new ArrayRangeExpression(startIndex, endIndex));
+    }
+
+    @Override
+    public void exitStringValue(StringValueContext ctx) {
+        expressions.peekFirst().add((original, current) -> stringValue(sanitise(ctx.getText())));
+    }
+
+    @Override
+    public void enterExpressionBooleanPredicate(ExpressionBooleanPredicateContext ctx) {
+        this.expressions.offerFirst(new ArrayList<>()); // new stack
+    }
+
+    @Override
+    public void exitExpressionBooleanPredicate(ExpressionBooleanPredicateContext ctx) {
+        var rightExpressions = this.expressions.pollFirst();
+        this.expressions.peekFirst()
+                        .add(new BooleanCompareExpression(BooleanOperator.get(ctx.booleanCompare().op.getText()), rightExpressions));
     }
 
     @Override
     public void exitIndexPredicateArray(IndexPredicateArrayContext ctx) {
-        var index = Integer.valueOf(ctx.indexPredicate().NUMBER().getText());
-        expressions.peek()
-                   .add((original, value) -> {
-                       if (!value.isArray()) {
-                           return value;
-                       }
-                       if (index >= 0 && index < value.lenght()) {
-                           return value.at(index);
-                       } else if (index < 0 && -index < value.lenght()) {
-                           return value.at(value.lenght() + index);
-                       } else {
-                           return empty();
-                       }
-                   });
+        expressions.peekFirst()
+                   .add(new ArrayIndexExpression(Integer.valueOf(ctx.indexPredicate().NUMBER().getText())));
     }
 
     public List<Expression> getExpressions() {
-        return expressions.peek();
+        return expressions.peekFirst();
+    }
+
+    private Function<Value, Value> toStringProvider(StringOrFieldContext sCtx) {
+        if (Objects.nonNull(sCtx.STRING())) {
+            return value -> stringValue(sanitise(sCtx.getText()));
+        } else if (Objects.nonNull(sCtx.NUMBER())) {
+            return value -> stringValue(Integer.valueOf(sCtx.NUMBER().getText()).toString());
+        } else if (Objects.nonNull(sCtx.BOOLEAN())) {
+            return value -> stringValue(sCtx.BOOLEAN().getText());
+        } else {
+            var transform = new FieldPathExpression(sCtx.fieldName().stream().map(ExpressionBuilder::fieldName2Text).toList());
+            return value -> transform.map(value, value);
+        }
     }
 }
