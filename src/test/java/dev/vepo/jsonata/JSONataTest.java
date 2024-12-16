@@ -166,6 +166,18 @@ class JSONataTest {
         }
     }
 
+    @Nested
+    class ObjectConstructor {
+        @Test
+        void arrayOfObjectsTest() {
+            assertThat(jsonata("Phone.{type: number}").evaluate(OBJECT).multi().asText()).containsExactly(
+                    "{\"home\":\"0203 544 1234\"}",
+                    "{\"office\":\"01962 001234\"}",
+                    "{\"office\":\"01962 001235\"}",
+                    "{\"mobile\":\"077 7700 1234\"}");
+        }
+    }
+
     private static final String NUMBERS = """
                                           {
                                             "Numbers": [1, 2.4, 3.5, 10, 20.9, 30]

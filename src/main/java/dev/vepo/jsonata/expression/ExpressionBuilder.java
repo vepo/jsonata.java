@@ -6,11 +6,13 @@ import static org.apache.commons.text.StringEscapeUtils.unescapeJson;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import dev.vepo.jsonata.expression.Expression.ArrayCastTransformerExpression;
 import dev.vepo.jsonata.expression.Expression.ArrayConstructorExpression;
@@ -21,9 +23,11 @@ import dev.vepo.jsonata.expression.Expression.BooleanOperator;
 import dev.vepo.jsonata.expression.Expression.CompareExpression;
 import dev.vepo.jsonata.expression.Expression.CompareOperator;
 import dev.vepo.jsonata.expression.Expression.DeepFindByFieldNameExpression;
+import dev.vepo.jsonata.expression.Expression.FieldContent;
 import dev.vepo.jsonata.expression.Expression.FieldPathExpression;
 import dev.vepo.jsonata.expression.Expression.FieldPredicateExpression;
 import dev.vepo.jsonata.expression.Expression.InnerExpressions;
+import dev.vepo.jsonata.expression.Expression.ObjectMapperExpression;
 import dev.vepo.jsonata.expression.Expression.StringConcatExpression;
 import dev.vepo.jsonata.expression.Expression.WildcardExpression;
 import dev.vepo.jsonata.expression.generated.ExpressionsBaseListener;
@@ -35,6 +39,7 @@ import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldPredicateArr
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.IndexPredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.InnerExpressionContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.NumberValueContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.ObjectMapperContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.QueryPathContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RangePredicateArrayContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.RootPathContext;
@@ -108,6 +113,15 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
                                                            .map(ExpressionBuilder::toValueProvider)
                                                            .toList()));
 
+    }
+
+    @Override
+    public void exitObjectMapper(ObjectMapperContext ctx) {
+        this.expressions.peekFirst()
+                        .add(new ObjectMapperExpression(IntStream.range(0, ctx.objectExpression().fieldPath().size() / 2)
+                                                                 .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression().fieldPath(index).fieldName()),
+                                                                                                     toFunction(ctx.objectExpression().fieldPath(index + 1).fieldName())))
+                                                                 .toList()));
     }
 
     @Override

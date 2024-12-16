@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.expression.transformers.Value.ArrayValue;
@@ -63,5 +64,30 @@ public class JsonFactory {
     }
 
     private JsonFactory() {
+    }
+
+    public static class ObjectBuilder {
+
+        private final ObjectNode root;
+
+        private ObjectBuilder(ObjectNode root) {
+            this.root = root;
+        }
+
+        public Value build() {
+            return new ObjectValue(root);
+        }
+
+        public void set(String field, Value value) {
+            root.set(field, value.toJson());
+        }
+
+        public JsonNode root() {
+            return root;
+        }
+    }
+
+    public static ObjectBuilder objectBuilder() {
+        return new ObjectBuilder(mapper.createObjectNode());
     }
 }

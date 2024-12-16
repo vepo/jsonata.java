@@ -18,10 +18,12 @@ expression:
     | '(' expressionGroup ')'              # innerExpression
     | booleanExpression                    # expressionBooleanSentence
     | booleanCompare                       # expressionBooleanPredicate
+    | DOT objectExpression                 # objectMapper
     | STRING                               # stringValue
     | NUMBER                               # numberValue
     ;
 
+objectExpression: '{' fieldPath ':' fieldPath (',' fieldPath ':' fieldPath)* '}';
 fieldName: IDENTIFIER |  QUOTED_VALUE;
 fieldPath: fieldName (DOT fieldName)*;
 fieldPredicate: '[' IDENTIFIER '=' STRING ']';

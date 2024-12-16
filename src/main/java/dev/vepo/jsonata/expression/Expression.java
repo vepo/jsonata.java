@@ -15,12 +15,17 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
+import dev.vepo.jsonata.expression.transformers.JsonFactory;
 import dev.vepo.jsonata.expression.transformers.Value;
+import dev.vepo.jsonata.expression.transformers.Value.ArrayValue;
 import dev.vepo.jsonata.expression.transformers.Value.GroupedValue;
 
 @FunctionalInterface
@@ -277,6 +282,33 @@ public interface Expression {
             }
         }
 
+    }
+
+    public static record FieldContent(Function<Value, Value> name, Function<Value, Value> value) {
+    }
+
+    public static record ObjectMapperExpression(List<FieldContent> contents) implements Expression {
+
+        @Override
+        public Value map(Value original, Value current) {
+            if (current.isObject()) {
+                var builder = JsonFactory.objectBuilder();
+                contents.forEach(
+                        content -> builder.set(content.name.apply(current).toString(), content.value.apply(current)));
+                return builder.build();
+            } else if (current.isArray()) {
+                var newContents = new ArrayList<JsonNode>();
+                range(0, current.lenght()).forEach(i -> {
+                    var builder = JsonFactory.objectBuilder();
+                    contents.forEach(content -> builder.set(content.name.apply(current.at(i)).toJson().asText(),
+                                                            content.value.apply(current.at(i))));
+                    newContents.add(builder.root());
+                });
+                return new ArrayValue(JsonFactory.arrayNode(newContents));
+            } else {
+                return empty();
+            }
+        }
     }
 
     Value map(Value original, Value current);

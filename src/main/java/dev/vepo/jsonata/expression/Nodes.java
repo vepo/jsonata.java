@@ -109,7 +109,7 @@ public abstract class Nodes {
                 public List<String> asText() {
                     return IntStream.range(0, element.size())
                                     .mapToObj(element::get)
-                                    .map(JsonNode::asText)
+                                    .map(Nodes::serialize)
                                     .toList();
                 }
 
@@ -195,6 +195,14 @@ public abstract class Nodes {
         }
     }
 
+    private static final String serialize(JsonNode node) {
+        if (node.isObject()) {
+            return node.toString();
+        } else {
+            return node.asText();
+        }
+    }
+
     private static class ObjectNode implements Node {
 
         private final JsonNode element;
@@ -205,11 +213,7 @@ public abstract class Nodes {
 
         @Override
         public String asText() {
-            if (element.isObject()) {
-                return element.toString();
-            } else {
-                return element.asText();
-            }
+            return serialize(element);
         }
 
         @Override
