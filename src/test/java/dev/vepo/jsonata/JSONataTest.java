@@ -13,12 +13,12 @@ class JSONataTest {
     class SimpleQuery {
         @Test
         void queryTest() {
-            assertThat(JSONata.of("Surname").evaluate(objectContent).asText()).isEqualTo("Smith");
-            assertThat(JSONata.of("Age").evaluate(objectContent).asInt()).isEqualTo(28);
-            assertThat(JSONata.of("Address.City").evaluate(objectContent).asText()).isEqualTo("Winchester");
-            assertThat(JSONata.of("Other.Misc").evaluate(objectContent).isNull()).isTrue();
-            assertThat(JSONata.of("Other.Nothing").evaluate(objectContent).isEmpty()).isTrue();
-            assertThat(JSONata.of("Other.`Over 18 ?`").evaluate(objectContent).asBoolean()).isTrue();
+            assertThat(JSONata.of("Surname").evaluate(OBJECT).asText()).isEqualTo("Smith");
+            assertThat(JSONata.of("Age").evaluate(OBJECT).asInt()).isEqualTo(28);
+            assertThat(JSONata.of("Address.City").evaluate(OBJECT).asText()).isEqualTo("Winchester");
+            assertThat(JSONata.of("Other.Misc").evaluate(OBJECT).isNull()).isTrue();
+            assertThat(JSONata.of("Other.Nothing").evaluate(OBJECT).isEmpty()).isTrue();
+            assertThat(JSONata.of("Other.`Over 18 ?`").evaluate(OBJECT).asBoolean()).isTrue();
         }
     }
 
@@ -41,22 +41,22 @@ class JSONataTest {
     class NavigatingJsonArrays {
         @Test
         void arrayTest() {
-            assertThat(JSONata.of("Phone[0]").evaluate(objectContent).asText()).isEqualTo("{\"type\":\"home\",\"number\":\"0203 544 1234\"}");
-            assertThat(JSONata.of("Phone[1]").evaluate(objectContent).asText()).isEqualTo("{\"type\":\"office\",\"number\":\"01962 001234\"}");
-            assertThat(JSONata.of("Phone[-1]").evaluate(objectContent).asText()).isEqualTo("{\"type\":\"mobile\",\"number\":\"077 7700 1234\"}");
-            assertThat(JSONata.of("Phone[-2]").evaluate(objectContent).asText()).isEqualTo("{\"type\":\"office\",\"number\":\"01962 001235\"}");
-            assertThat(JSONata.of("Phone[8]").evaluate(objectContent).isEmpty()).isTrue();
-            assertThat(JSONata.of("Phone[0].number").evaluate(objectContent).asText()).isEqualTo("0203 544 1234");
-            assertThat(JSONata.of("Phone.number").evaluate(objectContent).multi().asText()).containsExactly("0203 544 1234",
+            assertThat(JSONata.of("Phone[0]").evaluate(OBJECT).asText()).isEqualTo("{\"type\":\"home\",\"number\":\"0203 544 1234\"}");
+            assertThat(JSONata.of("Phone[1]").evaluate(OBJECT).asText()).isEqualTo("{\"type\":\"office\",\"number\":\"01962 001234\"}");
+            assertThat(JSONata.of("Phone[-1]").evaluate(OBJECT).asText()).isEqualTo("{\"type\":\"mobile\",\"number\":\"077 7700 1234\"}");
+            assertThat(JSONata.of("Phone[-2]").evaluate(OBJECT).asText()).isEqualTo("{\"type\":\"office\",\"number\":\"01962 001235\"}");
+            assertThat(JSONata.of("Phone[8]").evaluate(OBJECT).isEmpty()).isTrue();
+            assertThat(JSONata.of("Phone[0].number").evaluate(OBJECT).asText()).isEqualTo("0203 544 1234");
+            assertThat(JSONata.of("Phone.number").evaluate(OBJECT).multi().asText()).containsExactly("0203 544 1234",
                                                                                                             "01962 001234",
                                                                                                             "01962 001235",
                                                                                                             "077 7700 1234");
-            assertThat(JSONata.of("Phone.number[0]").evaluate(objectContent).multi().asText()).containsExactly("0203 544 1234",
+            assertThat(JSONata.of("Phone.number[0]").evaluate(OBJECT).multi().asText()).containsExactly("0203 544 1234",
                                                                                                                "01962 001234",
                                                                                                                "01962 001235",
                                                                                                                "077 7700 1234");
-            assertThat(JSONata.of("(Phone.number)[0]").evaluate(objectContent).asText()).isEqualTo("0203 544 1234");
-            assertThat(JSONata.of("Phone[[0..1]]").evaluate(objectContent).multi().asText()).containsExactly("{\"type\":\"home\",\"number\":\"0203 544 1234\"}",
+            assertThat(JSONata.of("(Phone.number)[0]").evaluate(OBJECT).asText()).isEqualTo("0203 544 1234");
+            assertThat(JSONata.of("Phone[[0..1]]").evaluate(OBJECT).multi().asText()).containsExactly("{\"type\":\"home\",\"number\":\"0203 544 1234\"}",
                                                                                                              "{\"type\":\"office\",\"number\":\"01962 001234\"}");
         }
     }
@@ -65,8 +65,8 @@ class JSONataTest {
     class Wildcard {
         @Test
         void wildCardTest() {
-            assertThat(JSONata.of("Address.*").evaluate(objectContent).multi().asText()).containsExactly("Hursley Park", "Winchester", "SO21 2JN");
-            assertThat(JSONata.of("*.Postcode").evaluate(objectContent).multi().asText()).containsExactly("SO21 2JN");
+            assertThat(JSONata.of("Address.*").evaluate(OBJECT).multi().asText()).containsExactly("Hursley Park", "Winchester", "SO21 2JN");
+            assertThat(JSONata.of("*.Postcode").evaluate(OBJECT).multi().asText()).containsExactly("SO21 2JN");
         }
     }
 
@@ -74,17 +74,17 @@ class JSONataTest {
     class Predicates {
         @Test
         void queriesTest() {
-            assertThat(JSONata.of("Phone[type='mobile']").evaluate(objectContent).asText()).isEqualTo("{\"type\":\"mobile\",\"number\":\"077 7700 1234\"}");
-            assertThat(JSONata.of("Phone[type='mobile'].number").evaluate(objectContent).asText()).isEqualTo("077 7700 1234");
-            assertThat(JSONata.of("Phone[type='office'].number").evaluate(objectContent).multi().asText()).containsExactly("01962 001234", "01962 001235");
+            assertThat(JSONata.of("Phone[type='mobile']").evaluate(OBJECT).asText()).isEqualTo("{\"type\":\"mobile\",\"number\":\"077 7700 1234\"}");
+            assertThat(JSONata.of("Phone[type='mobile'].number").evaluate(OBJECT).asText()).isEqualTo("077 7700 1234");
+            assertThat(JSONata.of("Phone[type='office'].number").evaluate(OBJECT).multi().asText()).containsExactly("01962 001234", "01962 001235");
         }
 
         @Test
         void arrayCastTest() {
-            assertThat(JSONata.of("Address[].City").evaluate(objectContent).multi().asText()).containsExactly("Winchester");
-            assertThat(JSONata.of("Phone[0][].number").evaluate(objectContent).multi().asText()).containsExactly("0203 544 1234");
-            assertThat(JSONata.of("Phone[][type='home'].number").evaluate(objectContent).multi().asText()).containsExactly("0203 544 1234");
-            assertThat(JSONata.of("Phone[type='office'].number[]").evaluate(objectContent).multi().asText()).containsExactly("01962 001234", "01962 001235");
+            assertThat(JSONata.of("Address[].City").evaluate(OBJECT).multi().asText()).containsExactly("Winchester");
+            assertThat(JSONata.of("Phone[0][].number").evaluate(OBJECT).multi().asText()).containsExactly("0203 544 1234");
+            assertThat(JSONata.of("Phone[][type='home'].number").evaluate(OBJECT).multi().asText()).containsExactly("0203 544 1234");
+            assertThat(JSONata.of("Phone[type='office'].number[]").evaluate(OBJECT).multi().asText()).containsExactly("01962 001234", "01962 001235");
         }
     }
 
@@ -92,10 +92,10 @@ class JSONataTest {
     class Flattening {
         @Test
         void queriesTest() {
-            assertThat(JSONata.of("$[0]").evaluate(arrayContent).asText()).isEqualTo("{\"ref\":[1,2]}");
-            assertThat(JSONata.of("$[0].ref").evaluate(arrayContent).multi().asInt()).containsExactly(1, 2);
-            assertThat(JSONata.of("$[0].ref[0]").evaluate(arrayContent).asInt()).isEqualTo(1);
-            assertThat(JSONata.of("$.ref").evaluate(arrayContent).multi().asInt()).containsExactly(1, 2, 3, 4);
+            assertThat(JSONata.of("$[0]").evaluate(ARRAY).asText()).isEqualTo("{\"ref\":[1,2]}");
+            assertThat(JSONata.of("$[0].ref").evaluate(ARRAY).multi().asInt()).containsExactly(1, 2);
+            assertThat(JSONata.of("$[0].ref[0]").evaluate(ARRAY).asInt()).isEqualTo(1);
+            assertThat(JSONata.of("$.ref").evaluate(ARRAY).multi().asInt()).containsExactly(1, 2, 3, 4);
         }
     }
 
@@ -103,37 +103,37 @@ class JSONataTest {
     class Expressions {
         @Test
         void stringTest() {
-            assertThat(JSONata.of("FirstName & ' ' & Surname").evaluate(objectContent).asText()).isEqualTo("Fred Smith");
-            assertThat(JSONata.of("Address.(Street & ', ' & City)").evaluate(objectContent).asText()).isEqualTo("Hursley Park, Winchester");
-            assertThat(JSONata.of("5&0&true").evaluate(objectContent).asText()).isEqualTo("50true");
+            assertThat(JSONata.of("FirstName & ' ' & Surname").evaluate(OBJECT).asText()).isEqualTo("Fred Smith");
+            assertThat(JSONata.of("Address.(Street & ', ' & City)").evaluate(OBJECT).asText()).isEqualTo("Hursley Park, Winchester");
+            assertThat(JSONata.of("5&0&true").evaluate(OBJECT).asText()).isEqualTo("50true");
         }
 
         @Test
         void numberTest() {
-            assertThat(JSONata.of("Numbers[0] = Numbers[5]").evaluate(numbersContent).asBoolean()).isFalse();
-            assertThat(JSONata.of("Numbers[0] != Numbers[4]").evaluate(numbersContent).asBoolean()).isTrue();
-            assertThat(JSONata.of("Numbers[1] < Numbers[5]").evaluate(numbersContent).asBoolean()).isTrue();
-            assertThat(JSONata.of("Numbers[1] <= Numbers[5]").evaluate(numbersContent).asBoolean()).isTrue();
-            assertThat(JSONata.of("Numbers[2] > Numbers[4]").evaluate(numbersContent).asBoolean()).isFalse();
-            assertThat(JSONata.of("Numbers[2] >= Numbers[4]").evaluate(numbersContent).asBoolean()).isFalse();
-            assertThat(JSONata.of("\"01962 001234\" in Phone.number").evaluate(objectContent).asBoolean()).isTrue();
+            assertThat(JSONata.of("Numbers[0] = Numbers[5]").evaluate(NUMBERS).asBoolean()).isFalse();
+            assertThat(JSONata.of("Numbers[0] != Numbers[4]").evaluate(NUMBERS).asBoolean()).isTrue();
+            assertThat(JSONata.of("Numbers[1] < Numbers[5]").evaluate(NUMBERS).asBoolean()).isTrue();
+            assertThat(JSONata.of("Numbers[1] <= Numbers[5]").evaluate(NUMBERS).asBoolean()).isTrue();
+            assertThat(JSONata.of("Numbers[2] > Numbers[4]").evaluate(NUMBERS).asBoolean()).isFalse();
+            assertThat(JSONata.of("Numbers[2] >= Numbers[4]").evaluate(NUMBERS).asBoolean()).isFalse();
+            assertThat(JSONata.of("\"01962 001234\" in Phone.number").evaluate(OBJECT).asBoolean()).isTrue();
         }
     }
 
-    private static final String numbersContent = """
+    private static final String NUMBERS = """
                                                  {
                                                    "Numbers": [1, 2.4, 3.5, 10, 20.9, 30]
                                                  }
                                                  """;
 
-    private static final String arrayContent = """
+    private static final String ARRAY = """
                                                [
                                                  { "ref": [ 1,2 ] },
                                                  { "ref": [ 3,4 ] }
                                                ]
                                                  """;
 
-    private static final String objectContent = """
+    private static final String OBJECT = """
                                                 {
                                                     "FirstName": "Fred",
                                                     "Surname": "Smith",

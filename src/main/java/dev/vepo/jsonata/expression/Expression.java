@@ -118,9 +118,9 @@ public interface Expression {
         public Value map(Value original, Value current) {
             return json2Value(inner.stream()
                                    .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                                   .get()
-                                   .map(original, current)
-                                   .toJson());
+                                   .map(f -> f.map(original, current)
+                                              .toJson())
+                                   .orElse(current.toJson()));
         }
     }
 
@@ -131,9 +131,9 @@ public interface Expression {
             return booleanValue(compare(current.toJson(),
                                         rightExpressions.stream()
                                                         .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                                                        .get()
-                                                        .map(original, original)
-                                                        .toJson()));
+                                                        .map(f -> f.map(original, original)
+                                                                   .toJson())
+                                                        .orElse(current.toJson())));
         }
 
         private boolean compare(JsonNode left, JsonNode right) {
@@ -144,8 +144,8 @@ public interface Expression {
                 case GREATER_THAN -> left.asInt() >= right.asInt();
                 case LESS -> left.asInt() < right.asInt();
                 case LESS_THAN -> left.asInt() <= right.asInt();
-                case IN -> right.isArray() ? StreamSupport.stream(spliteratorUnknownSize(right.elements(), 0), false).anyMatch(el -> el.equals(left))
-                                           : false;
+                case IN -> right.isArray() && StreamSupport.stream(spliteratorUnknownSize(right.elements(), 0), false)
+                                                           .anyMatch(el -> el.equals(left));
             };
         }
     }
