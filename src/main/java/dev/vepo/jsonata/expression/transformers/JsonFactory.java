@@ -1,5 +1,7 @@
 package dev.vepo.jsonata.expression.transformers;
 
+import java.util.List;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +37,12 @@ public class JsonFactory {
 
     public static Value booleanValue(boolean value) {
         return new ObjectValue(mapper.getNodeFactory().booleanNode(value));
+    }
+
+    public static JsonNode arrayNode(List<JsonNode> elements) {
+        var array = mapper.createArrayNode();
+        array.addAll(elements);
+        return array;
     }
 
     private JsonFactory() {

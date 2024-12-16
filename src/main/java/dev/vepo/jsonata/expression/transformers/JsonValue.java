@@ -1,21 +1,17 @@
 package dev.vepo.jsonata.expression.transformers;
 
+import static dev.vepo.jsonata.expression.transformers.JsonFactory.fromString;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import dev.vepo.jsonata.expression.Expression;
 import dev.vepo.jsonata.expression.Node;
 
-public class JsonValue {
-    static final ObjectMapper mapper = new ObjectMapper();
-
-    private Value actual;
+public record JsonValue(Value actual) {
 
     public JsonValue(String value) {
-        actual = JsonFactory.fromString(value);        
+        this(fromString(value));
     }
 
     public Node apply(List<Expression> expressions) {
