@@ -78,7 +78,7 @@ public abstract class Nodes {
 
         @Override
         public String asText() {
-            return element.asText();
+            return element.toString();
         }
 
         @Override
@@ -188,7 +188,7 @@ public abstract class Nodes {
                 public List<Boolean> asBoolean() {
                     return elements.stream()
                                    .flatMap(n -> n.multi().asBoolean().stream())
-                                   .toList();
+                                    .toList();
                 }
 
             };

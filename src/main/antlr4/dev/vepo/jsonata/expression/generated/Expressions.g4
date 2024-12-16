@@ -5,11 +5,12 @@ expressions: expression+ EOF;
 expressionGroup: expression+;
 
 expression:
-      DOT? fieldName (DOT fieldName)* DOT? # queryPath 
+      DOT? fieldPath DOT? # queryPath 
     | ROOT                                 # rootPath
     | fieldPredicate                       # fieldPredicateArray
     | indexPredicate                       # indexPredicateArray 
     | rangePredicate                       # rangePredicateArray
+    | arrayConstructor                     # arrayConstructorMapping
     | ARRAY_CAST                           # transformerArrayCast
     | WILDCARD WILDCARD DOT fieldName      # transformerDeepFindByField
     | WILDCARD                             # transformerWildcard
@@ -22,11 +23,13 @@ expression:
     ;
 
 fieldName: IDENTIFIER |  QUOTED_VALUE;
+fieldPath: fieldName (DOT fieldName)*;
 fieldPredicate: '[' IDENTIFIER '=' STRING ']';
 rangePredicate: '[[' NUMBER '..' NUMBER  ']]';
 indexPredicate: '[' NUMBER ']';
+arrayConstructor: '[' fieldPath (',' fieldPath)* ']';
 stringConcat: stringOrField ('&' stringOrField)+;
-stringOrField: (fieldName (DOT fieldName)*) | STRING | NUMBER | BOOLEAN;
+stringOrField: fieldPath | STRING | NUMBER | BOOLEAN;
 
 booleanCompare: op=('<' | '<=' | '>' | '>=' | '!=' | '=' | 'in') expressionGroup;
 booleanExpression: op=('and' | 'or') expressionGroup;

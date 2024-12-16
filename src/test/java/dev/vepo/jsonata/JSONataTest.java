@@ -129,6 +129,23 @@ class JSONataTest {
         }
     }
 
+    @Nested
+    class ArrayConstructor {
+        @Test
+        void arrayTest() {
+            assertThat(jsonata("Email.address").evaluate(OBJECT).multi().asText()).containsExactly( "fred.smith@my-work.com",
+                                                                                                   "fsmith@my-work.com",
+                                                                                                   "freddy@my-social.com",
+                                                                                                   "frederic.smith@very-serious.com");
+        }
+
+        @Test
+        void arrayCastTest() {
+            assertThat(jsonata("Email.[address]").evaluate(OBJECT).asText()).isEqualTo("[[\"fred.smith@my-work.com\",\"fsmith@my-work.com\"],[\"freddy@my-social.com\",\"frederic.smith@very-serious.com\"]]");
+            assertThat(jsonata("[Address, Other.`Alternative.Address`].City").evaluate(OBJECT).multi().asText()).containsExactly("Winchester","London");
+        }
+    }
+
     private static final String NUMBERS = """
                                           {
                                             "Numbers": [1, 2.4, 3.5, 10, 20.9, 30]

@@ -1,5 +1,6 @@
 package dev.vepo.jsonata.expression.transformers;
 
+import static dev.vepo.jsonata.expression.Nodes.array;
 import static dev.vepo.jsonata.expression.transformers.JsonFactory.arrayNode;
 import static dev.vepo.jsonata.expression.transformers.JsonFactory.json2Value;
 import static java.util.Spliterators.spliteratorUnknownSize;
@@ -40,10 +41,10 @@ public interface Value {
         @Override
         public Value get(String fieldName) {
             return new GroupedValue(IntStream.range(0, element.size()).mapToObj(element::get)
-                                                                                     .map(node -> node.get(fieldName))
-                                                                                     .filter(Objects::nonNull)
+                                                                           .map(node -> node.get(fieldName))
+                                                                           .filter(Objects::nonNull)
                                                                                      .map(JsonFactory::json2Value)
-                                                                                     .toList());
+                                                                           .toList());
         }
 
         @Override
@@ -63,7 +64,7 @@ public interface Value {
 
         @Override
         public Node toNode() {
-            return Nodes.array(element);
+            return array(element);
         }
 
         @Override

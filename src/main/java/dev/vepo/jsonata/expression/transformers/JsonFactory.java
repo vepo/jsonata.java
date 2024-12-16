@@ -1,12 +1,14 @@
 package dev.vepo.jsonata.expression.transformers;
 
 import java.util.List;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-
+import static java.util.Spliterators.spliteratorUnknownSize;
 import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.expression.transformers.Value.ArrayValue;
 import dev.vepo.jsonata.expression.transformers.Value.ObjectValue;
@@ -34,6 +36,15 @@ public class JsonFactory {
     public static Value stringValue(String value) {
         return new ObjectValue(mapper.getNodeFactory().textNode(value));
     }
+
+    public static Stream<Value> planify(JsonNode value) {
+        if (!value.isArray()) {
+            return Stream.of(new ObjectValue(value));
+        } else {
+            return StreamSupport.stream(spliteratorUnknownSize(((ArrayNode) value).elements(), 0), false)
+                    .map(ObjectValue::new);
+        }
+    }
    
 
     public static Value numberValue(Integer value) {
@@ -44,7 +55,7 @@ public class JsonFactory {
         return new ObjectValue(mapper.getNodeFactory().booleanNode(value));
     }
 
-    public static JsonNode arrayNode(List<JsonNode> elements) {
+    public static ArrayNode arrayNode(List<JsonNode> elements) {
         var array = mapper.createArrayNode();
         array.addAll(elements);
         return array;

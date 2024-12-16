@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import dev.vepo.jsonata.expression.Expression.ArrayCastTransformerExpression;
+import dev.vepo.jsonata.expression.Expression.ArrayConstructorExpression;
 import dev.vepo.jsonata.expression.Expression.ArrayIndexExpression;
 import dev.vepo.jsonata.expression.Expression.ArrayRangeExpression;
 import dev.vepo.jsonata.expression.Expression.BoleanExpression;
@@ -26,6 +27,7 @@ import dev.vepo.jsonata.expression.Expression.InnerExpressions;
 import dev.vepo.jsonata.expression.Expression.StringConcatExpression;
 import dev.vepo.jsonata.expression.Expression.WildcardExpression;
 import dev.vepo.jsonata.expression.generated.ExpressionsBaseListener;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.ArrayConstructorMappingContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.ExpressionBooleanPredicateContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.ExpressionBooleanSentenceContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.FieldNameContext;
@@ -78,7 +80,8 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
     @Override
     public void exitQueryPath(QueryPathContext ctx) {
         expressions.peekFirst()
-                   .add(new FieldPathExpression(ctx.fieldName()
+                   .add(new FieldPathExpression(ctx.fieldPath()
+                                                   .fieldName()
                                                    .stream()
                                                    .map(ExpressionBuilder::fieldName2Text)
                                                    .toList()));
@@ -102,9 +105,19 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
                         .add(new StringConcatExpression(ctx.stringConcat()
                                                            .stringOrField()
                                                            .stream()
-                                                           .map(this::toStringProvider)
+                                                           .map(ExpressionBuilder::toValueProvider)
                                                            .toList()));
 
+    }
+
+    @Override
+    public void exitArrayConstructorMapping(ArrayConstructorMappingContext ctx) {
+        this.expressions.peekFirst()
+                        .add(new ArrayConstructorExpression(ctx.arrayConstructor()
+                                                               .fieldPath()
+                                                               .stream()
+                                                               .map(fpCtx -> toFunction(fpCtx.fieldName()))
+                                                               .toList()));
     }
 
     @Override
@@ -195,7 +208,14 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
         return expressions.peekFirst();
     }
 
-    private Function<Value, Value> toStringProvider(StringOrFieldContext sCtx) {
+    private static Function<Value, Value> toFunction(List<FieldNameContext> path) {
+        var transform = new FieldPathExpression(path.stream()
+                                                    .map(ExpressionBuilder::fieldName2Text)
+                                                    .toList());
+        return value -> transform.map(value, value);
+    }
+
+    private static Function<Value, Value> toValueProvider(StringOrFieldContext sCtx) {
         if (Objects.nonNull(sCtx.STRING())) {
             return value -> stringValue(sanitise(sCtx.getText()));
         } else if (Objects.nonNull(sCtx.NUMBER())) {
@@ -203,7 +223,11 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
         } else if (Objects.nonNull(sCtx.BOOLEAN())) {
             return value -> stringValue(sCtx.BOOLEAN().getText());
         } else {
-            var transform = new FieldPathExpression(sCtx.fieldName().stream().map(ExpressionBuilder::fieldName2Text).toList());
+            var transform = new FieldPathExpression(sCtx.fieldPath()
+                                                        .fieldName()
+                                                        .stream()
+                                                        .map(ExpressionBuilder::fieldName2Text)
+                                                        .toList());
             return value -> transform.map(value, value);
         }
     }
