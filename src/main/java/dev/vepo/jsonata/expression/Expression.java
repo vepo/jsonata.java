@@ -11,6 +11,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.IntStream.range;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -44,7 +45,7 @@ public interface Expression {
             }
             if (start < current.lenght()) {
                 return new GroupedValue(range(start, min(end + 1, current.lenght())).mapToObj(current::at)
-                                                                                    .toList());
+                        .toList());
             } else {
                 return empty();
             }
@@ -100,9 +101,9 @@ public interface Expression {
 
         public static BooleanOperator get(String value) {
             return Stream.of(values())
-                         .filter(op -> op.value.compareTo(value) == 0)
-                         .findAny()
-                         .orElseThrow(() -> new IllegalStateException(String.format("Invalid operator!! operator=%s", value)));
+                    .filter(op -> op.value.compareTo(value) == 0)
+                    .findAny()
+                    .orElseThrow(() -> new IllegalStateException(String.format("Invalid operator!! operator=%s", value)));
         }
 
         private String value;
@@ -117,10 +118,10 @@ public interface Expression {
         @Override
         public Value map(Value original, Value current) {
             return json2Value(inner.stream()
-                                   .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                                   .map(f -> f.map(original, current)
-                                              .toJson())
-                                   .orElse(current.toJson()));
+                    .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                    .map(f -> f.map(original, current)
+                            .toJson())
+                    .orElse(current.toJson()));
         }
     }
 
@@ -129,11 +130,11 @@ public interface Expression {
         @Override
         public Value map(Value original, Value current) {
             return booleanValue(compare(current.toJson(),
-                                        rightExpressions.stream()
-                                                        .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                                                        .map(f -> f.map(original, original)
-                                                                   .toJson())
-                                                        .orElse(current.toJson())));
+                    rightExpressions.stream()
+                            .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                            .map(f -> f.map(original, original)
+                                    .toJson())
+                            .orElse(current.toJson())));
         }
 
         private boolean compare(JsonNode left, JsonNode right) {
@@ -145,7 +146,7 @@ public interface Expression {
                 case LESS -> left.asInt() < right.asInt();
                 case LESS_THAN -> left.asInt() <= right.asInt();
                 case IN -> right.isArray() && StreamSupport.stream(spliteratorUnknownSize(right.elements(), 0), false)
-                                                           .anyMatch(el -> el.equals(left));
+                        .anyMatch(el -> el.equals(left));
             };
         }
     }
@@ -155,8 +156,8 @@ public interface Expression {
         @Override
         public Value map(Value original, Value current) {
             return stringValue(sources.stream()
-                                      .map(fn -> fn.apply(current).toJson().asText())
-                                      .collect(joining()));
+                    .map(fn -> fn.apply(current).toJson().asText())
+                    .collect(joining()));
         }
     }
 
@@ -182,6 +183,34 @@ public interface Expression {
             }
         }
 
+    }
+
+    public static record DeepFindByFieldNameExpression(String fieldName) implements Expression {
+
+        @Override
+        public Value map(Value original, Value current) {
+            var availableNodes = new LinkedList<Value>();
+            var matchedNodes = new ArrayList<Value>();
+            availableNodes.add(current);
+            while (!availableNodes.isEmpty()) {
+                var currNode = availableNodes.pollFirst();
+                if (currNode.isEmpty()) {
+                    continue;
+                }
+
+                if (currNode.isObject() && currNode.hasField(fieldName)) {
+                    matchedNodes.add(currNode);
+                    continue;
+                }
+
+                currNode.forEachChild(availableNodes::offerLast);
+            }
+            if (!matchedNodes.isEmpty()) {
+                return new GroupedValue(matchedNodes).get(fieldName);
+            } else {
+                return empty();
+            }
+        }
     }
 
     public static class WildcardExpression implements Expression {

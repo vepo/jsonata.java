@@ -11,6 +11,7 @@ expression:
     | indexPredicate                       # indexPredicateArray 
     | rangePredicate                       # rangePredicateArray
     | ARRAY_CAST                           # transformerArrayCast
+    | WILDCARD WILDCARD DOT fieldName      # transformerDeepFindByField
     | WILDCARD                             # transformerWildcard
     | stringConcat                         # transformerStringConcat
     | '(' expressionGroup ')'              # innerExpression

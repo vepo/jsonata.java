@@ -5,8 +5,9 @@ import static dev.vepo.jsonata.expression.transformers.JsonFactory.json2Value;
 import static java.util.Spliterators.spliteratorUnknownSize;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
@@ -33,17 +34,17 @@ public interface Value {
         @Override
         public boolean hasField(String fieldName) {
             return IntStream.range(0, element.size())
-                            .anyMatch(i -> element.get(i).has(fieldName));
+                    .anyMatch(i -> element.get(i).has(fieldName));
         }
 
         @Override
         public Value get(String fieldName) {
             return new GroupedValue(IntStream.range(0, element.size())
-                                             .mapToObj(element::get)
-                                             .map(node -> node.get(fieldName))
-                                             .filter(Objects::nonNull)
-                                             .map(JsonFactory::json2Value)
-                                             .toList());
+                    .mapToObj(element::get)
+                    .map(node -> node.get(fieldName))
+                    .filter(Objects::nonNull)
+                    .map(JsonFactory::json2Value)
+                    .toList());
         }
 
         @Override
@@ -75,6 +76,18 @@ public interface Value {
         public Value all() {
             return this;
         }
+
+        @Override
+        public void forEachChild(Consumer<Value> action) {
+            for (int i = 0; i < element.size(); ++i) {
+                action.accept(json2Value(element.get(i)));
+            }
+        }
+
+        @Override
+        public boolean isObject() {
+            return false;
+        }
     }
 
     public class GroupedValue implements Value {
@@ -98,10 +111,10 @@ public interface Value {
         @Override
         public Value get(String fieldName) {
             return new GroupedValue(elements.stream()
-                                            .filter(v -> v.hasField(fieldName))
-                                            .map(e -> e.get(fieldName))
-                                            .filter(v -> !v.isEmpty())
-                                            .toList());
+                    .filter(v -> v.hasField(fieldName))
+                    .map(e -> e.get(fieldName))
+                    .filter(v -> !v.isEmpty())
+                    .toList());
         }
 
         @Override
@@ -122,20 +135,30 @@ public interface Value {
         @Override
         public Node toNode() {
             return Nodes.group(elements.stream()
-                                       .map(Value::toNode)
-                                       .toList());
+                    .map(Value::toNode)
+                    .toList());
         }
 
         @Override
         public JsonNode toJson() {
             return arrayNode(elements.stream()
-                                     .map(Value::toJson)
-                                     .toList());
+                    .map(Value::toJson)
+                    .toList());
         }
 
         @Override
         public Value all() {
             return this;
+        }
+
+        @Override
+        public void forEachChild(Consumer<Value> action) {
+            elements.forEach(action);
+        }
+
+        @Override
+        public boolean isObject() {
+            return false;
         }
     }
 
@@ -190,9 +213,23 @@ public interface Value {
         @Override
         public Value all() {
             return new GroupedValue(StreamSupport.stream(spliteratorUnknownSize(element.fields(), 0), false)
-                                                 .map(Entry::getValue)
-                                                 .map(ObjectValue::new)
-                                                 .map(v -> (Value) v).toList());
+                    .map(Entry::getValue)
+                    .map(ObjectValue::new)
+                    .map(v -> (Value) v).toList());
+        }
+
+        @Override
+        public void forEachChild(Consumer<Value> action) {
+            StreamSupport.stream(spliteratorUnknownSize(element.fields(), 0), false)
+                    .map(Entry::getValue)
+                    .filter(JsonNode::isObject)
+                    .map(ObjectValue::new)
+                    .forEach(action);
+        }
+
+        @Override
+        public boolean isObject() {
+            return true;
         }
     }
 
@@ -242,6 +279,16 @@ public interface Value {
         public Value all() {
             return this;
         }
+
+        @Override
+        public void forEachChild(Consumer<Value> action) {
+            // nothing! This is empty
+        }
+
+        @Override
+        public boolean isObject() {
+            return false;
+        }
     }
 
     public static Value empty() {
@@ -249,6 +296,8 @@ public interface Value {
     }
 
     boolean isArray();
+
+    boolean isObject();
 
     boolean hasField(String fieldName);
 
@@ -265,4 +314,6 @@ public interface Value {
     JsonNode toJson();
 
     Value all();
+
+    void forEachChild(Consumer<Value> action);
 }

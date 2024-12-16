@@ -16,6 +16,7 @@ import dev.vepo.jsonata.expression.Expression.ArrayIndexExpression;
 import dev.vepo.jsonata.expression.Expression.ArrayRangeExpression;
 import dev.vepo.jsonata.expression.Expression.BooleanCompareExpression;
 import dev.vepo.jsonata.expression.Expression.BooleanOperator;
+import dev.vepo.jsonata.expression.Expression.DeepFindByFieldNameExpression;
 import dev.vepo.jsonata.expression.Expression.FieldPathExpression;
 import dev.vepo.jsonata.expression.Expression.FieldPredicateExpression;
 import dev.vepo.jsonata.expression.Expression.InnerExpressions;
@@ -33,6 +34,7 @@ import dev.vepo.jsonata.expression.generated.ExpressionsParser.RootPathContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.StringOrFieldContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.StringValueContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerArrayCastContext;
+import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerDeepFindByFieldContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerStringConcatContext;
 import dev.vepo.jsonata.expression.generated.ExpressionsParser.TransformerWildcardContext;
 import dev.vepo.jsonata.expression.transformers.Value;
@@ -104,6 +106,12 @@ public class ExpressionBuilder extends ExpressionsBaseListener {
     public void exitTransformerWildcard(TransformerWildcardContext ctx) {
         expressions.peekFirst()
                    .add(new WildcardExpression());
+    }
+
+    @Override
+    public void exitTransformerDeepFindByField(TransformerDeepFindByFieldContext ctx) {
+        expressions.peekFirst()
+                   .add(new DeepFindByFieldNameExpression(ctx.fieldName().getText()));
     }
 
     @Override

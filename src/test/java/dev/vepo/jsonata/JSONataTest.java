@@ -67,6 +67,8 @@ class JSONataTest {
         void wildCardTest() {
             assertThat(JSONata.of("Address.*").evaluate(OBJECT).multi().asText()).containsExactly("Hursley Park", "Winchester", "SO21 2JN");
             assertThat(JSONata.of("*.Postcode").evaluate(OBJECT).multi().asText()).containsExactly("SO21 2JN");
+            assertThat(JSONata.of("**.Postcode").evaluate(OBJECT).multi().asText()).containsExactly("SO21 2JN", "E1 6RF");
+            assertThat(JSONata.of("**.InvalidField").evaluate(OBJECT).multi().asText()).isEmpty();
         }
     }
 
@@ -121,65 +123,65 @@ class JSONataTest {
     }
 
     private static final String NUMBERS = """
-                                                 {
-                                                   "Numbers": [1, 2.4, 3.5, 10, 20.9, 30]
-                                                 }
-                                                 """;
+                                          {
+                                            "Numbers": [1, 2.4, 3.5, 10, 20.9, 30]
+                                          }
+                                          """;
 
     private static final String ARRAY = """
-                                               [
-                                                 { "ref": [ 1,2 ] },
-                                                 { "ref": [ 3,4 ] }
-                                               ]
-                                                 """;
+                                        [
+                                            { "ref": [ 1,2 ] },
+                                            { "ref": [ 3,4 ] }
+                                        ]
+                                        """;
 
     private static final String OBJECT = """
-                                                {
-                                                    "FirstName": "Fred",
-                                                    "Surname": "Smith",
-                                                    "Age": 28,
-                                                    "Address": {
-                                                        "Street": "Hursley Park",
-                                                        "City": "Winchester",
-                                                        "Postcode": "SO21 2JN"
-                                                    },
-                                                    "Phone": [
-                                                        {
-                                                             "type": "home",
-                                                             "number": "0203 544 1234"
-                                                        },
-                                                        {
-                                                             "type": "office",
-                                                             "number": "01962 001234"
-                                                        },
-                                                        {
-                                                             "type": "office",
-                                                             "number": "01962 001235"
-                                                        },
-                                                        {
-                                                             "type": "mobile",
-                                                             "number": "077 7700 1234"
-                                                        }
-                                                    ],
-                                                    "Email": [
-                                                        {
-                                                             "type": "work",
-                                                             "address": ["fred.smith@my-work.com", "fsmith@my-work.com"]
-                                                        },
-                                                        {
-                                                             "type": "home",
-                                                             "address": ["freddy@my-social.com", "frederic.smith@very-serious.com"]
-                                                        }
-                                                    ],
-                                                    "Other": {
-                                                        "Over 18 ?": true,
-                                                        "Misc": null,
-                                                        "Alternative.Address": {
-                                                        "Street": "Brick Lane",
-                                                        "City": "London",
-                                                        "Postcode": "E1 6RF"
-                                                        }
-                                                    }
+                                         {
+                                             "FirstName": "Fred",
+                                             "Surname": "Smith",
+                                             "Age": 28,
+                                             "Address": {
+                                                 "Street": "Hursley Park",
+                                                 "City": "Winchester",
+                                                 "Postcode": "SO21 2JN"
+                                             },
+                                             "Phone": [
+                                                 {
+                                                      "type": "home",
+                                                      "number": "0203 544 1234"
+                                                 },
+                                                 {
+                                                      "type": "office",
+                                                      "number": "01962 001234"
+                                                 },
+                                                 {
+                                                      "type": "office",
+                                                      "number": "01962 001235"
+                                                 },
+                                                 {
+                                                      "type": "mobile",
+                                                      "number": "077 7700 1234"
                                                  }
-                                                """;
+                                             ],
+                                             "Email": [
+                                                 {
+                                                      "type": "work",
+                                                      "address": ["fred.smith@my-work.com", "fsmith@my-work.com"]
+                                                 },
+                                                 {
+                                                      "type": "home",
+                                                      "address": ["freddy@my-social.com", "frederic.smith@very-serious.com"]
+                                                 }
+                                             ],
+                                             "Other": {
+                                                 "Over 18 ?": true,
+                                                 "Misc": null,
+                                                 "Alternative.Address": {
+                                                 "Street": "Brick Lane",
+                                                 "City": "London",
+                                                 "Postcode": "E1 6RF"
+                                                 }
+                                             }
+                                         }
+                                         """;
 }
