@@ -34,7 +34,8 @@ class JSONataTest {
 
         @Test
         void invalidJsonTest() {
-            assertThatThrownBy(() -> jsonata("Invalid").evaluate("{ssssss}")).isInstanceOf(JSONataException.class)
+            var mapping = jsonata("Invalid");
+            assertThatThrownBy(() -> mapping.evaluate("{ssssss}")).isInstanceOf(JSONataException.class)
                     .hasMessage("Invalid JSON! content={ssssss}");
         }
     }
