@@ -8,6 +8,8 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import dev.vepo.jsonata.exception.JSONataException;
+
 class JSONataTest {
 
     @Nested
@@ -20,6 +22,20 @@ class JSONataTest {
             assertThat(jsonata("Other.Misc").evaluate(OBJECT).isNull()).isTrue();
             assertThat(jsonata("Other.Nothing").evaluate(OBJECT).isEmpty()).isTrue();
             assertThat(jsonata("Other.`Over 18 ?`").evaluate(OBJECT).asBoolean()).isTrue();
+        }
+
+        @Test
+        void notFoundPathTest() {
+            assertThat(jsonata("Invalid").evaluate(OBJECT).isEmpty()).isTrue();
+            assertThat(jsonata("Age.Invalid").evaluate(OBJECT).isEmpty()).isTrue();
+            assertThat(jsonata("Invalid.Age").evaluate(OBJECT).isEmpty()).isTrue();
+        }
+
+
+        @Test
+        void invalidJsonTest() {
+            assertThatThrownBy(() -> jsonata("Invalid").evaluate("{ssssss}")).isInstanceOf(JSONataException.class)
+                    .hasMessage("Invalid JSON! content={ssssss}");
         }
     }
 
@@ -69,7 +85,11 @@ class JSONataTest {
             assertThat(jsonata("Address.*").evaluate(OBJECT).multi().asText()).containsExactly("Hursley Park", "Winchester", "SO21 2JN");
             assertThat(jsonata("*.Postcode").evaluate(OBJECT).multi().asText()).containsExactly("SO21 2JN");
             assertThat(jsonata("**.Postcode").evaluate(OBJECT).multi().asText()).containsExactly("SO21 2JN", "E1 6RF");
+            assertThat(jsonata("**.Postcode.*").evaluate(OBJECT).multi().asText()).containsExactly("SO21 2JN", "E1 6RF");
             assertThat(jsonata("**.InvalidField").evaluate(OBJECT).multi().asText()).isEmpty();
+            assertThat(jsonata("**.InvalidField").evaluate("{}").multi().asText()).isEmpty();
+            assertThat(jsonata("InvalidField.**.InvalidField").evaluate("{}").multi().asText()).isEmpty();
+
         }
     }
 

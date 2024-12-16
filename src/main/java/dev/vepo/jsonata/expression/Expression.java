@@ -270,7 +270,7 @@ public interface Expression {
 
         @Override
         public Value map(Value original, Value current) {
-            if (!current.isEmpty() && !current.isArray() && current.lenght() == 1) {
+            if (!current.isEmpty() && current.isObject()) {
                 return current.all();
             } else {
                 return current;

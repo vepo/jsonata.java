@@ -12,7 +12,7 @@ expression:
     | rangePredicate                       # rangePredicateArray
     | arrayConstructor                     # arrayConstructorMapping
     | ARRAY_CAST                           # transformerArrayCast
-    | WILDCARD WILDCARD DOT fieldName      # transformerDeepFindByField
+    | WILDCARD WILDCARD DOT fieldName DOT? # transformerDeepFindByField
     | WILDCARD                             # transformerWildcard
     | stringConcat                         # transformerStringConcat
     | '(' expressionGroup ')'              # innerExpression

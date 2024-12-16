@@ -1,5 +1,7 @@
 package dev.vepo.jsonata.expression.transformers;
 
+import static java.util.Spliterators.spliteratorUnknownSize;
+
 import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -8,7 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import static java.util.Spliterators.spliteratorUnknownSize;
+
 import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.expression.transformers.Value.ArrayValue;
 import dev.vepo.jsonata.expression.transformers.Value.ObjectValue;
@@ -29,7 +31,7 @@ public class JsonFactory {
         try {
             return json2Value(mapper.readTree(value));
         } catch (JsonProcessingException e) {
-            throw new JSONataException("Could not load JSON!", e);
+            throw new JSONataException(String.format("Invalid JSON! content=%s", value), e);
         }
     }
 
@@ -45,7 +47,6 @@ public class JsonFactory {
                     .map(ObjectValue::new);
         }
     }
-   
 
     public static Value numberValue(Integer value) {
         return new ObjectValue(mapper.getNodeFactory().numberNode(value));
