@@ -248,16 +248,15 @@ public interface Expression {
             availableNodes.add(current);
             while (!availableNodes.isEmpty()) {
                 var currNode = availableNodes.pollFirst();
-                if (currNode.isEmpty()) {
+                if (currNode.isEmpty()) {                    
                     continue;
                 }
 
                 if (currNode.isObject() && currNode.hasField(fieldName)) {
-                    matchedNodes.add(currNode);
-                    continue;
+                    matchedNodes.add(currNode);                       
+                } else {
+                    currNode.forEachChild(availableNodes::offerLast);
                 }
-
-                currNode.forEachChild(availableNodes::offerLast);
             }
             if (!matchedNodes.isEmpty()) {
                 return new GroupedValue(matchedNodes).get(fieldName);
