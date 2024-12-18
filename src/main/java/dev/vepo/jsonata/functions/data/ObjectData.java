@@ -1,7 +1,6 @@
 package dev.vepo.jsonata.functions.data;
 
 import static dev.vepo.jsonata.functions.json.JsonFactory.json2Value;
-import static dev.vepo.jsonata.functions.data.Data.empty;
 import static java.util.Spliterators.spliteratorUnknownSize;
 
 import java.util.Map.Entry;
@@ -11,6 +10,7 @@ import java.util.stream.StreamSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.JSONataResult;
+import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.results.JSONataResults;
 
 public class ObjectData implements Data {
@@ -31,7 +31,7 @@ public class ObjectData implements Data {
 
     @Override
     public Data at(int index) {
-        return empty();
+        return JSONataFunction.empty();
     }
 
     @Override

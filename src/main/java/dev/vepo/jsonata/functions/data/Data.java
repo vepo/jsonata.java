@@ -9,9 +9,6 @@ import dev.vepo.jsonata.JSONataResult;
 import static dev.vepo.jsonata.functions.json.JsonFactory.fromString;
 
 public interface Data {
-    public static Data empty() {
-        return new EmptyData();
-    }
 
     public static Data load(String contents) {
         return fromString(contents);

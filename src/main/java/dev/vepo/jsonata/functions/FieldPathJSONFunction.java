@@ -1,7 +1,5 @@
 package dev.vepo.jsonata.functions;
 
-import static dev.vepo.jsonata.functions.data.Data.empty;
-
 import java.util.List;
 
 import dev.vepo.jsonata.functions.data.Data;
@@ -17,7 +15,7 @@ public record FieldPathJSONFunction(List<String> fields) implements JSONataFunct
             } else if (currNode.hasField(field)) {
                 currNode = currNode.get(field);
             } else {
-                currNode = empty();
+                currNode = JSONataFunction.empty();
             }
         }
         return currNode;

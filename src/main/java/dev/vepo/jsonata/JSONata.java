@@ -2,11 +2,9 @@ package dev.vepo.jsonata;
 
 import java.util.List;
 
-import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.JSONFunctionsParser;
+import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * The JSONata class provides functionality to parse and evaluate JSONata expressions.

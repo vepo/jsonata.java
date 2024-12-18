@@ -1,11 +1,9 @@
 package dev.vepo.jsonata.functions;
 
-import static dev.vepo.jsonata.functions.data.Data.empty;
-
 import java.util.ArrayList;
 
-import dev.vepo.jsonata.functions.data.GroupedData;
 import dev.vepo.jsonata.functions.data.Data;
+import dev.vepo.jsonata.functions.data.GroupedData;
 
 public record FieldPredicateJSONFunction(String fieldName, String content) implements JSONataFunction {
 
@@ -25,7 +23,7 @@ public record FieldPredicateJSONFunction(String fieldName, String content) imple
             }
             return new GroupedData(matched);
         } else {
-            return empty();
+            return JSONataFunction.empty();
         }
     }
 

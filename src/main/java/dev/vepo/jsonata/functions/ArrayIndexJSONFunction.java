@@ -1,7 +1,5 @@
 package dev.vepo.jsonata.functions;
 
-import static dev.vepo.jsonata.functions.data.Data.empty;
-
 import dev.vepo.jsonata.functions.data.Data;
 
 public record ArrayIndexJSONFunction(int index) implements JSONataFunction {
@@ -16,7 +14,7 @@ public record ArrayIndexJSONFunction(int index) implements JSONataFunction {
         } else if (index < 0 && -index < current.length()) {
             return current.at(current.length() + index);
         } else {
-            return empty();
+            return JSONataFunction.empty();
         }
     }
 

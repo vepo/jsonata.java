@@ -1,7 +1,5 @@
 package dev.vepo.jsonata.functions;
 
-import static dev.vepo.jsonata.functions.data.Data.empty;
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 
@@ -30,7 +28,7 @@ public record DeepFindByFieldNameJSONFunction(String fieldName) implements JSONa
         if (!matchedNodes.isEmpty()) {
             return new GroupedData(matchedNodes).get(fieldName);
         } else {
-            return empty();
+            return JSONataFunction.empty();
         }
     }
 }

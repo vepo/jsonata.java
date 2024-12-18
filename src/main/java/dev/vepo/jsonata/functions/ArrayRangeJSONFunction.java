@@ -1,6 +1,5 @@
 package dev.vepo.jsonata.functions;
 
-import static dev.vepo.jsonata.functions.data.Data.empty;
 import static java.lang.Math.min;
 import static java.util.stream.IntStream.range;
 
@@ -18,7 +17,7 @@ public record ArrayRangeJSONFunction(int start, int end) implements JSONataFunct
             return new GroupedData(range(start, min(end + 1, current.length())).mapToObj(current::at)
                                                                                 .toList());
         } else {
-            return empty();
+            return JSONataFunction.empty();
         }
     }
 

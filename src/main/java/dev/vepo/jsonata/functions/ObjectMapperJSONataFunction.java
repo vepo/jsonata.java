@@ -1,6 +1,5 @@
 package dev.vepo.jsonata.functions;
 
-import static dev.vepo.jsonata.functions.data.Data.empty;
 import static java.util.stream.IntStream.range;
 
 import java.util.ArrayList;
@@ -9,8 +8,8 @@ import java.util.List;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.functions.data.ArrayData;
-import dev.vepo.jsonata.functions.json.JsonFactory;
 import dev.vepo.jsonata.functions.data.Data;
+import dev.vepo.jsonata.functions.json.JsonFactory;
 
 public record ObjectMapperJSONataFunction(List<FieldContent> contents) implements JSONataFunction {
 
@@ -31,7 +30,7 @@ public record ObjectMapperJSONataFunction(List<FieldContent> contents) implement
             });
             return new ArrayData(JsonFactory.arrayNode(newContents));
         } else {
-            return empty();
+            return JSONataFunction.empty();
         }
     }
 }
