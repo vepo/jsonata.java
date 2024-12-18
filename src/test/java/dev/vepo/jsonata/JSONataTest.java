@@ -176,6 +176,7 @@ class JSONataTest {
                     "{\"office\":\"01962 001234\"}",
                     "{\"office\":\"01962 001235\"}",
                     "{\"mobile\":\"077 7700 1234\"}");
+            assertThat(jsonata("Phone{type: number}").evaluate(OBJECT).asText()).isEqualTo("{\"home\":\"0203 544 1234\",\"office\":[\"01962 001234\",\"01962 001235\"],\"mobile\":\"077 7700 1234\"}");
         }
     }
 

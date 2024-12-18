@@ -46,7 +46,7 @@ public class JsonFactory {
             return Stream.of(new ObjectData(value));
         } else {
             return StreamSupport.stream(spliteratorUnknownSize(((ArrayNode) value).elements(), 0), false)
-                    .map(ObjectData::new);
+                                .map(ObjectData::new);
         }
     }
 
@@ -64,15 +64,20 @@ public class JsonFactory {
         return array;
     }
 
-    private JsonFactory() {
-    }
+    private JsonFactory() {}
 
     public static class ObjectBuilder {
 
         private final ObjectNode root;
+        private final boolean groupRecordsInArray;
 
         private ObjectBuilder(ObjectNode root) {
+            this(root, false);
+        }
+
+        private ObjectBuilder(ObjectNode root, boolean groupRecordsInArray) {
             this.root = root;
+            this.groupRecordsInArray = groupRecordsInArray;
         }
 
         public Data build() {
@@ -80,7 +85,19 @@ public class JsonFactory {
         }
 
         public void set(String field, Data value) {
-            root.set(field, value.toJson());
+            if (groupRecordsInArray && root.has(field)) {
+                var previousValue = root.get(field);
+                if (previousValue.isArray()) {
+                    ((ArrayNode) previousValue).add(value.toJson());
+                } else {
+                    var arr = root.arrayNode();
+                    arr.add(previousValue);
+                    arr.add(value.toJson());
+                    root.set(field, arr);
+                }
+            } else {
+                root.set(field, value.toJson());
+            }
         }
 
         public JsonNode root() {
@@ -90,5 +107,9 @@ public class JsonFactory {
 
     public static ObjectBuilder objectBuilder() {
         return new ObjectBuilder(mapper.createObjectNode());
+    }
+
+    public static ObjectBuilder objectBuilder(boolean groupRecordsInArray) {
+        return new ObjectBuilder(mapper.createObjectNode(), groupRecordsInArray);
     }
 }

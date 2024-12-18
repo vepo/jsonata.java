@@ -5,20 +5,21 @@ expressions: expression+ EOF;
 expressionGroup: expression+;
 
 expression:
-      DOT? fieldPath DOT? # queryPath 
+      DOT? fieldPath                       # queryPath 
     | ROOT                                 # rootPath
     | fieldPredicate                       # fieldPredicateArray
     | indexPredicate                       # indexPredicateArray 
     | rangePredicate                       # rangePredicateArray
-    | arrayConstructor                     # arrayConstructorMapping
+    | DOT? arrayConstructor                # arrayConstructorMapping
     | ARRAY_CAST                           # transformerArrayCast
     | WILDCARD WILDCARD DOT fieldName DOT? # transformerDeepFindByField
-    | WILDCARD                             # transformerWildcard
+    | DOT? WILDCARD                        # transformerWildcard
     | stringConcat                         # transformerStringConcat
-    | '(' expressionGroup ')'              # innerExpression
+    | DOT? '(' expressionGroup ')'         # innerExpression
     | booleanExpression                    # expressionBooleanSentence
     | booleanCompare                       # expressionBooleanPredicate
     | DOT objectExpression                 # objectMapper
+    | objectExpression                     # objectBuilder
     | STRING                               # stringValue
     | NUMBER                               # numberValue
     ;

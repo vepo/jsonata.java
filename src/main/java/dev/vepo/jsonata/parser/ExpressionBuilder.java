@@ -27,6 +27,7 @@ import dev.vepo.jsonata.functions.FieldPathJSONFunction;
 import dev.vepo.jsonata.functions.FieldPredicateJSONFunction;
 import dev.vepo.jsonata.functions.InnerFunctionJSONFunction;
 import dev.vepo.jsonata.functions.JSONataFunction;
+import dev.vepo.jsonata.functions.ObjectBuilderJSONataFunction;
 import dev.vepo.jsonata.functions.ObjectMapperJSONataFunction;
 import dev.vepo.jsonata.functions.StringConcatJSONFunction;
 import dev.vepo.jsonata.functions.WildcardJSONFunction;
@@ -40,6 +41,7 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FieldPredicateA
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.IndexPredicateArrayContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.InnerExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.NumberValueContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectBuilderContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectMapperContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.QueryPathContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RangePredicateArrayContext;
@@ -86,10 +88,10 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     public void exitQueryPath(QueryPathContext ctx) {
         expressions.peekFirst()
                    .add(new FieldPathJSONFunction(ctx.fieldPath()
-                                                   .fieldName()
-                                                   .stream()
-                                                   .map(ExpressionBuilder::fieldName2Text)
-                                                   .toList()));
+                                                     .fieldName()
+                                                     .stream()
+                                                     .map(ExpressionBuilder::fieldName2Text)
+                                                     .toList()));
     }
 
     @Override
@@ -108,10 +110,10 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     public void exitTransformerStringConcat(TransformerStringConcatContext ctx) {
         this.expressions.peekFirst()
                         .add(new StringConcatJSONFunction(ctx.stringConcat()
-                                                           .stringOrField()
-                                                           .stream()
-                                                           .map(ExpressionBuilder::toValueProvider)
-                                                           .toList()));
+                                                             .stringOrField()
+                                                             .stream()
+                                                             .map(ExpressionBuilder::toValueProvider)
+                                                             .toList()));
 
     }
 
@@ -119,19 +121,32 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     public void exitObjectMapper(ObjectMapperContext ctx) {
         this.expressions.peekFirst()
                         .add(new ObjectMapperJSONataFunction(IntStream.range(0, ctx.objectExpression().fieldPath().size() / 2)
-                                                                 .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression().fieldPath(index).fieldName()),
-                                                                                                     toFunction(ctx.objectExpression().fieldPath(index + 1).fieldName())))
-                                                                 .toList()));
+                                                                      .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression().fieldPath(index)
+                                                                                                                        .fieldName()),
+                                                                                                          toFunction(ctx.objectExpression().fieldPath(index + 1)
+                                                                                                                        .fieldName())))
+                                                                      .toList()));
+    }
+
+    @Override
+    public void exitObjectBuilder(ObjectBuilderContext ctx) {
+        this.expressions.peekFirst()
+                        .add(new ObjectBuilderJSONataFunction(IntStream.range(0, ctx.objectExpression().fieldPath().size() / 2)
+                                                                       .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression().fieldPath(index)
+                                                                                                                         .fieldName()),
+                                                                                                           toFunction(ctx.objectExpression()
+                                                                                                                         .fieldPath(index + 1).fieldName())))
+                                                                       .toList()));
     }
 
     @Override
     public void exitArrayConstructorMapping(ArrayConstructorMappingContext ctx) {
         this.expressions.peekFirst()
                         .add(new ArrayConstructorJSONFunction(ctx.arrayConstructor()
-                                                               .fieldPath()
-                                                               .stream()
-                                                               .map(fpCtx -> toFunction(fpCtx.fieldName()))
-                                                               .toList()));
+                                                                 .fieldPath()
+                                                                 .stream()
+                                                                 .map(fpCtx -> toFunction(fpCtx.fieldName()))
+                                                                 .toList()));
     }
 
     @Override
@@ -156,7 +171,7 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     public void exitFieldPredicateArray(FieldPredicateArrayContext ctx) {
         expressions.peekFirst()
                    .add(new FieldPredicateJSONFunction(ctx.fieldPredicate().IDENTIFIER().getText(),
-                                                     sanitise(ctx.fieldPredicate().STRING().getText())));
+                                                       sanitise(ctx.fieldPredicate().STRING().getText())));
     }
 
     @Override
@@ -224,8 +239,8 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
 
     private static Function<Data, Data> toFunction(List<FieldNameContext> path) {
         var transform = new FieldPathJSONFunction(path.stream()
-                                                    .map(ExpressionBuilder::fieldName2Text)
-                                                    .toList());
+                                                      .map(ExpressionBuilder::fieldName2Text)
+                                                      .toList());
         return value -> transform.map(value, value);
     }
 
@@ -238,10 +253,10 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
             return value -> stringValue(sCtx.BOOLEAN().getText());
         } else {
             var transform = new FieldPathJSONFunction(sCtx.fieldPath()
-                                                        .fieldName()
-                                                        .stream()
-                                                        .map(ExpressionBuilder::fieldName2Text)
-                                                        .toList());
+                                                          .fieldName()
+                                                          .stream()
+                                                          .map(ExpressionBuilder::fieldName2Text)
+                                                          .toList());
             return value -> transform.map(value, value);
         }
     }
