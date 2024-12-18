@@ -102,7 +102,7 @@
                 <configuration>
                     <arguments>
                         <argument>-package</argument>
-                        <argument>dev.vepo.jsonata.expression.generated</argument>
+                        <argument>dev.vepo.jsonata.functions.generated</argument>
                     </arguments>
                 </configuration>
                 <executions>
