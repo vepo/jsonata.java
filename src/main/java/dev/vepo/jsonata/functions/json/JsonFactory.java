@@ -100,6 +100,16 @@ public class JsonFactory {
             }
         }
 
+        public void add(String field, Data value) {
+            if (root.has(field)) {
+                ((ArrayNode) root.get(field)).add(value.toJson());
+            } else {
+                var arr = root.arrayNode();
+                arr.add(value.toJson());
+                root.set(field, arr);
+            }
+        }
+
         public JsonNode root() {
             return root;
         }

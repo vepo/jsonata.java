@@ -17,15 +17,29 @@ public record ObjectMapperJSONataFunction(List<FieldContent> contents) implement
     public Data map(Data original, Data current) {
         if (current.isObject()) {
             var builder = JsonFactory.objectBuilder();
-            contents.forEach(
-                    content -> builder.set(content.name().apply(current).toString(), content.value().apply(current)));
+            contents.forEach(content -> {
+                if (content.arrayCast()) {
+                    builder.add(content.name().apply(current).toString(),
+                                content.value().apply(current));
+                } else {
+                    builder.set(content.name().apply(current).toString(),
+                                content.value().apply(current));
+                }
+            });
             return builder.build();
         } else if (current.isArray()) {
             var newContents = new ArrayList<JsonNode>();
             range(0, current.length()).forEach(i -> {
                 var builder = JsonFactory.objectBuilder();
-                contents.forEach(content -> builder.set(content.name().apply(current.at(i)).toJson().asText(),
-                                                        content.value().apply(current.at(i))));
+                contents.forEach(content -> {
+                    if (content.arrayCast()) {
+                        builder.add(content.name().apply(current.at(i)).toJson().asText(),
+                                    content.value().apply(current.at(i)));
+                    } else {
+                        builder.set(content.name().apply(current.at(i)).toJson().asText(),
+                                    content.value().apply(current.at(i)));
+                    }
+                });
                 newContents.add(builder.root());
             });
             return new ArrayData(JsonFactory.arrayNode(newContents));

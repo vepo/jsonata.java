@@ -24,7 +24,7 @@ expression:
     | NUMBER                               # numberValue
     ;
 
-objectExpression: '{' fieldPath ':' fieldPath (',' fieldPath ':' fieldPath)* '}';
+objectExpression: '{' fieldPath ':' fieldPath ARRAY_CAST? (',' fieldPath ':' fieldPath ARRAY_CAST?)* '}';
 fieldName: IDENTIFIER |  QUOTED_VALUE;
 fieldPath: fieldName (DOT fieldName)*;
 fieldPredicate: '[' IDENTIFIER '=' STRING ']';

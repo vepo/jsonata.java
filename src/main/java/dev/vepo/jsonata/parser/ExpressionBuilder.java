@@ -2,6 +2,7 @@ package dev.vepo.jsonata.parser;
 
 import static dev.vepo.jsonata.functions.json.JsonFactory.numberValue;
 import static dev.vepo.jsonata.functions.json.JsonFactory.stringValue;
+import static java.util.Objects.nonNull;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJson;
 
 import java.security.InvalidParameterException;
@@ -9,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -55,7 +55,7 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.TransformerWild
 
 public class ExpressionBuilder extends JSONataGrammarBaseListener {
     private static String fieldName2Text(FieldNameContext ctx) {
-        if (Objects.nonNull(ctx.IDENTIFIER())) {
+        if (nonNull(ctx.IDENTIFIER())) {
             return ctx.getText();
         } else {
             return ctx.getText().substring(1, ctx.getText().length() - 1);
@@ -124,7 +124,9 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
                                                                       .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression().fieldPath(index)
                                                                                                                         .fieldName()),
                                                                                                           toFunction(ctx.objectExpression().fieldPath(index + 1)
-                                                                                                                        .fieldName())))
+                                                                                                                        .fieldName()),
+                                                                                                          nonNull(ctx.objectExpression()
+                                                                                                                     .ARRAY_CAST(index + 1))))
                                                                       .toList()));
     }
 
@@ -135,7 +137,9 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
                                                                        .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression().fieldPath(index)
                                                                                                                          .fieldName()),
                                                                                                            toFunction(ctx.objectExpression()
-                                                                                                                         .fieldPath(index + 1).fieldName())))
+                                                                                                                         .fieldPath(index + 1).fieldName()),
+                                                                                                           nonNull(ctx.objectExpression()
+                                                                                                                      .ARRAY_CAST(index))))
                                                                        .toList()));
     }
 
@@ -245,11 +249,11 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     }
 
     private static Function<Data, Data> toValueProvider(StringOrFieldContext sCtx) {
-        if (Objects.nonNull(sCtx.STRING())) {
+        if (nonNull(sCtx.STRING())) {
             return value -> stringValue(sanitise(sCtx.getText()));
-        } else if (Objects.nonNull(sCtx.NUMBER())) {
+        } else if (nonNull(sCtx.NUMBER())) {
             return value -> stringValue(Integer.valueOf(sCtx.NUMBER().getText()).toString());
-        } else if (Objects.nonNull(sCtx.BOOLEAN())) {
+        } else if (nonNull(sCtx.BOOLEAN())) {
             return value -> stringValue(sCtx.BOOLEAN().getText());
         } else {
             var transform = new FieldPathJSONFunction(sCtx.fieldPath()
