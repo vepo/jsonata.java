@@ -2,7 +2,6 @@ package dev.vepo.jsonata.functions;
 
 import java.util.Comparator;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import dev.vepo.jsonata.exception.JSONataException;
@@ -16,30 +15,32 @@ public record BuiltInSortJSONataFunction(FieldPathJSONataFunction extractor, Opt
         this(extractor, function, buildComparator(function));
     }
 
-    private static Comparator<Data> buildComparator(Optional<DeclaredFunction> fn) {
-        if (fn.isPresent()) {
-            return (left, right) -> {
-                var result = fn.get()
-                               .accept(left, right);
-                if (result.toJson().isInt()) {
-                    return result.toJson().asInt();
-                } else if (result.toJson().isBoolean()) {
-                    return result.toJson().asBoolean() ? 1 : -1;
-                } else {
-                    throw new JSONataException(String.format("Cannot compare values!!! left=%s right=%s", left, right));
-                }
-            };
+    private static Comparator<Data> buildComparator(DeclaredFunction fn) {
+        return (left, right) -> {
+            var result = fn.accept(left, right);
+            if (result.toJson().isInt()) {
+                return result.toJson().asInt();
+            } else if (result.toJson().isBoolean()) {
+                return result.toJson().asBoolean() ? 1 : -1;
+            } else {
+                throw new JSONataException(String.format("Cannot compare values!!! left=%s right=%s", left, right));
+            }
+        };
+    }
+
+    private static int defaultComparator(Data left, Data right) {
+        if (left.toJson().isInt()) {
+            return Integer.compare(left.toJson().asInt(), right.toJson().asInt());
+        } else if (left.toJson().isTextual()) {
+            return left.toJson().asText().compareTo(right.toJson().asText());
         } else {
-            return (left, right) -> {
-                if (left.toJson().isInt()) {
-                    return Integer.compare(left.toJson().asInt(), right.toJson().asInt());
-                } else if (left.toJson().isTextual()) {
-                    return left.toJson().asText().compareTo(right.toJson().asText());
-                } else {
-                    throw new JSONataException(String.format("Cannot compare values!!! left=%s right=%s", left, right));
-                }
-            };
+            throw new JSONataException(String.format("Cannot compare values!!! left=%s right=%s", left, right));
         }
+    }
+
+    private static Comparator<Data> buildComparator(Optional<DeclaredFunction> fn) {
+        return fn.map(BuiltInSortJSONataFunction::buildComparator)
+                 .orElse(BuiltInSortJSONataFunction::defaultComparator);
     }
 
     @Override

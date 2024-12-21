@@ -206,6 +206,18 @@ class JSONataTest {
                                    $l.Description.Weight < $r.Description.Weight
                                }).Name
                                """).evaluate(ACCOUNT).multi().asText()).containsExactly("City", "House", "Table", "Chair");
+            var numbers = """
+                          {
+                              "Numbers": [5, 3, 1, 2, 4]
+                          }
+                          """;
+            assertThat(jsonata("$sort(Numbers)").evaluate(numbers).multi().asInt()).containsExactly(1, 2, 3, 4, 5);
+            var strings = """
+                          {
+                              "Strings": ["e", "c", "a", "b", "d"]
+                          }
+                          """;
+            assertThat(jsonata("$sort(Strings)").evaluate(strings).multi().asText()).containsExactly("a", "b", "c", "d", "e");
         }
     }
 

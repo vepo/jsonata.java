@@ -5,8 +5,8 @@ expressions: expression+ EOF;
 expressionGroup: expression+;
 
 expression:
-      DOT? fieldPath                       # queryPath 
-    | functionStatement                    # functionCall 
+    functionStatement                      # functionCall 
+    |  DOT? fieldPath                      # queryPath 
     | ROOT                                 # rootPath
     | fieldPredicate                       # fieldPredicateArray
     | indexPredicate                       # indexPredicateArray 
