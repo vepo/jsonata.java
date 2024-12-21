@@ -26,7 +26,7 @@ expression:
     ;
 
 objectExpression: '{' fieldPath ':' fieldPath ARRAY_CAST? (',' fieldPath ':' fieldPath ARRAY_CAST?)* '}';
-fieldName: IDENTIFIER |  QUOTED_VALUE;
+fieldName: IDENTIFIER |  QUOTED_VALUE | STRING;
 fieldPath: fieldName (DOT fieldName)*;
 functionStatement: IDENTIFIER '(' parameterStatement (',' parameterStatement)*  ')' ;
 parameterStatement: fieldPath | functionDeclaration;

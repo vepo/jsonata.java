@@ -182,6 +182,25 @@ class JSONataTest {
                                                      .asText()).isEqualTo("{\"home\":\"0203 544 1234\",\"office\":[\"01962 001234\",\"01962 001235\"],\"mobile\":\"077 7700 1234\"}");
             assertThat(jsonata("Phone{type: number[]}").evaluate(OBJECT)
                                                        .asText()).isEqualTo("{\"home\":[\"0203 544 1234\"],\"office\":[\"01962 001234\",\"01962 001235\"],\"mobile\":[\"077 7700 1234\"]}");
+            assertThat(jsonata("""
+                               {
+                                   'name': FirstName,
+                                   'age': Age,
+                                   "city": Address.City	
+                               }
+                               """).evaluate("""
+                                             {
+                                                 "FirstName": "Fred",
+                                                 "Surname": "Smith",
+                                                 "Age": 28,
+                                                 "Address": {
+                                                    "City": "Winchester",
+                                                    "Postcode": "SO21 2JN",
+                                                    "Country": "UK",
+                                                    "Street": "Hursley Park"    
+                                                 }
+                                             }
+                                             """).asText()).isEqualTo("{\"name\":\"Fred\",\"age\":28,\"city\":\"Winchester\"}");
         }
     }
 

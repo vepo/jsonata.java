@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -81,9 +82,13 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     }
 
     private static Function<Data, Data> toFunction(List<FieldNameContext> path) {
+        if (path.size() == 1 && Objects.nonNull(path.get(0).STRING())) {
+            return value -> stringValue(sanitise(path.get(0).STRING().getText()));
+        }
         var transform = new FieldPathJSONataFunction(path.stream()
                                                          .map(ExpressionBuilder::fieldName2Text)
                                                          .toList());
+
         return value -> transform.map(value, value);
     }
 
@@ -203,9 +208,12 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     public void exitObjectMapper(ObjectMapperContext ctx) {
         this.expressions.peekFirst()
                         .add(new ObjectMapperJSONataFunction(IntStream.range(0, ctx.objectExpression().fieldPath().size() / 2)
-                                                                      .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression().fieldPath(index)
+                                                                      .map(i -> i * 2)
+                                                                      .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression()
+                                                                                                                        .fieldPath(index)
                                                                                                                         .fieldName()),
-                                                                                                          toFunction(ctx.objectExpression().fieldPath(index + 1)
+                                                                                                          toFunction(ctx.objectExpression()
+                                                                                                                        .fieldPath(index + 1)
                                                                                                                         .fieldName()),
                                                                                                           nonNull(ctx.objectExpression()
                                                                                                                      .ARRAY_CAST(index + 1))))
@@ -216,10 +224,12 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     public void exitObjectBuilder(ObjectBuilderContext ctx) {
         this.expressions.peekFirst()
                         .add(new ObjectBuilderJSONataFunction(IntStream.range(0, ctx.objectExpression().fieldPath().size() / 2)
+                                                                       .map(i -> i * 2)
                                                                        .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression().fieldPath(index)
                                                                                                                          .fieldName()),
                                                                                                            toFunction(ctx.objectExpression()
-                                                                                                                         .fieldPath(index + 1).fieldName()),
+                                                                                                                         .fieldPath(index + 1)
+                                                                                                                         .fieldName()),
                                                                                                            nonNull(ctx.objectExpression()
                                                                                                                       .ARRAY_CAST(index))))
                                                                        .toList()));
