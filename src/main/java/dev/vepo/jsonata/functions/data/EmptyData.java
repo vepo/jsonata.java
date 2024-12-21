@@ -66,6 +66,6 @@ public class EmptyData implements Data {
     
     @Override
     public String toString() {
-        return String.format("Empty []");
+        return "Empty []";
     }
 }
