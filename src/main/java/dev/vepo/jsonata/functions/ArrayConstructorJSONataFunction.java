@@ -10,7 +10,7 @@ import java.util.function.Function;
 import dev.vepo.jsonata.functions.data.GroupedData;
 import dev.vepo.jsonata.functions.data.Data;
 
-public record ArrayConstructorJSONFunction(List<Function<Data, Data>> arrayBuilder) implements JSONataFunction {
+public record ArrayConstructorJSONataFunction(List<Function<Data, Data>> arrayBuilder) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

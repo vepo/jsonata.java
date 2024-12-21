@@ -5,7 +5,7 @@ import static java.util.Collections.singletonList;
 import dev.vepo.jsonata.functions.data.GroupedData;
 import dev.vepo.jsonata.functions.data.Data;
 
-public class ArrayCastTransformerJSONFunction implements JSONataFunction {
+public class ArrayCastTransformerJSONataFunction implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

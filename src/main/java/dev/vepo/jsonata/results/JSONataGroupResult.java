@@ -24,6 +24,12 @@ class JSONataGroupResult implements JSONataResult {
     }
 
     @Override
+    public boolean isInt() {
+        return this.elements.stream()
+                            .allMatch(JSONataResult::isInt);
+    }
+
+    @Override
     public boolean asBoolean() {
         return elements.stream().map(JSONataResult::asBoolean).reduce((b1, b2) -> b1 && b2).orElse(false);
     }
@@ -60,7 +66,7 @@ class JSONataGroupResult implements JSONataResult {
             public List<Boolean> asBoolean() {
                 return elements.stream()
                                .flatMap(n -> n.multi().asBoolean().stream())
-                                .toList();
+                               .toList();
             }
 
         };

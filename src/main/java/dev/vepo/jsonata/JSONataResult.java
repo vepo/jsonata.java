@@ -21,6 +21,13 @@ public interface JSONataResult {
      */
     int asInt();
 
+    /*
+     * Checks if the node is an integer.
+     * 
+     * @return true if the node is an integer, false otherwise
+     */
+    boolean isInt();
+
     /**
      * Converts the node to its boolean representation.
      *

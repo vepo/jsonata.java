@@ -30,6 +30,11 @@ class JSONataEmptyResult implements JSONataResult {
     }
 
     @Override
+    public boolean isInt() {
+        return false;
+    }
+
+    @Override
     public boolean isEmpty() {
         return true;
     }

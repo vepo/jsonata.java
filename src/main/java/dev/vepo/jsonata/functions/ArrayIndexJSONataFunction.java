@@ -2,7 +2,7 @@ package dev.vepo.jsonata.functions;
 
 import dev.vepo.jsonata.functions.data.Data;
 
-public record ArrayIndexJSONFunction(int index) implements JSONataFunction {
+public record ArrayIndexJSONataFunction(int index) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

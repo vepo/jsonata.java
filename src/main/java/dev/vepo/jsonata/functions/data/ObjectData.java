@@ -82,4 +82,9 @@ public class ObjectData implements Data {
     public JSONataResult toNode() {
         return JSONataResults.object(element);
     }
+
+    @Override
+    public String toString() {
+        return String.format("Object [%s]", element);
+    }
 }

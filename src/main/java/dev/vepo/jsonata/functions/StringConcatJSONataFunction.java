@@ -8,7 +8,7 @@ import java.util.function.Function;
 
 import dev.vepo.jsonata.functions.data.Data;
 
-public record StringConcatJSONFunction(List<Function<Data, Data>> sources) implements JSONataFunction {
+public record StringConcatJSONataFunction(List<Function<Data, Data>> sources) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

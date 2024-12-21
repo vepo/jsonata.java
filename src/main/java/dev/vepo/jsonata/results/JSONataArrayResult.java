@@ -27,6 +27,11 @@ class JSONataArrayResult implements JSONataResult {
     }
 
     @Override
+    public boolean isInt() {
+        return false;
+    }
+
+    @Override
     public boolean asBoolean() {
         return element.asBoolean();
     }

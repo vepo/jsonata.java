@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.functions.data.Data;
 
-public record BooleanCompareJSONFunction(BooleanOperator operator, List<JSONataFunction> rightExpressions) implements JSONataFunction {
+public record BooleanCompareJSONataFunction(BooleanOperator operator, List<JSONataFunction> rightExpressions) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

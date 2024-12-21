@@ -82,4 +82,9 @@ public class ArrayData implements Data {
     public JSONataResult toNode() {
         return array(element);
     }
+
+    @Override
+    public String toString() {
+        return String.format("Grouped [%s]", element);
+    }
 }

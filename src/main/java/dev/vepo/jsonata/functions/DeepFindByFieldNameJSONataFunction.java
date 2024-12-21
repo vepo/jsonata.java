@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import dev.vepo.jsonata.functions.data.GroupedData;
 import dev.vepo.jsonata.functions.data.Data;
 
-public record DeepFindByFieldNameJSONFunction(String fieldName) implements JSONataFunction {
+public record DeepFindByFieldNameJSONataFunction(String fieldName) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

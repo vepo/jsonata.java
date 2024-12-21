@@ -31,12 +31,11 @@ class JSONataTest {
             assertThat(jsonata("Invalid.Age").evaluate(OBJECT).isEmpty()).isTrue();
         }
 
-
         @Test
         void invalidJsonTest() {
             var mapping = jsonata("Invalid");
             assertThatThrownBy(() -> mapping.evaluate("{ssssss}")).isInstanceOf(JSONataException.class)
-                    .hasMessage("Invalid JSON! content={ssssss}");
+                                                                  .hasMessage("Invalid JSON! content={ssssss}");
         }
     }
 
@@ -66,16 +65,16 @@ class JSONataTest {
             assertThat(jsonata("Phone[8]").evaluate(OBJECT).isEmpty()).isTrue();
             assertThat(jsonata("Phone[0].number").evaluate(OBJECT).asText()).isEqualTo("0203 544 1234");
             assertThat(jsonata("Phone.number").evaluate(OBJECT).multi().asText()).containsExactly("0203 544 1234",
-                                                                                                            "01962 001234",
-                                                                                                            "01962 001235",
-                                                                                                            "077 7700 1234");
+                                                                                                  "01962 001234",
+                                                                                                  "01962 001235",
+                                                                                                  "077 7700 1234");
             assertThat(jsonata("Phone.number[0]").evaluate(OBJECT).multi().asText()).containsExactly("0203 544 1234",
-                                                                                                               "01962 001234",
-                                                                                                               "01962 001235",
-                                                                                                               "077 7700 1234");
+                                                                                                     "01962 001234",
+                                                                                                     "01962 001235",
+                                                                                                     "077 7700 1234");
             assertThat(jsonata("(Phone.number)[0]").evaluate(OBJECT).asText()).isEqualTo("0203 544 1234");
             assertThat(jsonata("Phone[[0..1]]").evaluate(OBJECT).multi().asText()).containsExactly("{\"type\":\"home\",\"number\":\"0203 544 1234\"}",
-                                                                                                             "{\"type\":\"office\",\"number\":\"01962 001234\"}");
+                                                                                                   "{\"type\":\"office\",\"number\":\"01962 001234\"}");
         }
     }
 
@@ -139,6 +138,8 @@ class JSONataTest {
             assertThat(jsonata("Numbers[1] < Numbers[5]").evaluate(NUMBERS).asBoolean()).isTrue();
             assertThat(jsonata("Numbers[1] <= Numbers[5]").evaluate(NUMBERS).asBoolean()).isTrue();
             assertThat(jsonata("Numbers[2] > Numbers[4]").evaluate(NUMBERS).asBoolean()).isFalse();
+            assertThat(jsonata("Numbers[4] > Numbers[2]").evaluate(NUMBERS).asBoolean()).isTrue();
+            assertThat(jsonata("Numbers[2] < Numbers[4]").evaluate(NUMBERS).asBoolean()).isTrue();
             assertThat(jsonata("Numbers[2] >= Numbers[4]").evaluate(NUMBERS).asBoolean()).isFalse();
             assertThat(jsonata("\"01962 001234\" in Phone.number").evaluate(OBJECT).asBoolean()).isTrue();
         }
@@ -154,7 +155,7 @@ class JSONataTest {
     class ArrayConstructor {
         @Test
         void arrayTest() {
-            assertThat(jsonata("Email.address").evaluate(OBJECT).multi().asText()).containsExactly( "fred.smith@my-work.com",
+            assertThat(jsonata("Email.address").evaluate(OBJECT).multi().asText()).containsExactly("fred.smith@my-work.com",
                                                                                                    "fsmith@my-work.com",
                                                                                                    "freddy@my-social.com",
                                                                                                    "frederic.smith@very-serious.com");
@@ -162,8 +163,9 @@ class JSONataTest {
 
         @Test
         void arrayCastTest() {
-            assertThat(jsonata("Email.[address]").evaluate(OBJECT).asText()).isEqualTo("[[\"fred.smith@my-work.com\",\"fsmith@my-work.com\"],[\"freddy@my-social.com\",\"frederic.smith@very-serious.com\"]]");
-            assertThat(jsonata("[Address, Other.`Alternative.Address`].City").evaluate(OBJECT).multi().asText()).containsExactly("Winchester","London");
+            assertThat(jsonata("Email.[address]").evaluate(OBJECT)
+                                                 .asText()).isEqualTo("[[\"fred.smith@my-work.com\",\"fsmith@my-work.com\"],[\"freddy@my-social.com\",\"frederic.smith@very-serious.com\"]]");
+            assertThat(jsonata("[Address, Other.`Alternative.Address`].City").evaluate(OBJECT).multi().asText()).containsExactly("Winchester", "London");
         }
     }
 
@@ -172,14 +174,72 @@ class JSONataTest {
         @Test
         void arrayOfObjectsTest() {
             assertThat(jsonata("Phone.{type: number}").evaluate(OBJECT).multi().asText()).containsExactly(
-                    "{\"home\":\"0203 544 1234\"}",
-                    "{\"office\":\"01962 001234\"}",
-                    "{\"office\":\"01962 001235\"}",
-                    "{\"mobile\":\"077 7700 1234\"}");
-            assertThat(jsonata("Phone{type: number}").evaluate(OBJECT).asText()).isEqualTo("{\"home\":\"0203 544 1234\",\"office\":[\"01962 001234\",\"01962 001235\"],\"mobile\":\"077 7700 1234\"}");
-            assertThat(jsonata("Phone{type: number[]}").evaluate(OBJECT).asText()).isEqualTo("{\"home\":[\"0203 544 1234\"],\"office\":[\"01962 001234\",\"01962 001235\"],\"mobile\":[\"077 7700 1234\"]}");
+                                                                                                          "{\"home\":\"0203 544 1234\"}",
+                                                                                                          "{\"office\":\"01962 001234\"}",
+                                                                                                          "{\"office\":\"01962 001235\"}",
+                                                                                                          "{\"mobile\":\"077 7700 1234\"}");
+            assertThat(jsonata("Phone{type: number}").evaluate(OBJECT)
+                                                     .asText()).isEqualTo("{\"home\":\"0203 544 1234\",\"office\":[\"01962 001234\",\"01962 001235\"],\"mobile\":\"077 7700 1234\"}");
+            assertThat(jsonata("Phone{type: number[]}").evaluate(OBJECT)
+                                                       .asText()).isEqualTo("{\"home\":[\"0203 544 1234\"],\"office\":[\"01962 001234\",\"01962 001235\"],\"mobile\":[\"077 7700 1234\"]}");
         }
     }
+
+    @Nested
+    class Functions {
+        @Test
+        void sortTest() {
+            assertThat(jsonata("""
+                               $sort(Account.Order.Product, function($l, $r) {
+                                   $l.Description.Weight > $r.Description.Weight
+                               })
+                               """).evaluate(ACCOUNT)
+                                   .asText()).isEqualTo("{\"Name\":\"Chair\",\"Description\":{\"Weight\":2}}, {\"Name\":\"Table\",\"Description\":{\"Weight\":100}}, {\"Name\":\"House\",\"Description\":{\"Weight\":1200000}}, {\"Name\":\"City\",\"Description\":{\"Weight\":200000000000000000}}");
+            assertThat(jsonata("""
+                               $sort(Account.Order.Product, function($l, $r) {
+                                   $l.Description.Weight < $r.Description.Weight
+                               })
+                               """).evaluate(ACCOUNT)
+                                   .asText()).isEqualTo("{\"Name\":\"City\",\"Description\":{\"Weight\":200000000000000000}}, {\"Name\":\"House\",\"Description\":{\"Weight\":1200000}}, {\"Name\":\"Table\",\"Description\":{\"Weight\":100}}, {\"Name\":\"Chair\",\"Description\":{\"Weight\":2}}");
+            assertThat(jsonata("""
+                               $sort(Account.Order.Product, function($l, $r) {
+                                   $l.Description.Weight < $r.Description.Weight
+                               }).Name
+                               """).evaluate(ACCOUNT).multi().asText()).containsExactly("City", "House", "Table", "Chair");
+        }
+    }
+
+    private static final String ACCOUNT = """
+                                          {
+                                              "Account": {
+                                                  "Order": {
+                                                      "Product": [
+                                                          {
+                                                              "Name": "City",
+                                                              "Description": {
+                                                                  "Weight": 200000000000000000
+                                                              }
+                                                          }, {
+                                                              "Name": "Table",
+                                                              "Description": {
+                                                                  "Weight": 100
+                                                              }
+                                                          }, {
+                                                              "Name": "Chair",
+                                                              "Description": {
+                                                                  "Weight": 2
+                                                              }
+                                                          }, {
+                                                              "Name": "House",
+                                                              "Description": {
+                                                                  "Weight": 1200000
+                                                              }
+                                                          }
+                                                      ]
+                                                  }
+                                              }
+                                          }
+                                          """;
 
     private static final String NUMBERS = """
                                           {

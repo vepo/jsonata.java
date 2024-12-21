@@ -63,4 +63,9 @@ public class EmptyData implements Data {
     public JSONataResult toNode() {
         return JSONataResults.empty();
     }
+    
+    @Override
+    public String toString() {
+        return String.format("Empty []");
+    }
 }

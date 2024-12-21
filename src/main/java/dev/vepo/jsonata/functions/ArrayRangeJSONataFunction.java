@@ -6,7 +6,7 @@ import static java.util.stream.IntStream.range;
 import dev.vepo.jsonata.functions.data.GroupedData;
 import dev.vepo.jsonata.functions.data.Data;
 
-public record ArrayRangeJSONFunction(int start, int end) implements JSONataFunction {
+public record ArrayRangeJSONataFunction(int start, int end) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

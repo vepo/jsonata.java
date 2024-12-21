@@ -6,6 +6,7 @@ expressionGroup: expression+;
 
 expression:
       DOT? fieldPath                       # queryPath 
+    | functionStatement                    # functionCall 
     | ROOT                                 # rootPath
     | fieldPredicate                       # fieldPredicateArray
     | indexPredicate                       # indexPredicateArray 
@@ -27,6 +28,11 @@ expression:
 objectExpression: '{' fieldPath ':' fieldPath ARRAY_CAST? (',' fieldPath ':' fieldPath ARRAY_CAST?)* '}';
 fieldName: IDENTIFIER |  QUOTED_VALUE;
 fieldPath: fieldName (DOT fieldName)*;
+functionStatement: IDENTIFIER '(' parameterStatement (',' parameterStatement)*  ')' ;
+parameterStatement: fieldPath | functionDeclaration;
+functionDeclaration: 
+    'function' '(' IDENTIFIER (',' IDENTIFIER)* ')' '{' expressionGroup '}' # functionDeclarationBuilder
+    ;
 fieldPredicate: '[' IDENTIFIER '=' STRING ']';
 rangePredicate: '[[' NUMBER '..' NUMBER  ']]';
 indexPredicate: '[' NUMBER ']';
@@ -50,7 +56,7 @@ STRING:
 
 ROOT : '$' ;
 NUMBER: '-'? [0-9]+;
-IDENTIFIER: [A-Za-z_][A-Za-z_0-9]*;
+IDENTIFIER: [$A-Za-z_][$A-Za-z_0-9]*;
 QUOTED_VALUE: '`' (~'`')* '`';
 
 

@@ -2,7 +2,7 @@ package dev.vepo.jsonata.functions;
 
 import dev.vepo.jsonata.functions.data.Data;
 
-public class WildcardJSONFunction implements JSONataFunction {
+public class WildcardJSONataFunction implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

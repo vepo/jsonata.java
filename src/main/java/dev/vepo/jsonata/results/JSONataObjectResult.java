@@ -27,6 +27,11 @@ class JSONataObjectResult implements JSONataResult {
     }
 
     @Override
+    public boolean isInt() {
+        return  element.isNumber();
+    }
+
+    @Override
     public boolean isNull() {
         return element.isNull();
     }

@@ -10,27 +10,34 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
-import dev.vepo.jsonata.functions.ArrayCastTransformerJSONFunction;
-import dev.vepo.jsonata.functions.ArrayConstructorJSONFunction;
-import dev.vepo.jsonata.functions.ArrayIndexJSONFunction;
-import dev.vepo.jsonata.functions.ArrayRangeJSONFunction;
-import dev.vepo.jsonata.functions.BooleanCompareJSONFunction;
+import org.antlr.v4.runtime.tree.TerminalNode;
+
+import dev.vepo.jsonata.exception.JSONataException;
+import dev.vepo.jsonata.functions.ArrayCastTransformerJSONataFunction;
+import dev.vepo.jsonata.functions.ArrayConstructorJSONataFunction;
+import dev.vepo.jsonata.functions.ArrayIndexJSONataFunction;
+import dev.vepo.jsonata.functions.ArrayRangeJSONataFunction;
+import dev.vepo.jsonata.functions.BooleanCompareJSONataFunction;
 import dev.vepo.jsonata.functions.BooleanOperator;
+import dev.vepo.jsonata.functions.BuiltInSortJSONataFunction;
 import dev.vepo.jsonata.functions.CompareOperator;
-import dev.vepo.jsonata.functions.CompareValuesJSONFunction;
-import dev.vepo.jsonata.functions.DeepFindByFieldNameJSONFunction;
+import dev.vepo.jsonata.functions.CompareValuesJSONataFunction;
+import dev.vepo.jsonata.functions.DeclaredFunction;
+import dev.vepo.jsonata.functions.DeepFindByFieldNameJSONataFunction;
 import dev.vepo.jsonata.functions.FieldContent;
-import dev.vepo.jsonata.functions.FieldPathJSONFunction;
-import dev.vepo.jsonata.functions.FieldPredicateJSONFunction;
-import dev.vepo.jsonata.functions.InnerFunctionJSONFunction;
+import dev.vepo.jsonata.functions.FieldPathJSONataFunction;
+import dev.vepo.jsonata.functions.FieldPredicateJSONataFunction;
+import dev.vepo.jsonata.functions.InnerFunctionJSONataFunction;
 import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.ObjectBuilderJSONataFunction;
 import dev.vepo.jsonata.functions.ObjectMapperJSONataFunction;
-import dev.vepo.jsonata.functions.StringConcatJSONFunction;
-import dev.vepo.jsonata.functions.WildcardJSONFunction;
+import dev.vepo.jsonata.functions.StringConcatJSONataFunction;
+import dev.vepo.jsonata.functions.WildcardJSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarBaseListener;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayConstructorMappingContext;
@@ -38,6 +45,8 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ExpressionBoole
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ExpressionBooleanSentenceContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FieldNameContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FieldPredicateArrayContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FunctionCallContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FunctionDeclarationBuilderContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.IndexPredicateArrayContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.InnerExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.NumberValueContext;
@@ -71,11 +80,84 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
         }
     }
 
+    private static Function<Data, Data> toFunction(List<FieldNameContext> path) {
+        var transform = new FieldPathJSONataFunction(path.stream()
+                                                         .map(ExpressionBuilder::fieldName2Text)
+                                                         .toList());
+        return value -> transform.map(value, value);
+    }
+
+    private static Function<Data, Data> toValueProvider(StringOrFieldContext sCtx) {
+        if (nonNull(sCtx.STRING())) {
+            return value -> stringValue(sanitise(sCtx.getText()));
+        } else if (nonNull(sCtx.NUMBER())) {
+            return value -> stringValue(Integer.valueOf(sCtx.NUMBER().getText()).toString());
+        } else if (nonNull(sCtx.BOOLEAN())) {
+            return value -> stringValue(sCtx.BOOLEAN().getText());
+        } else {
+            var transform = new FieldPathJSONataFunction(sCtx.fieldPath()
+                                                             .fieldName()
+                                                             .stream()
+                                                             .map(ExpressionBuilder::fieldName2Text)
+                                                             .toList());
+            return value -> transform.map(value, value);
+        }
+    }
+
     private final Deque<List<JSONataFunction>> expressions;
+    private final Deque<DeclaredFunction> functionsDeclared;
 
     public ExpressionBuilder() {
         this.expressions = new LinkedList<>();
         this.expressions.offerFirst(new ArrayList<>()); // root
+        this.functionsDeclared = new LinkedList<>();
+    }
+
+    @Override
+    public void enterFunctionDeclarationBuilder(FunctionDeclarationBuilderContext ctx) {
+        this.expressions.offerFirst(new ArrayList<>()); // new stack
+    }
+
+    @Override
+    public void exitFunctionDeclarationBuilder(FunctionDeclarationBuilderContext ctx) {
+        this.functionsDeclared.offerFirst(new DeclaredFunction(ctx.IDENTIFIER()
+                                                                  .stream()
+                                                                  .map(TerminalNode::getText)
+                                                                  .toList(),
+                                                               this.expressions.pollFirst()));
+    }
+
+    public enum BuiltInFunction {
+        SORT("$sort");
+
+        private String name;
+
+        BuiltInFunction(String name) {
+            this.name = name;
+        }
+
+        public static BuiltInFunction get(String name) {
+            return Stream.of(values())
+                         .filter(n -> n.name.compareToIgnoreCase(name) == 0)
+                         .findAny()
+                         .orElseThrow(() -> new JSONataException(String.format("Unknown function!!! function=%s", name)));
+        }
+    }
+
+    @Override
+    public void exitFunctionCall(FunctionCallContext ctx) {
+        expressions.peekFirst()
+                   .add(switch (BuiltInFunction.get(ctx.functionStatement().IDENTIFIER().getText())) {
+                       case SORT -> new BuiltInSortJSONataFunction(new FieldPathJSONataFunction(ctx.functionStatement()
+                                                                                                   .parameterStatement()
+                                                                                                   .get(0)
+                                                                                                   .fieldPath()
+                                                                                                   .fieldName()
+                                                                                                   .stream()
+                                                                                                   .map(ExpressionBuilder::fieldName2Text)
+                                                                                                   .toList()),
+                                                                   Optional.ofNullable(functionsDeclared.peekFirst()));
+                   });
     }
 
     @Override
@@ -87,11 +169,11 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     @Override
     public void exitQueryPath(QueryPathContext ctx) {
         expressions.peekFirst()
-                   .add(new FieldPathJSONFunction(ctx.fieldPath()
-                                                     .fieldName()
-                                                     .stream()
-                                                     .map(ExpressionBuilder::fieldName2Text)
-                                                     .toList()));
+                   .add(new FieldPathJSONataFunction(ctx.fieldPath()
+                                                        .fieldName()
+                                                        .stream()
+                                                        .map(ExpressionBuilder::fieldName2Text)
+                                                        .toList()));
     }
 
     @Override
@@ -103,17 +185,17 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     public void exitInnerExpression(InnerExpressionContext ctx) {
         var inner = this.expressions.pollFirst();
         this.expressions.peekFirst()
-                        .add(new InnerFunctionJSONFunction(inner));
+                        .add(new InnerFunctionJSONataFunction(inner));
     }
 
     @Override
     public void exitTransformerStringConcat(TransformerStringConcatContext ctx) {
         this.expressions.peekFirst()
-                        .add(new StringConcatJSONFunction(ctx.stringConcat()
-                                                             .stringOrField()
-                                                             .stream()
-                                                             .map(ExpressionBuilder::toValueProvider)
-                                                             .toList()));
+                        .add(new StringConcatJSONataFunction(ctx.stringConcat()
+                                                                .stringOrField()
+                                                                .stream()
+                                                                .map(ExpressionBuilder::toValueProvider)
+                                                                .toList()));
 
     }
 
@@ -146,36 +228,36 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     @Override
     public void exitArrayConstructorMapping(ArrayConstructorMappingContext ctx) {
         this.expressions.peekFirst()
-                        .add(new ArrayConstructorJSONFunction(ctx.arrayConstructor()
-                                                                 .fieldPath()
-                                                                 .stream()
-                                                                 .map(fpCtx -> toFunction(fpCtx.fieldName()))
-                                                                 .toList()));
+                        .add(new ArrayConstructorJSONataFunction(ctx.arrayConstructor()
+                                                                    .fieldPath()
+                                                                    .stream()
+                                                                    .map(fpCtx -> toFunction(fpCtx.fieldName()))
+                                                                    .toList()));
     }
 
     @Override
     public void exitTransformerWildcard(TransformerWildcardContext ctx) {
         expressions.peekFirst()
-                   .add(new WildcardJSONFunction());
+                   .add(new WildcardJSONataFunction());
     }
 
     @Override
     public void exitTransformerDeepFindByField(TransformerDeepFindByFieldContext ctx) {
         expressions.peekFirst()
-                   .add(new DeepFindByFieldNameJSONFunction(ctx.fieldName().getText()));
+                   .add(new DeepFindByFieldNameJSONataFunction(ctx.fieldName().getText()));
     }
 
     @Override
     public void exitTransformerArrayCast(TransformerArrayCastContext ctx) {
         expressions.peekFirst()
-                   .add(new ArrayCastTransformerJSONFunction());
+                   .add(new ArrayCastTransformerJSONataFunction());
     }
 
     @Override
     public void exitFieldPredicateArray(FieldPredicateArrayContext ctx) {
         expressions.peekFirst()
-                   .add(new FieldPredicateJSONFunction(ctx.fieldPredicate().IDENTIFIER().getText(),
-                                                       sanitise(ctx.fieldPredicate().STRING().getText())));
+                   .add(new FieldPredicateJSONataFunction(ctx.fieldPredicate().IDENTIFIER().getText(),
+                                                          sanitise(ctx.fieldPredicate().STRING().getText())));
     }
 
     @Override
@@ -187,7 +269,7 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     public void exitExpressionBooleanSentence(ExpressionBooleanSentenceContext ctx) {
         var rightExpressions = this.expressions.pollFirst();
         this.expressions.peekFirst()
-                        .add(new BooleanCompareJSONFunction(BooleanOperator.get(ctx.booleanExpression().op.getText()), rightExpressions));
+                        .add(new BooleanCompareJSONataFunction(BooleanOperator.get(ctx.booleanExpression().op.getText()), rightExpressions));
     }
 
     @Override
@@ -204,7 +286,7 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
             throw new InvalidParameterException("End index should be greather than start index!");
         }
         expressions.peek()
-                   .add(new ArrayRangeJSONFunction(startIndex, endIndex));
+                   .add(new ArrayRangeJSONataFunction(startIndex, endIndex));
     }
 
     @Override
@@ -228,40 +310,16 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     public void exitExpressionBooleanPredicate(ExpressionBooleanPredicateContext ctx) {
         var rightExpressions = this.expressions.pollFirst();
         this.expressions.peekFirst()
-                        .add(new CompareValuesJSONFunction(CompareOperator.get(ctx.booleanCompare().op.getText()), rightExpressions));
+                        .add(new CompareValuesJSONataFunction(CompareOperator.get(ctx.booleanCompare().op.getText()), rightExpressions));
     }
 
     @Override
     public void exitIndexPredicateArray(IndexPredicateArrayContext ctx) {
         expressions.peekFirst()
-                   .add(new ArrayIndexJSONFunction(Integer.valueOf(ctx.indexPredicate().NUMBER().getText())));
+                   .add(new ArrayIndexJSONataFunction(Integer.valueOf(ctx.indexPredicate().NUMBER().getText())));
     }
 
     public List<JSONataFunction> getExpressions() {
         return expressions.peekFirst();
-    }
-
-    private static Function<Data, Data> toFunction(List<FieldNameContext> path) {
-        var transform = new FieldPathJSONFunction(path.stream()
-                                                      .map(ExpressionBuilder::fieldName2Text)
-                                                      .toList());
-        return value -> transform.map(value, value);
-    }
-
-    private static Function<Data, Data> toValueProvider(StringOrFieldContext sCtx) {
-        if (nonNull(sCtx.STRING())) {
-            return value -> stringValue(sanitise(sCtx.getText()));
-        } else if (nonNull(sCtx.NUMBER())) {
-            return value -> stringValue(Integer.valueOf(sCtx.NUMBER().getText()).toString());
-        } else if (nonNull(sCtx.BOOLEAN())) {
-            return value -> stringValue(sCtx.BOOLEAN().getText());
-        } else {
-            var transform = new FieldPathJSONFunction(sCtx.fieldPath()
-                                                          .fieldName()
-                                                          .stream()
-                                                          .map(ExpressionBuilder::fieldName2Text)
-                                                          .toList());
-            return value -> transform.map(value, value);
-        }
     }
 }

@@ -11,7 +11,7 @@ import dev.vepo.jsonata.parser.ExpressionValidator;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarLexer;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser;
 
-public class JSONFunctionsParser {
+public class JSONataFunctionsParser {
 
     public static List<JSONataFunction> parse(String content) {
         var validator = new ExpressionValidator();
@@ -26,7 +26,7 @@ public class JSONFunctionsParser {
         return builder.getExpressions();
     }
 
-    private JSONFunctionsParser() {
+    private JSONataFunctionsParser() {
     }
 
 }

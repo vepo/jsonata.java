@@ -2,8 +2,8 @@ package dev.vepo.jsonata;
 
 import java.util.List;
 
-import dev.vepo.jsonata.functions.JSONFunctionsParser;
 import dev.vepo.jsonata.functions.JSONataFunction;
+import dev.vepo.jsonata.functions.JSONataFunctionsParser;
 import dev.vepo.jsonata.functions.data.Data;
 
 /**
@@ -46,7 +46,7 @@ public class JSONata {
      * @return a new JSONata instance
      */
     public static JSONata jsonata(String content) {
-        return new JSONata(JSONFunctionsParser.parse(content));
+        return new JSONata(JSONataFunctionsParser.parse(content));
     }
 
     public JSONataResult evaluate(String contents) {

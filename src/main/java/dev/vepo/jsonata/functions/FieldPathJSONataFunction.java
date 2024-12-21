@@ -4,7 +4,7 @@ import java.util.List;
 
 import dev.vepo.jsonata.functions.data.Data;
 
-public record FieldPathJSONFunction(List<String> fields) implements JSONataFunction {
+public record FieldPathJSONataFunction(List<String> fields) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

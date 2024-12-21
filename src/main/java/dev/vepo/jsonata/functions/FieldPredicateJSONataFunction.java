@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
-public record FieldPredicateJSONFunction(String fieldName, String content) implements JSONataFunction {
+public record FieldPredicateJSONataFunction(String fieldName, String content) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

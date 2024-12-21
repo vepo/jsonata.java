@@ -6,7 +6,7 @@ import java.util.List;
 
 import dev.vepo.jsonata.functions.data.Data;
 
-public record InnerFunctionJSONFunction(List<JSONataFunction> inner) implements JSONataFunction {
+public record InnerFunctionJSONataFunction(List<JSONataFunction> inner) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

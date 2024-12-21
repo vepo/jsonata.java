@@ -80,4 +80,9 @@ public class GroupedData implements Data {
                                             .map(Data::toNode)
                                             .toList());
     }
+    
+    @Override
+    public String toString() {
+        return String.format("Grouped [%s]", elements);
+    }
 }
