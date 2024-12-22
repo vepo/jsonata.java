@@ -25,8 +25,12 @@ expression:
     | NUMBER                               # numberValue
     ;
 
-objectExpression: '{' fieldPath ':' fieldPath ARRAY_CAST? (',' fieldPath ':' fieldPath ARRAY_CAST?)* '}';
-fieldName: IDENTIFIER |  QUOTED_VALUE | STRING;
+objectExpression:
+	'{' fieldPathOrString ':' fieldPathOrString ARRAY_CAST? (
+		',' fieldPathOrString ':' fieldPathOrString ARRAY_CAST?
+	)* '}';
+fieldPathOrString: fieldPath | STRING;
+fieldName: IDENTIFIER |  QUOTED_VALUE;
 fieldPath: fieldName (DOT fieldName)*;
 functionStatement: IDENTIFIER '(' parameterStatement (',' parameterStatement)*  ')' ;
 parameterStatement: fieldPath | functionDeclaration;

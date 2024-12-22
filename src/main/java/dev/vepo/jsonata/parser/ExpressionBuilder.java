@@ -45,6 +45,7 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayConstructo
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ExpressionBooleanPredicateContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ExpressionBooleanSentenceContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FieldNameContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FieldPathOrStringContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FieldPredicateArrayContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FunctionCallContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FunctionDeclarationBuilderContext;
@@ -81,15 +82,20 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
         }
     }
 
-    private static Function<Data, Data> toFunction(List<FieldNameContext> path) {
-        if (path.size() == 1 && Objects.nonNull(path.get(0).STRING())) {
-            return value -> stringValue(sanitise(path.get(0).STRING().getText()));
-        }
-        var transform = new FieldPathJSONataFunction(path.stream()
-                                                         .map(ExpressionBuilder::fieldName2Text)
-                                                         .toList());
+    private static Function<Data, Data> toFunction(List<FieldNameContext> ctx) {
+        var transform = new FieldPathJSONataFunction(ctx.stream()
+                                                        .map(ExpressionBuilder::fieldName2Text)
+                                                        .toList());
 
         return value -> transform.map(value, value);
+    }
+
+    private static Function<Data, Data> toFunction(FieldPathOrStringContext ctx) {
+        if (Objects.nonNull(ctx.STRING())) {
+            return value -> stringValue(sanitise(ctx.STRING().getText()));
+        } else {
+            return toFunction(ctx.fieldPath().fieldName());
+        }
     }
 
     private static Function<Data, Data> toValueProvider(StringOrFieldContext sCtx) {
@@ -207,29 +213,26 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     @Override
     public void exitObjectMapper(ObjectMapperContext ctx) {
         this.expressions.peekFirst()
-                        .add(new ObjectMapperJSONataFunction(IntStream.range(0, ctx.objectExpression().fieldPath().size() / 2)
+                        .add(new ObjectMapperJSONataFunction(IntStream.range(0, ctx.objectExpression().fieldPathOrString().size() / 2)
                                                                       .map(i -> i * 2)
                                                                       .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression()
-                                                                                                                        .fieldPath(index)
-                                                                                                                        .fieldName()),
+                                                                                                                        .fieldPathOrString(index)),
                                                                                                           toFunction(ctx.objectExpression()
-                                                                                                                        .fieldPath(index + 1)
-                                                                                                                        .fieldName()),
+                                                                                                                        .fieldPathOrString(index + 1)),
                                                                                                           nonNull(ctx.objectExpression()
-                                                                                                                     .ARRAY_CAST(index + 1))))
+                                                                                                                     .ARRAY_CAST(index))))
                                                                       .toList()));
     }
 
     @Override
     public void exitObjectBuilder(ObjectBuilderContext ctx) {
         this.expressions.peekFirst()
-                        .add(new ObjectBuilderJSONataFunction(IntStream.range(0, ctx.objectExpression().fieldPath().size() / 2)
+                        .add(new ObjectBuilderJSONataFunction(IntStream.range(0, ctx.objectExpression().fieldPathOrString().size() / 2)
                                                                        .map(i -> i * 2)
-                                                                       .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression().fieldPath(index)
-                                                                                                                         .fieldName()),
+                                                                       .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression()
+                                                                                                                         .fieldPathOrString(index)),
                                                                                                            toFunction(ctx.objectExpression()
-                                                                                                                         .fieldPath(index + 1)
-                                                                                                                         .fieldName()),
+                                                                                                                         .fieldPathOrString(index + 1)),
                                                                                                            nonNull(ctx.objectExpression()
                                                                                                                       .ARRAY_CAST(index))))
                                                                        .toList()));
