@@ -64,7 +64,7 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.TransformerDeep
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.TransformerStringConcatContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.TransformerWildcardContext;
 
-public class ExpressionBuilder extends JSONataGrammarBaseListener {
+public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     private static String fieldName2Text(FieldNameContext ctx) {
         if (nonNull(ctx.IDENTIFIER())) {
             return ctx.getText();
@@ -84,7 +84,7 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
 
     private static Function<Data, Data> toFunction(List<FieldNameContext> ctx) {
         var transform = new FieldPathJSONataFunction(ctx.stream()
-                                                        .map(ExpressionBuilder::fieldName2Text)
+                                                        .map(JSONataGrammarListener::fieldName2Text)
                                                         .toList());
 
         return value -> transform.map(value, value);
@@ -109,7 +109,7 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
             var transform = new FieldPathJSONataFunction(sCtx.fieldPath()
                                                              .fieldName()
                                                              .stream()
-                                                             .map(ExpressionBuilder::fieldName2Text)
+                                                             .map(JSONataGrammarListener::fieldName2Text)
                                                              .toList());
             return value -> transform.map(value, value);
         }
@@ -118,7 +118,7 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
     private final Deque<List<JSONataFunction>> expressions;
     private final Deque<DeclaredFunction> functionsDeclared;
 
-    public ExpressionBuilder() {
+    public JSONataGrammarListener() {
         this.expressions = new LinkedList<>();
         this.expressions.offerFirst(new ArrayList<>()); // root
         this.functionsDeclared = new LinkedList<>();
@@ -165,7 +165,7 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
                                                                                                    .fieldPath()
                                                                                                    .fieldName()
                                                                                                    .stream()
-                                                                                                   .map(ExpressionBuilder::fieldName2Text)
+                                                                                                   .map(JSONataGrammarListener::fieldName2Text)
                                                                                                    .toList()),
                                                                    Optional.ofNullable(functionsDeclared.peekFirst()));
                    });
@@ -183,7 +183,7 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
                    .add(new FieldPathJSONataFunction(ctx.fieldPath()
                                                         .fieldName()
                                                         .stream()
-                                                        .map(ExpressionBuilder::fieldName2Text)
+                                                        .map(JSONataGrammarListener::fieldName2Text)
                                                         .toList()));
     }
 
@@ -205,7 +205,7 @@ public class ExpressionBuilder extends JSONataGrammarBaseListener {
                         .add(new StringConcatJSONataFunction(ctx.stringConcat()
                                                                 .stringOrField()
                                                                 .stream()
-                                                                .map(ExpressionBuilder::toValueProvider)
+                                                                .map(JSONataGrammarListener::toValueProvider)
                                                                 .toList()));
 
     }
