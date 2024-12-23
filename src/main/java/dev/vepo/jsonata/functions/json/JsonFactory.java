@@ -54,6 +54,10 @@ public class JsonFactory {
         return new ObjectData(mapper.getNodeFactory().numberNode(value));
     }
 
+    public static Data booleanValue(Boolean value) {
+        return new ObjectData(mapper.getNodeFactory().booleanNode(value));
+    }
+
     public static Data booleanValue(boolean value) {
         return new ObjectData(mapper.getNodeFactory().booleanNode(value));
     }

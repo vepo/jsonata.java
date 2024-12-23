@@ -240,6 +240,25 @@ class JSONataTest {
         }
     }
 
+    @Nested
+    class JSONSupplier {
+        @Test
+        void jsonSupplierTest() {
+            assertThat(jsonata("""
+                               {
+                                   "FirstName": "Fred",
+                                   "Surname": "Smith",
+                                   "Age": 28,
+                                   "Address": {
+                                       "Street": "Hursley Park",
+                                       "City": "Winchester",
+                                       "Postcode": "SO21 2JN"
+                                   }
+                               }
+                               """).evaluate("{}").asText()).isEqualTo("{\"FirstName\":\"Fred\",\"Surname\":\"Smith\",\"Age\":28,\"Address\":{\"Street\":\"Hursley Park\",\"City\":\"Winchester\",\"Postcode\":\"SO21 2JN\"}}");
+        }
+    }
+
     private static final String ACCOUNT = """
                                           {
                                               "Account": {

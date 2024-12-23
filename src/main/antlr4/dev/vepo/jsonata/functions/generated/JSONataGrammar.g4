@@ -29,7 +29,7 @@ objectExpression:
 	'{' fieldPathOrString ':' fieldPathOrString ARRAY_CAST? (
 		',' fieldPathOrString ':' fieldPathOrString ARRAY_CAST?
 	)* '}';
-fieldPathOrString: fieldPath | STRING;
+fieldPathOrString: fieldPath | STRING | NUMBER | BOOLEAN | objectExpression;
 fieldName: IDENTIFIER |  QUOTED_VALUE;
 fieldPath: fieldName (DOT fieldName)*;
 functionStatement: IDENTIFIER '(' parameterStatement (',' parameterStatement)*  ')' ;

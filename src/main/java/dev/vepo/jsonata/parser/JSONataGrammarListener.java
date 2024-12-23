@@ -2,6 +2,7 @@ package dev.vepo.jsonata.parser;
 
 import static dev.vepo.jsonata.functions.json.JsonFactory.numberValue;
 import static dev.vepo.jsonata.functions.json.JsonFactory.stringValue;
+import static dev.vepo.jsonata.functions.json.JsonFactory.booleanValue;
 import static java.util.Objects.nonNull;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJson;
 
@@ -10,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -53,6 +53,7 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.IndexPredicateA
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.InnerExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.NumberValueContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectBuilderContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectMapperContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.QueryPathContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RangePredicateArrayContext;
@@ -91,8 +92,15 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     }
 
     private static Function<Data, Data> toFunction(FieldPathOrStringContext ctx) {
-        if (Objects.nonNull(ctx.STRING())) {
+        if (nonNull(ctx.STRING())) {
             return value -> stringValue(sanitise(ctx.STRING().getText()));
+        } else if (nonNull(ctx.NUMBER())) {
+            return value -> numberValue(Integer.valueOf(ctx.NUMBER().getText()));
+        } else if (nonNull(ctx.BOOLEAN())) {
+            return value -> booleanValue(Boolean.valueOf(ctx.BOOLEAN().getText()));
+        } else if(nonNull(ctx.objectExpression())) {
+            var mapper = toObjectMapper(ctx.objectExpression());
+            return data -> mapper.map(data, data);
         } else {
             return toFunction(ctx.fieldPath().fieldName());
         }
@@ -210,18 +218,20 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
 
     }
 
+    private static ObjectMapperJSONataFunction toObjectMapper(ObjectExpressionContext ctx) {
+        return new ObjectMapperJSONataFunction(IntStream.range(0, ctx.fieldPathOrString().size() / 2)
+                                                        .map(i -> i * 2)
+                                                        .mapToObj(index -> new FieldContent(toFunction(ctx.fieldPathOrString(index)),
+                                                                                            toFunction(ctx
+                                                                                                          .fieldPathOrString(index + 1)),
+                                                                                            nonNull(ctx.ARRAY_CAST(index))))
+                                                        .toList());
+    }
+
     @Override
     public void exitObjectMapper(ObjectMapperContext ctx) {
         this.expressions.peekFirst()
-                        .add(new ObjectMapperJSONataFunction(IntStream.range(0, ctx.objectExpression().fieldPathOrString().size() / 2)
-                                                                      .map(i -> i * 2)
-                                                                      .mapToObj(index -> new FieldContent(toFunction(ctx.objectExpression()
-                                                                                                                        .fieldPathOrString(index)),
-                                                                                                          toFunction(ctx.objectExpression()
-                                                                                                                        .fieldPathOrString(index + 1)),
-                                                                                                          nonNull(ctx.objectExpression()
-                                                                                                                     .ARRAY_CAST(index))))
-                                                                      .toList()));
+                        .add(toObjectMapper(ctx.objectExpression()));
     }
 
     @Override
@@ -233,7 +243,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                                                                                                          .fieldPathOrString(index)),
                                                                                                            toFunction(ctx.objectExpression()
                                                                                                                          .fieldPathOrString(index + 1)),
-                                                                                                           nonNull(ctx.objectExpression()
+                                                                                                                         nonNull(ctx.objectExpression()
                                                                                                                       .ARRAY_CAST(index))))
                                                                        .toList()));
     }

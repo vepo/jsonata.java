@@ -19,10 +19,10 @@ public record ObjectMapperJSONataFunction(List<FieldContent> contents) implement
             var builder = JsonFactory.objectBuilder();
             contents.forEach(content -> {
                 if (content.arrayCast()) {
-                    builder.add(content.name().apply(current).toString(),
+                    builder.add(content.name().apply(current).toJson().asText(),
                                 content.value().apply(current));
                 } else {
-                    builder.set(content.name().apply(current).toString(),
+                    builder.set(content.name().apply(current).toJson().asText(),
                                 content.value().apply(current));
                 }
             });
