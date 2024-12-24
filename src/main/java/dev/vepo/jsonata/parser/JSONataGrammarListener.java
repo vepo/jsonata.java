@@ -19,6 +19,8 @@ import java.util.stream.Stream;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
 import dev.vepo.jsonata.exception.JSONataException;
+import dev.vepo.jsonata.functions.AlgebraicJSONataFunction;
+import dev.vepo.jsonata.functions.AlgebraicOperator;
 import dev.vepo.jsonata.functions.ArrayCastTransformerJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayConstructorJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayIndexJSONataFunction;
@@ -42,6 +44,7 @@ import dev.vepo.jsonata.functions.StringConcatJSONataFunction;
 import dev.vepo.jsonata.functions.WildcardJSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarBaseListener;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AlgebraicExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayConstructorMappingContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ExpressionBooleanPredicateContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ExpressionBooleanSentenceContext;
@@ -344,6 +347,18 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         var rightExpressions = this.expressions.pollFirst();
         this.expressions.peekFirst()
                         .add(new CompareValuesJSONataFunction(CompareOperator.get(ctx.booleanCompare().op.getText()), rightExpressions));
+    }
+
+    @Override
+    public void enterAlgebraicExpression(AlgebraicExpressionContext ctx) {
+        this.expressions.offerFirst(new ArrayList<>()); // new stack
+    }
+
+    @Override
+    public void exitAlgebraicExpression(AlgebraicExpressionContext ctx) {
+        var rightExpressions = this.expressions.pollFirst();
+        this.expressions.peekFirst()
+                        .add(new AlgebraicJSONataFunction(AlgebraicOperator.get(ctx.op.getText()), rightExpressions));
     }
 
     @Override

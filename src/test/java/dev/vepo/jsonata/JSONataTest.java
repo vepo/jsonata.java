@@ -250,6 +250,19 @@ class JSONataTest {
     }
 
     @Nested
+    class Numbers{
+        @Test
+        void operationsTest() {
+            assertThat(jsonata("5 + 5").evaluate("{}").asInt()).isEqualTo(10);
+            assertThat(jsonata("5 - 5").evaluate("{}").asInt()).isZero();
+            assertThat(jsonata("5 * 5").evaluate("{}").asInt()).isEqualTo(25);
+            assertThat(jsonata("5 / 5").evaluate("{}").asInt()).isOne();
+            assertThat(jsonata("5 % 5").evaluate("{}").asInt()).isZero();
+            assertThat(jsonata("5 ^ 5").evaluate("{}").asInt()).isEqualTo(3125);
+        }
+    }
+
+    @Nested
     class JSONSupplier {
         @Test
         void jsonSupplierTest() {

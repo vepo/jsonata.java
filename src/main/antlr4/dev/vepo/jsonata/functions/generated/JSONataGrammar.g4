@@ -14,11 +14,12 @@ expression:
     | DOT? arrayConstructor                # arrayConstructorMapping
     | ARRAY_CAST                           # transformerArrayCast
     | WILDCARD WILDCARD DOT fieldName DOT? # transformerDeepFindByField
-    | DOT? WILDCARD                        # transformerWildcard
+    | (DOT WILDCARD | WILDCARD DOT)        # transformerWildcard
     | stringConcat                         # transformerStringConcat
     | DOT? '(' expressionGroup ')'         # innerExpression
     | booleanExpression                    # expressionBooleanSentence
     | booleanCompare                       # expressionBooleanPredicate
+    | algebraicExpression                  # expressionAlgebraic
     | DOT objectExpression                 # objectMapper
     | objectExpression                     # objectBuilder
     | STRING                               # stringValue
@@ -46,6 +47,8 @@ stringOrField: fieldPath | STRING | NUMBER | BOOLEAN;
 
 booleanCompare: op=('<' | '<=' | '>' | '>=' | '!=' | '=' | 'in') expressionGroup;
 booleanExpression: op=('and' | 'or') expressionGroup;
+
+algebraicExpression: op=('+' | '-' | '*' | '/' | '%' | '^') expressionGroup;
 
 // BOOLEAN_OPERATOR: ;
 ARRAY_CAST: '[]';
