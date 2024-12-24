@@ -237,6 +237,15 @@ class JSONataTest {
                           }
                           """;
             assertThat(jsonata("$sort(Strings)").evaluate(strings).multi().asText()).containsExactly("a", "b", "c", "d", "e");
+            assertThat(jsonata("$sort(FirstName)").evaluate(OBJECT).multi().asText()).containsExactly("Fred");
+        }
+
+        @Test
+        void sumTest() {
+            assertThat(jsonata("$sum(Numbers)").evaluate(NUMBERS).asDouble()).isEqualTo(67.8);
+            assertThat(jsonata("$sum(Numbers)").evaluate(NUMBERS).asInt()).isEqualTo(67);
+            assertThat(jsonata("$sum(Numbers)").evaluate("{}").isEmpty()).isTrue();
+            assertThat(jsonata("$sum(Numbers)").evaluate("{\"Numbers\": []}").asInt()).isEqualTo(0);
         }
     }
 

@@ -35,6 +35,16 @@ class JSONataEmptyResult implements JSONataResult {
     }
 
     @Override
+    public double asDouble() {
+        throw emptyValueException();
+    }
+
+    @Override
+    public boolean isDouble() {
+        return false;
+    }
+
+    @Override
     public boolean isEmpty() {
         return true;
     }

@@ -26,6 +26,7 @@ import dev.vepo.jsonata.functions.ArrayRangeJSONataFunction;
 import dev.vepo.jsonata.functions.BooleanCompareJSONataFunction;
 import dev.vepo.jsonata.functions.BooleanOperator;
 import dev.vepo.jsonata.functions.BuiltInSortJSONataFunction;
+import dev.vepo.jsonata.functions.BuiltInSumJSONataFunction;
 import dev.vepo.jsonata.functions.CompareOperator;
 import dev.vepo.jsonata.functions.CompareValuesJSONataFunction;
 import dev.vepo.jsonata.functions.DeclaredFunction;
@@ -98,7 +99,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
             return value -> numberValue(Integer.valueOf(ctx.NUMBER().getText()));
         } else if (nonNull(ctx.BOOLEAN())) {
             return value -> booleanValue(Boolean.valueOf(ctx.BOOLEAN().getText()));
-        } else if(nonNull(ctx.objectExpression())) {
+        } else if (nonNull(ctx.objectExpression())) {
             var mapper = toObjectMapper(ctx.objectExpression());
             return data -> mapper.map(data, data);
         } else {
@@ -147,7 +148,8 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     }
 
     public enum BuiltInFunction {
-        SORT("$sort");
+        SORT("$sort"),
+        SUM("$sum");
 
         private String name;
 
@@ -176,6 +178,14 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                                                                                    .map(JSONataGrammarListener::fieldName2Text)
                                                                                                    .toList()),
                                                                    Optional.ofNullable(functionsDeclared.peekFirst()));
+                       case SUM -> new BuiltInSumJSONataFunction(new FieldPathJSONataFunction(ctx.functionStatement()
+                                                                                                  .parameterStatement()
+                                                                                                  .get(0)
+                                                                                                  .fieldPath()
+                                                                                                  .fieldName()
+                                                                                                  .stream()
+                                                                                                  .map(JSONataGrammarListener::fieldName2Text)
+                                                                                                  .toList()));
                    });
     }
 
@@ -243,7 +253,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                                                                                                          .fieldPathOrString(index)),
                                                                                                            toFunction(ctx.objectExpression()
                                                                                                                          .fieldPathOrString(index + 1)),
-                                                                                                                         nonNull(ctx.objectExpression()
+                                                                                                           nonNull(ctx.objectExpression()
                                                                                                                       .ARRAY_CAST(index))))
                                                                        .toList()));
     }

@@ -30,6 +30,19 @@ class JSONataGroupResult implements JSONataResult {
     }
 
     @Override
+    public double asDouble() {
+        return elements.stream()
+                       .mapToDouble(JSONataResult::asDouble)
+                       .sum();
+    }
+
+    @Override
+    public boolean isDouble() {
+        return this.elements.stream()
+                            .allMatch(JSONataResult::isDouble);
+    }
+
+    @Override
     public boolean asBoolean() {
         return elements.stream().map(JSONataResult::asBoolean).reduce((b1, b2) -> b1 && b2).orElse(false);
     }

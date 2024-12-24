@@ -37,6 +37,16 @@ class JSONataArrayResult implements JSONataResult {
     }
 
     @Override
+    public double asDouble() {
+        return element.asDouble();
+    }
+
+    @Override
+    public boolean isDouble() {
+        return element.isDouble();
+    }
+
+    @Override
     public boolean isNull() {
         return element.isNull();
     }

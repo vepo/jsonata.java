@@ -1,6 +1,7 @@
 package dev.vepo.jsonata;
 
 import java.util.List;
+import java.util.function.IntPredicate;
 
 /**
  * Represents a node in an expression tree.
@@ -27,6 +28,20 @@ public interface JSONataResult {
      * @return true if the node is an integer, false otherwise
      */
     boolean isInt();
+
+    /*
+     * Converts the node to its double representation.
+     * 
+     * @return true if the node is a double, false otherwise
+     */
+    double asDouble();
+
+    /**
+     * Checks if the node is a double.
+     *
+     * @return true if the node is a double, false otherwise
+     */
+    boolean isDouble();
 
     /**
      * Converts the node to its boolean representation.
