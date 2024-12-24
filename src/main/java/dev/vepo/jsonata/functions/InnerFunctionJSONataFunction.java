@@ -11,7 +11,7 @@ public record InnerFunctionJSONataFunction(List<JSONataFunction> inner) implemen
     @Override
     public Data map(Data original, Data current) {
         return json2Value(inner.stream().reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                                        .map(f -> f.map(original, current)
+                                        .map(f -> f.map(current, current)
                                                    .toJson())
                                         .orElse(current.toJson()));
     }

@@ -267,6 +267,82 @@ class JSONataTest {
             assertThat(jsonata("Numbers[2] % Numbers[5]").evaluate(NUMBERS).asDouble()).isEqualTo(3.5);
 
         }
+
+        @Test
+        void expressionTest() {
+            assertThat(jsonata("(5 + 3) * 4").evaluate("{}").asInt()).isEqualTo(32);
+            assertThat(jsonata("Age * 2").evaluate("""
+                                                   {
+                                                       "FirstName": "Fred",
+                                                       "Surname": "Smith",
+                                                       "Age": 28,
+                                                       "Address": {
+                                                           "Street": "Hursley Park",
+                                                           "City": "Winchester",
+                                                           "Postcode": "SO21 2JN"
+                                                       }
+                                                   }
+                                                    """).asInt()).isEqualTo(56);
+            assertThat(jsonata("Product.(Price * Quantity)").evaluate("""
+                                                                      {
+                                                                           "Product": [
+                                                                             {
+                                                                                  "Name": "City",
+                                                                                  "Price": 100,
+                                                                                  "Quantity": 2
+                                                                             }, {
+                                                                                  "Name": "Table",
+                                                                                  "Price": 50,
+                                                                                  "Quantity": 4
+                                                                             }, {
+                                                                                  "Name": "Chair",
+                                                                                  "Price": 10,
+                                                                                  "Quantity": 10
+                                                                             }
+                                                                           ]
+                                                                      }
+                                                                      """).multi().asInt()).containsExactly(200, 200, 100);
+            assertThat(jsonata("Product.(Price * 5)").evaluate("""
+                                                               {
+                                                                    "Product": [
+                                                                      {
+                                                                           "Name": "City",
+                                                                           "Price": 100,
+                                                                           "Quantity": 2
+                                                                      }, {
+                                                                           "Name": "Table",
+                                                                           "Price": 50,
+                                                                           "Quantity": 4
+                                                                      }, {
+                                                                           "Name": "Chair",
+                                                                           "Price": 10,
+                                                                           "Quantity": 10
+                                                                      }
+                                                                    ]
+                                                               }
+                                                               """).multi().asInt()).containsExactly(500, 250, 50);
+
+            assertThat(jsonata("Product.(7 * Price)").evaluate("""
+                                                               {
+                                                                    "Product": [
+                                                                      {
+                                                                           "Name": "City",
+                                                                           "Price": 100,
+                                                                           "Quantity": 2
+                                                                      }, {
+                                                                           "Name": "Table",
+                                                                           "Price": 50,
+                                                                           "Quantity": 4
+                                                                      }, {
+                                                                           "Name": "Chair",
+                                                                           "Price": 10,
+                                                                           "Quantity": 10
+                                                                      }
+                                                                    ]
+                                                               }
+                                                               """).multi().asInt()).containsExactly(700, 350, 70);
+
+        }
     }
 
     @Nested
