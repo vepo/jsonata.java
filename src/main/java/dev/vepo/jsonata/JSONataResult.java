@@ -1,7 +1,6 @@
 package dev.vepo.jsonata;
 
 import java.util.List;
-import java.util.function.IntPredicate;
 
 /**
  * Represents a node in an expression tree.

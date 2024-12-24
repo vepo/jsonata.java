@@ -245,7 +245,7 @@ class JSONataTest {
             assertThat(jsonata("$sum(Numbers)").evaluate(NUMBERS).asDouble()).isEqualTo(67.8);
             assertThat(jsonata("$sum(Numbers)").evaluate(NUMBERS).asInt()).isEqualTo(67);
             assertThat(jsonata("$sum(Numbers)").evaluate("{}").isEmpty()).isTrue();
-            assertThat(jsonata("$sum(Numbers)").evaluate("{\"Numbers\": []}").asInt()).isEqualTo(0);
+            assertThat(jsonata("$sum(Numbers)").evaluate("{\"Numbers\": []}").asInt()).isZero();
         }
     }
 
