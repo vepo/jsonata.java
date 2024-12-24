@@ -3,6 +3,7 @@ package dev.vepo.jsonata;
 import static dev.vepo.jsonata.JSONata.jsonata;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.data.Offset.offset;
 
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.junit.jupiter.api.Nested;
@@ -186,7 +187,7 @@ class JSONataTest {
                                {
                                    'name': FirstName,
                                    'age': Age,
-                                   "city": Address.City	
+                                   "city": Address.City
                                }
                                """).evaluate("""
                                              {
@@ -197,7 +198,7 @@ class JSONataTest {
                                                     "City": "Winchester",
                                                     "Postcode": "SO21 2JN",
                                                     "Country": "UK",
-                                                    "Street": "Hursley Park"    
+                                                    "Street": "Hursley Park"
                                                  }
                                              }
                                              """).asText()).isEqualTo("{\"name\":\"Fred\",\"age\":28,\"city\":\"Winchester\"}");
@@ -250,7 +251,7 @@ class JSONataTest {
     }
 
     @Nested
-    class Numbers{
+    class Numbers {
         @Test
         void operationsTest() {
             assertThat(jsonata("5 + 5").evaluate("{}").asInt()).isEqualTo(10);
@@ -259,6 +260,12 @@ class JSONataTest {
             assertThat(jsonata("5 / 5").evaluate("{}").asInt()).isOne();
             assertThat(jsonata("5 % 5").evaluate("{}").asInt()).isZero();
             assertThat(jsonata("5 ^ 5").evaluate("{}").asInt()).isEqualTo(3125);
+            assertThat(jsonata("Numbers[0] + Numbers[1]").evaluate(NUMBERS).asDouble()).isEqualTo(3.4);
+            assertThat(jsonata("Numbers[0] - Numbers[4]").evaluate(NUMBERS).asDouble()).isEqualTo(-19.9);
+            assertThat(jsonata("Numbers[0] * Numbers[5]").evaluate(NUMBERS).asDouble()).isEqualTo(30);
+            assertThat(jsonata("Numbers[0] / Numbers[4]").evaluate(NUMBERS).asDouble()).isEqualTo(0.04784688995215, offset(0.0001));
+            assertThat(jsonata("Numbers[2] % Numbers[5]").evaluate(NUMBERS).asDouble()).isEqualTo(3.5);
+
         }
     }
 
@@ -277,7 +284,8 @@ class JSONataTest {
                                        "Postcode": "SO21 2JN"
                                    }
                                }
-                               """).evaluate("{}").asText()).isEqualTo("{\"FirstName\":\"Fred\",\"Surname\":\"Smith\",\"Age\":28,\"Address\":{\"Street\":\"Hursley Park\",\"City\":\"Winchester\",\"Postcode\":\"SO21 2JN\"}}");
+                               """).evaluate("{}")
+                                   .asText()).isEqualTo("{\"FirstName\":\"Fred\",\"Surname\":\"Smith\",\"Age\":28,\"Address\":{\"Street\":\"Hursley Park\",\"City\":\"Winchester\",\"Postcode\":\"SO21 2JN\"}}");
         }
     }
 
