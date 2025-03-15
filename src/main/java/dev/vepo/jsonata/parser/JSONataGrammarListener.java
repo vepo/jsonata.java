@@ -16,21 +16,21 @@ import dev.vepo.jsonata.functions.ArrayCastTransformerJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayIndexJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayQueryJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayRangeJSONataFunction;
-import dev.vepo.jsonata.functions.BooleanCompareJSONataFunction;
-import dev.vepo.jsonata.functions.BooleanOperator;
 import dev.vepo.jsonata.functions.CompareOperator;
 import dev.vepo.jsonata.functions.CompareValuesJSONataFunction;
+import dev.vepo.jsonata.functions.ContextValueJSONataFunction;
 import dev.vepo.jsonata.functions.DeepFindByFieldNameJSONataFunction;
 import dev.vepo.jsonata.functions.FieldPathJSONataFunction;
-import dev.vepo.jsonata.functions.ContextValueJSONataFunction;
 import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.JoinJSONataFunction;
+import dev.vepo.jsonata.functions.StringConcatJSONataFunction;
 import dev.vepo.jsonata.functions.WildcardJSONataFunction;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarBaseListener;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AllDescendantSearchContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayIndexQueryContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayQueryContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.BooleanCompareContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ConcatValuesContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ContextRefereceContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ContextValueContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ExpNumberValueContext;
@@ -206,7 +206,12 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
 
     @Override
     public void exitArrayIndexQuery(ArrayIndexQueryContext ctx) {
+        if (expressions.isEmpty()) {
             expressions.offer(new ArrayIndexJSONataFunction(Integer.valueOf(ctx.NUMBER().getText())));
+        } else {
+            var previousFunction = expressions.removeLast();
+            expressions.offer(new JoinJSONataFunction(previousFunction, new ArrayIndexJSONataFunction(Integer.valueOf(ctx.NUMBER().getText()))));
+        }
     }
     
     @Override
@@ -267,6 +272,13 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     @Override
     public void exitContextReferece(ContextRefereceContext ctx) {
         this.expressions.offer((original, value) -> original);
+    }
+
+    @Override
+    public void exitConcatValues(ConcatValuesContext ctx) {
+        var currentFunction = expressions.removeLast();
+        var previousFunction = expressions.removeLast();
+        expressions.offer(new StringConcatJSONataFunction(previousFunction, currentFunction));
     }
 
     // @Override

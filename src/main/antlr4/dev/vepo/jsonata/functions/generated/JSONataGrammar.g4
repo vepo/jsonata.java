@@ -16,6 +16,7 @@ expression:
     | expression ARR_OPEN expression ARR_CLOSE                                # arrayQuery
     | expression rangePredicate                                               # rangeQuery
     | expression op=('<' | '<=' | '>' | '>=' | '!=' | '=' | 'in') expression  # booleanCompare
+    | expression '&' expression                                               # concatValues
     | '(' expression ')'                                                      # contextValue
     | STRING                                                                  # stringValue
     | NUMBER                                                                  # numberValue
