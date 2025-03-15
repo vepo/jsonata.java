@@ -173,6 +173,15 @@ class JSONataTest {
     @Nested
     class ObjectConstructor {
         @Test
+        void objectMapper() {
+            assertThat(jsonata("""
+                               Account.Order.Product.{
+                                   `Product Name`: Price
+                               }
+                               """).evaluate(HATS).asText()).isEqualTo("[{\"Bowler Hat\":50},{\"Trilby hat\":75},{\"Bowler Hat\":60},{\"Cloak\":150}]");
+        }
+
+        @Test
         void arrayOfObjectsTest() {
             assertThat(jsonata("Phone.{type: number}").evaluate(OBJECT).multi().asText()).containsExactly(
                                                                                                           "{\"home\":\"0203 544 1234\"}",
@@ -202,6 +211,23 @@ class JSONataTest {
                                                  }
                                              }
                                              """).asText()).isEqualTo("{\"name\":\"Fred\",\"age\":28,\"city\":\"Winchester\"}");
+        }
+    }
+
+    @Nested
+    class Literal {
+        @Test
+        void literalTest() {
+            assertThat(jsonata("""
+                {
+                    "string": "Hello World!",
+                    "integer": 3,
+                    "float": 2.4,
+                    "binary": 175e-2,
+                    "boolean": true,
+                    "null": null
+                }
+            """).evaluate("{}").asText()).isEqualTo("{\"string\":\"Hello World!\",\"integer\":3,\"float\":2.4,\"binary\":1.75,\"boolean\":true,\"null\":null}");
         }
     }
 
@@ -346,6 +372,18 @@ class JSONataTest {
     }
 
     @Nested
+    class Programming {
+        @Test
+        void conditionalInlineTest() {
+            assertThat(jsonata("""
+                               Account.Order.Product.{
+                                   `Product Name`: $.Price > 100 ? "Premium" : "Basic"
+                               }
+                               """).evaluate(HATS).asText()).isEqualTo("[{\"Bowler Hat\":\"Basic\"},{\"Trilby hat\":\"Basic\"},{\"Bowler Hat\":\"Basic\"},{\"Cloak\":\"Premium\"}]");
+        }
+    }
+
+    @Nested
     class JSONSupplier {
         @Test
         void jsonSupplierTest() {
@@ -364,6 +402,65 @@ class JSONataTest {
                                    .asText()).isEqualTo("{\"FirstName\":\"Fred\",\"Surname\":\"Smith\",\"Age\":28,\"Address\":{\"Street\":\"Hursley Park\",\"City\":\"Winchester\",\"Postcode\":\"SO21 2JN\"}}");
         }
     }
+    private static final String HATS = """
+                                       {
+                                         "Account": {
+                                           "AccountID": "ACC12345",
+                                           "Customer": {
+                                             "Name": "John Doe",
+                                             "Email": "john.doe@example.com",
+                                             "Address": {
+                                               "Street": "123 Main St",
+                                               "City": "Anytown",
+                                               "State": "CA",
+                                               "Zip": "90210"
+                                             }
+                                           },
+                                           "Order": [
+                                             {
+                                               "OrderID": "ORD67890",
+                                               "OrderDate": "2023-10-01",
+                                               "Product": [
+                                                 {
+                                                   "ProductID": "PROD001",
+                                                   "Product Name": "Bowler Hat",
+                                                   "Category": "Headwear",
+                                                   "Price": 50,
+                                                   "Quantity": 2
+                                                 },
+                                                 {
+                                                   "ProductID": "PROD002",
+                                                   "Product Name": "Trilby hat",
+                                                   "Category": "Headwear",
+                                                   "Price": 75,
+                                                   "Quantity": 1
+                                                 }
+                                               ]
+                                             },
+                                             {
+                                               "OrderID": "ORD67891",
+                                               "OrderDate": "2023-10-05",
+                                               "Product": [
+                                                 {
+                                                   "ProductID": "PROD001",
+                                                   "Product Name": "Bowler Hat",
+                                                   "Category": "Headwear",
+                                                   "Price": 60,
+                                                   "Quantity": 1
+                                                 },
+                                                 {
+                                                   "ProductID": "PROD003",
+                                                   "Product Name": "Cloak",
+                                                   "Category": "Clothing",
+                                                   "Price": 150,
+                                                   "Quantity": 1
+                                                 }
+                                               ]
+                                             }
+                                           ]
+                                         }
+                                       }
+                                       """;
 
     private static final String ACCOUNT = """
                                           {

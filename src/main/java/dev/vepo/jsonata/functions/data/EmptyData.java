@@ -40,6 +40,11 @@ public class EmptyData implements Data {
     }
 
     @Override
+    public boolean isList() {
+        return false;
+    }
+
+    @Override
     public boolean isEmpty() {
         return true;
     }

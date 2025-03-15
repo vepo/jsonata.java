@@ -1,11 +1,12 @@
 package dev.vepo.jsonata.functions.data;
 
-import static dev.vepo.jsonata.results.JSONataResults.array;
 import static dev.vepo.jsonata.functions.json.JsonFactory.json2Value;
+import static dev.vepo.jsonata.results.JSONataResults.array;
 
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -38,13 +39,18 @@ public class ArrayData implements Data {
         }
     }
 
+    private Stream<JsonNode> toStream(ArrayNode node) {
+        return IntStream.range(0, node.size())
+                        .mapToObj(node::get);
+    }
+
     @Override
     public Data get(String fieldName) {
-        return new GroupedData(IntStream.range(0, element.size()).mapToObj(element::get)
-                                                                       .map(node -> node.get(fieldName))
-                                                                       .filter(Objects::nonNull)
-                                                                                 .map(JsonFactory::json2Value)
-                                                                       .toList());
+        return new GroupedData(toStream(element).map(node -> node.get(fieldName))
+                                                .filter(Objects::nonNull)
+                                                .flatMap(node -> node.isArray() ? toStream((ArrayNode) node) : Stream.of(node))
+                                                .map(JsonFactory::json2Value)
+                                                .toList());
     }
 
     @Override
@@ -56,6 +62,11 @@ public class ArrayData implements Data {
     @Override
     public boolean isArray() {
         return true;
+    }
+
+    @Override
+    public boolean isList() {
+        return false;
     }
 
     @Override

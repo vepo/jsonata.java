@@ -8,10 +8,10 @@ import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
-public record BuiltInSortJSONataFunction(FieldPathJSONataFunction extractor, Optional<DeclaredFunction> function,
+public record BuiltInSortJSONataFunction(JSONataFunction extractor, Optional<DeclaredFunction> function,
                                          Comparator<Data> comparator)
         implements JSONataFunction {
-    public BuiltInSortJSONataFunction(FieldPathJSONataFunction extractor, Optional<DeclaredFunction> function) {
+    public BuiltInSortJSONataFunction(JSONataFunction extractor, Optional<DeclaredFunction> function) {
         this(extractor, function, buildComparator(function));
     }
 

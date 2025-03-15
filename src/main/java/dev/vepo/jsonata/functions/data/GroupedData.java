@@ -53,6 +53,11 @@ public class GroupedData implements Data {
     }
 
     @Override
+    public boolean isList() {
+        return true;
+    }
+
+    @Override
     public boolean isEmpty() {
         return false;
     }

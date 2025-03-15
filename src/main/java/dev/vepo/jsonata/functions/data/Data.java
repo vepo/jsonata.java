@@ -26,6 +26,8 @@ public interface Data {
 
     boolean isArray();
 
+    boolean isList();
+
     boolean isEmpty();
 
     boolean isObject();
