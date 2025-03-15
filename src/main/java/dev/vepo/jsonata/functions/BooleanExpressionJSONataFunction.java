@@ -6,12 +6,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.functions.data.Data;
 
-public record BooleanCompareJSONataFunction(BooleanOperator operator, JSONataFunction rightExpressions) implements JSONataFunction {
+public record BooleanExpressionJSONataFunction(JSONataFunction left, BooleanOperator operator, JSONataFunction right) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {
-        return booleanValue(compare(current.toJson(),
-                                    rightExpressions.map(original, current).toJson()));
+        return booleanValue(compare(left.map(original, current).toJson(),
+                                    right.map(original, current).toJson()));
     }
 
     private boolean compare(JsonNode left, JsonNode right) {

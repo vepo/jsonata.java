@@ -14,25 +14,15 @@ public record ObjectBuilderJSONataFunction(List<FieldContent> contents) implemen
         if (current.isObject()) {
             var builder = objectBuilder();
             contents.forEach(content -> {
-                if (content.arrayCast()) {
-                    builder.add(content.name().apply(current).toJson().asText(),
-                                content.value().apply(current));
-                } else {
-                    builder.set(content.name().apply(current).toJson().asText(),
-                                content.value().apply(current));
-                }
+                builder.set(content.name().map(original, current).toJson().asText(),
+                            content.value().map(original, current));
             });
             return builder.build();
         } else if (current.isArray()) {
             var builder = objectBuilder(true);
             range(0, current.length()).forEach(i -> contents.forEach(content -> {
-                if (content.arrayCast()) {
-                    builder.add(content.name().apply(current.at(i)).toJson().asText(),
-                                content.value().apply(current.at(i)));
-                } else {
-                    builder.set(content.name().apply(current.at(i)).toJson().asText(),
-                                content.value().apply(current.at(i)));
-                }
+                builder.set(content.name().map(original, current.at(i)).toJson().asText(),
+                            content.value().map(original, current.at(i)));
             }));
             return builder.build();
         } else {

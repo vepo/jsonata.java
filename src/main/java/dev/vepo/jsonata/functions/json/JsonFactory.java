@@ -76,7 +76,8 @@ public class JsonFactory {
         return array;
     }
 
-    private JsonFactory() {}
+    private JsonFactory() {
+    }
 
     public static class ObjectBuilder {
 
@@ -100,7 +101,12 @@ public class JsonFactory {
             if (groupRecordsInArray && root.has(field)) {
                 var previousValue = root.get(field);
                 if (previousValue.isArray()) {
-                    ((ArrayNode) previousValue).add(value.toJson());
+                    var arrValue = value.toJson();
+                    if (arrValue.isArray()) {
+                        ((ArrayNode) previousValue).addAll((ArrayNode) arrValue);
+                    } else {
+                        ((ArrayNode) previousValue).add(arrValue);
+                    }
                 } else {
                     var arr = root.arrayNode();
                     arr.add(previousValue);

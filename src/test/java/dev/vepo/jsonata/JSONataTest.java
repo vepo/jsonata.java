@@ -173,6 +173,15 @@ class JSONataTest {
     @Nested
     class ObjectConstructor {
         @Test
+        void objectMapper() {
+            assertThat(jsonata("""
+                               Account.Order.Product.{
+                                   `Product Name`: Price
+                               }
+                               """).evaluate(HATS).asText()).isEqualTo("[{\"Bowler Hat\":50},{\"Trilby hat\":75},{\"Bowler Hat\":60},{\"Cloak\":150}]");
+        }
+
+        @Test
         void arrayOfObjectsTest() {
             assertThat(jsonata("Phone.{type: number}").evaluate(OBJECT).multi().asText()).containsExactly(
                                                                                                           "{\"home\":\"0203 544 1234\"}",

@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
-public record BuiltInSumJSONataFunction(FieldPathJSONataFunction extractor) implements JSONataFunction {
+public record BuiltInSumJSONataFunction(JSONataFunction extractor) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {

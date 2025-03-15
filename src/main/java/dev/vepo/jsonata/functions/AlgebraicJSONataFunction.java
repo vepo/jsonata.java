@@ -2,7 +2,6 @@ package dev.vepo.jsonata.functions;
 
 import static dev.vepo.jsonata.functions.json.JsonFactory.numberValue;
 
-import java.util.List;
 import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -10,15 +9,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
-public record AlgebraicJSONataFunction(AlgebraicOperator operator, List<JSONataFunction> rightExpressions) implements JSONataFunction {
+public record AlgebraicJSONataFunction(JSONataFunction left, AlgebraicOperator operator, JSONataFunction right) implements JSONataFunction {
 
     @Override
     public Data map(Data original, Data current) {
-        var right = rightExpressions.stream()
-                                    .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                                    .map(f -> f.map(original, original).toJson())
-                                    .orElse(current.toJson());
-        return execute(current.toJson(), right);
+        return execute(left.map(original, current).toJson(), right.map(original, current).toJson());
     }
 
     private Data execute(JsonNode left, JsonNode right) {

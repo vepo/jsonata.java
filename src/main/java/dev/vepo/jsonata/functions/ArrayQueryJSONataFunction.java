@@ -16,7 +16,7 @@ public record ArrayQueryJSONataFunction(JSONataFunction mapFunction, JSONataFunc
                 var currData = mapped.at(i);
                 var currResult = filterFunction.map(original, currData).toJson();
                 if (currResult.isBoolean() && currResult.asBoolean()) {
-                    filteredData.add(current.at(i));
+                    filteredData.add(mapped.at(i));
                 }
             }
             return new GroupedData(filteredData);
