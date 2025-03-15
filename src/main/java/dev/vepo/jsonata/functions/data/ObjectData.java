@@ -59,6 +59,11 @@ public class ObjectData implements Data {
     }
 
     @Override
+    public boolean isList() {
+        return false;
+    }
+
+    @Override
     public boolean isEmpty() {
         return false;
     }

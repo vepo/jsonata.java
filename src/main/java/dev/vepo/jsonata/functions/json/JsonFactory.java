@@ -54,6 +54,10 @@ public class JsonFactory {
         return new ObjectData(mapper.getNodeFactory().numberNode(value));
     }
 
+    public static Data numberValue(Float value) {
+        return new ObjectData(mapper.getNodeFactory().numberNode(value));
+    }
+
     public static Data numberValue(Double value) {
         return new ObjectData(mapper.getNodeFactory().numberNode(value));
     }
