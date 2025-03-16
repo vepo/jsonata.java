@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -26,6 +27,7 @@ import dev.vepo.jsonata.functions.ArrayConstructorJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayIndexJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayQueryJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayRangeJSONataFunction;
+import dev.vepo.jsonata.functions.BockContext;
 import dev.vepo.jsonata.functions.BooleanExpressionJSONataFunction;
 import dev.vepo.jsonata.functions.BooleanOperator;
 import dev.vepo.jsonata.functions.BuiltInSortJSONataFunction;
@@ -43,6 +45,7 @@ import dev.vepo.jsonata.functions.JoinJSONataFunction;
 import dev.vepo.jsonata.functions.ObjectBuilderJSONataFunction;
 import dev.vepo.jsonata.functions.ObjectMapperJSONataFunction;
 import dev.vepo.jsonata.functions.StringConcatJSONataFunction;
+import dev.vepo.jsonata.functions.UserDefinedFunctionJSONataFunction;
 import dev.vepo.jsonata.functions.WildcardJSONataFunction;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarBaseListener;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AlgebraicExpressionContext;
@@ -50,6 +53,7 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AllDescendantSe
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayConstructorContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayIndexQueryContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayQueryContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.BlockExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.BooleanCompareContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.BooleanExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.BooleanValueContext;
@@ -73,19 +77,18 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RangeQueryConte
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RootPathContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.StringValueContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ToArrayContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.VariableAssignmentContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.VariableUsageContext;
 
 public class JSONataGrammarListener extends JSONataGrammarBaseListener {
-    private static final Logger logger = LoggerFactory.getLogger(JSONataGrammarListener.class);
-
     public enum BuiltInFunction {
         SORT("$sort"),
         SUM("$sum");
 
-        public static BuiltInFunction get(String name) {
+        public static Optional<BuiltInFunction> get(String name) {
             return Stream.of(values())
                          .filter(n -> n.name.compareToIgnoreCase(name) == 0)
-                         .findAny()
-                         .orElseThrow(() -> new JSONataException(String.format("Unknown function!!! function=%s", name)));
+                         .findAny();
         }
 
         private String name;
@@ -94,6 +97,8 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
             this.name = name;
         }
     }
+
+    private static final Logger logger = LoggerFactory.getLogger(JSONataGrammarListener.class);
 
     private static String fieldName2Text(TerminalNode ctx) {
         if (!ctx.getText().startsWith("`")) {
@@ -113,12 +118,13 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     }
 
     private final Deque<JSONataFunction> expressions;
-
     private final Deque<DeclaredFunction> functionsDeclared;
+    private final Queue<BockContext> blocks;
 
     public JSONataGrammarListener() {
         this.expressions = new LinkedList<>();
         this.functionsDeclared = new LinkedList<>();
+        this.blocks = new LinkedList<>();
     }
 
     @Override
@@ -131,15 +137,28 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                                                this.expressions.removeLast()));
     }
 
+    private List<JSONataFunction> previous(int size) {
+        var fns = new ArrayList<JSONataFunction>(size);
+        for (int i = 0; i < size; ++i) {
+            fns.addFirst(expressions.removeLast());
+        }
+        return fns;
+    }
+
     @Override
     public void exitFunctionCall(FunctionCallContext ctx) {
         logger.atInfo().setMessage("Function call! {}").addArgument(ctx::getText).log();
-        var valueProvider = expressions.removeLast();
         Optional<DeclaredFunction> maybeFn = functionsDeclared.isEmpty() ? Optional.empty() : Optional.of(functionsDeclared.removeLast());
-        expressions.offer(switch (BuiltInFunction.get(ctx.functionStatement().IDENTIFIER().getText())) {
-            case SORT -> new BuiltInSortJSONataFunction(valueProvider, maybeFn);
-            case SUM -> new BuiltInSumJSONataFunction(valueProvider);
-        });
+        var fnName = ctx.functionStatement().IDENTIFIER().getText();
+        expressions.offer(BuiltInFunction.get(fnName)
+                                         .map(fn -> switch (fn) {
+                                             case SORT -> new BuiltInSortJSONataFunction(expressions.removeLast(), maybeFn);
+                                             case SUM -> new BuiltInSumJSONataFunction(expressions.removeLast());
+                                         })
+                                         .orElseGet(() -> this.blocks.peek().function(fnName)
+                                                                     .map(fn -> new UserDefinedFunctionJSONataFunction(previous(fn.parameterNames().size()),
+                                                                                                                       fn))
+                                                                     .orElseThrow(() -> new JSONataException("Function not found: " + fnName))));
     }
 
     @Override
@@ -151,7 +170,13 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     @Override
     public void exitIdentifier(IdentifierContext ctx) {
         logger.atInfo().setMessage("Identifier! {}").addArgument(ctx::getText).log();
-        expressions.offer(new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER())));
+        if (blocks.isEmpty()) {
+            expressions.offer(new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER())));
+        } else {
+            expressions.offer(Objects.requireNonNull(this.blocks.peek(), "Variable should only be defined in blocks!")
+                                     .variable(ctx.IDENTIFIER().getText())
+                                     .orElseGet(() -> new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER()))));
+        }
     }
 
     @Override
@@ -330,6 +355,42 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         expressions.offer(new JoinJSONataFunction(previousFunction, new ObjectBuilderJSONataFunction(fieldList)));
     }
 
+    @Override
+    public void exitObjectBuilder(ObjectBuilderContext ctx) {
+        logger.atInfo().setMessage("Object builder! {}").addArgument(ctx::getText).log();
+        expressions.offer(new ObjectBuilderJSONataFunction(objectFields(ctx.fieldList())));
+    }
+
+    @Override
+    public void enterBlockExpression(BlockExpressionContext ctx) {
+        logger.atInfo().setMessage("Block expression! {}").addArgument(ctx::getText).log();
+        this.blocks.offer(new BockContext());
+    }
+
+    @Override
+    public void exitVariableUsage(VariableUsageContext ctx) {
+        logger.atInfo().setMessage("Variable usage! {}").addArgument(ctx::getText).log();
+        expressions.offer(Objects.requireNonNull(this.blocks.peek(), "Variable should only be defined in blocks!")
+                                 .variable(ctx.IDENTIFIER().getText())
+                                 .orElseThrow(() -> new JSONataException("Variable not found: " + ctx.IDENTIFIER().getText())));
+    }
+
+    @Override
+    public void exitVariableAssignment(VariableAssignmentContext ctx) {
+        logger.atInfo().setMessage("Variable assignment! {}").addArgument(ctx::getText).log();
+        if (Objects.nonNull(ctx.expression())) {
+            Objects.requireNonNull(this.blocks.peek(), "Variable should only be defined in blocks!")
+                   .defineVariable(ctx.IDENTIFIER().getText(), expressions.removeLast());
+        } else {
+            Objects.requireNonNull(this.blocks.peek(), "Variable should only be defined in blocks!")
+                   .defineFunction(ctx.IDENTIFIER().getText(), functionsDeclared.removeLast());
+        }
+    }
+
+    public List<JSONataFunction> getExpressions() {
+        return expressions.stream().toList();
+    }
+
     private List<FieldContent> objectFields(FieldListContext ctx) {
         var expresisonCounter = ctx.expression().size();
         var fieldBuilder = new ArrayList<FieldContent>(expresisonCounter);
@@ -339,15 +400,5 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
             fieldBuilder.addFirst(new FieldContent(fieldFn, valueFn, Objects.isNull(ctx.uniqueObj(i).DOLLAR())));
         }
         return fieldBuilder;
-    }
-
-    @Override
-    public void exitObjectBuilder(ObjectBuilderContext ctx) {
-        logger.atInfo().setMessage("Object builder! {}").addArgument(ctx::getText).log();
-        expressions.offer(new ObjectBuilderJSONataFunction(objectFields(ctx.fieldList())));
-    }
-
-    public List<JSONataFunction> getExpressions() {
-        return expressions.stream().toList();
     }
 }

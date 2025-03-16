@@ -8,6 +8,7 @@ object: OBJ_OPEN fieldList OBJ_CLOSE                                          # 
 expression:
     functionStatement                                                         # functionCall 
     | ROOT                                                                    # rootPath
+    | DOLLAR IDENTIFIER                                                       # variableUsage
     | IDENTIFIER                                                              # identifier 
     | '*'                                                                     # fieldValues
     | DESCEND                                                                 # allDescendantSearch
@@ -26,6 +27,8 @@ expression:
     | expression '?' expression (':' expression)?                             # inlineIfExpression 
     | expression '&' expression                                               # concatValues
     | '(' expression ')'                                                      # contextValue
+    | '(' expression ';' (expression ';')+ ')'                                # blockExpression
+    | IDENTIFIER VAR_ASSIGN (expression|functionDeclaration)                  # variableAssignment
     | STRING                                                                  # stringValue
     | NUMBER                                                                  # numberValue
     | FLOAT                                                                   # floatValue
@@ -51,6 +54,7 @@ ARR_OPEN: '[';
 ARR_CLOSE: ']';
 OBJ_OPEN: '{';
 OBJ_CLOSE: '}';
+VAR_ASSIGN : ':=' ;
 uniqueObj: (DOLLAR DOT)?;
 
 IDENTIFIER: [\p{L}_$] [\p{L}0-9_$]*
@@ -74,4 +78,5 @@ fragment HEX : [0-9a-fA-F];
 DOT: '.';
 
 // Just ignore WhiteSpaces
+COMMENT:  '/*' .*? '*/' -> skip;      // allow comments
 WS: [ \t\r\n]+ -> skip;

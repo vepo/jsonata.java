@@ -404,6 +404,40 @@ class JSONataTest {
     @Nested
     class Programming {
         @Test
+        void commentsDefitionTest() {
+            assertThat(jsonata("""
+                               /* This is a comment */
+                               5 + 5
+                               """).evaluate("{}").asInt()).isEqualTo(10);
+            assertThat(jsonata("""
+                               /* This is a comment
+                                * with multiple lines
+                                */
+                               5 + 5
+                               """).evaluate("{}").asInt()).isEqualTo(10);
+        }
+
+        // @Disabled
+        @Test
+        void variableDefinitionTest() {
+            assertThat(jsonata("""
+                               (
+                                 $volume := function($l, $w, $h){ $l * $w * $h };
+                                 $volume(10, 10, 5);
+                               )
+                               """).evaluate("{}").asInt()).isEqualTo(500);
+            assertThat(jsonata("""
+                               (
+                                 $volume := function($l, $w, $h){ $l * $w * $h };
+                                 $v1 := 10;
+                                 $x2 := 5;
+                                 $abcdefghijlmnopqrstuvxz := 10000;
+                                 $volume($v1, $x2, $abcdefghijlmnopqrstuvxz);
+                               )
+                               """).evaluate("{}").asInt()).isEqualTo(500_000);
+        }
+
+        @Test
         void conditionalInlineTest() {
             assertThat(jsonata("""
                                Account.Order.Product.{
