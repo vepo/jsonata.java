@@ -76,6 +76,8 @@ class JSONataTest {
             assertThat(jsonata("(Phone.number)[0]").evaluate(OBJECT).asText()).isEqualTo("0203 544 1234");
             assertThat(jsonata("Phone[[0..1]]").evaluate(OBJECT).multi().asText()).containsExactly("{\"type\":\"home\",\"number\":\"0203 544 1234\"}",
                                                                                                    "{\"type\":\"office\",\"number\":\"01962 001234\"}");
+            assertThat(jsonata("Address[[0..3]]").evaluate(OBJECT).asText()).isEqualTo("{\"Street\":\"Hursley Park\",\"City\":\"Winchester\",\"Postcode\":\"SO21 2JN\"}");
+            assertThat(jsonata("Address[[1..3]]").evaluate(OBJECT).isEmpty()).isTrue();
         }
     }
 
