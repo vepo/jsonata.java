@@ -301,6 +301,8 @@ class JSONataTest {
             assertThat(jsonata("$sum(Numbers)").evaluate(NUMBERS).asInt()).isEqualTo(67);
             assertThat(jsonata("$sum(Numbers)").evaluate("{}").isEmpty()).isTrue();
             assertThat(jsonata("$sum(Numbers)").evaluate("{\"Numbers\": []}").asInt()).isZero();
+            assertThat(jsonata("$sum(Account.Order.Product.Price)").evaluate(INVOICE).asDouble()).isEqualTo(198.56);
+            assertThat(jsonata("$sum(Account.Order.Product.(Price*Quantity))").evaluate(INVOICE).asDouble()).isEqualTo(336.36);
         }
     }
 
