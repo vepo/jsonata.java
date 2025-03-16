@@ -28,7 +28,8 @@ public record ObjectMapperJSONataFunction(List<FieldContent> contents) implement
                 var builder = JsonFactory.objectBuilder();
                 contents.forEach(content -> {
                     builder.set(content.name().map(current, current.at(i)).toJson().asText(),
-                                content.value().map(current, current.at(i)));
+                                content.value().map(current, current.at(i)),
+                                content.merge());
                 });
                 newContents.add(builder.root());
             });

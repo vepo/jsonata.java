@@ -18,11 +18,12 @@ public record ObjectBuilderJSONataFunction(List<FieldContent> contents) implemen
                             content.value().map(original, current));
             });
             return builder.build();
-        } else if (current.isArray()) {
+        } else if (current.isArray() || current.isList()) {
             var builder = objectBuilder(true);
             range(0, current.length()).forEach(i -> contents.forEach(content -> {
                 builder.set(content.name().map(original, current.at(i)).toJson().asText(),
-                            content.value().map(original, current.at(i)));
+                            content.value().map(original, current.at(i)),
+                            content.merge());
             }));
             return builder.build();
         } else {

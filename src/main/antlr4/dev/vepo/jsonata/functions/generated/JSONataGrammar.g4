@@ -2,7 +2,7 @@ grammar JSONataGrammar;
 
 expressions: (expression+ | object) EOF;
 
-object: OBJ_OPEN fieldList OBJ_CLOSE                                            # objectBuilder
+object: OBJ_OPEN fieldList OBJ_CLOSE                                          # objectBuilder
     ;
 
 expression:
@@ -12,7 +12,7 @@ expression:
     | '*'                                                                     # fieldValues
     | DESCEND                                                                 # allDescendantSearch
     | DOLLAR                                                                  # contextReferece
-    | ARR_OPEN expressionList ARR_CLOSE                                       # arrayConstructor
+    | ARR_OPEN expressionList ARR_CLOSE                                       # arrayConstructor    
     | expression DOT OBJ_OPEN fieldList OBJ_CLOSE                             # objectMapper
     | expression OBJ_OPEN fieldList OBJ_CLOSE                                 # objectConstructor
     | expression DOT expression                                               # path
@@ -39,7 +39,7 @@ functionDeclaration:
     'function' '(' IDENTIFIER (',' IDENTIFIER)* ')' '{' expression+ '}' # functionDeclarationBuilder
     ;
 expressionList: expression (',' expression)*;
-fieldList: expression ':' expOrObject  (',' expression ':' expOrObject)*;
+fieldList: expression ':' uniqueObj expOrObject  (',' expression ':' uniqueObj expOrObject)*;
 expOrObject: expression | object;
 
 rangePredicate: ARR_OPEN ARR_OPEN NUMBER '..' NUMBER  ARR_CLOSE ARR_CLOSE;
@@ -51,6 +51,7 @@ ARR_OPEN: '[';
 ARR_CLOSE: ']';
 OBJ_OPEN: '{';
 OBJ_CLOSE: '}';
+uniqueObj: (DOLLAR DOT)?;
 
 IDENTIFIER: [\p{L}_$] [\p{L}0-9_$]*
 	        | BACK_QUOTE ~[`]* BACK_QUOTE;

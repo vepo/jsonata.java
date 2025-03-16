@@ -76,7 +76,8 @@ class JSONataTest {
             assertThat(jsonata("(Phone.number)[0]").evaluate(OBJECT).asText()).isEqualTo("0203 544 1234");
             assertThat(jsonata("Phone[[0..1]]").evaluate(OBJECT).multi().asText()).containsExactly("{\"type\":\"home\",\"number\":\"0203 544 1234\"}",
                                                                                                    "{\"type\":\"office\",\"number\":\"01962 001234\"}");
-            assertThat(jsonata("Address[[0..3]]").evaluate(OBJECT).asText()).isEqualTo("{\"Street\":\"Hursley Park\",\"City\":\"Winchester\",\"Postcode\":\"SO21 2JN\"}");
+            assertThat(jsonata("Address[[0..3]]").evaluate(OBJECT)
+                                                 .asText()).isEqualTo("{\"Street\":\"Hursley Park\",\"City\":\"Winchester\",\"Postcode\":\"SO21 2JN\"}");
             assertThat(jsonata("Address[[1..3]]").evaluate(OBJECT).isEmpty()).isTrue();
         }
     }
@@ -174,13 +175,31 @@ class JSONataTest {
 
     @Nested
     class ObjectConstructor {
+
         @Test
-        void objectMapper() {
+        void groupTest() {
+            assertThat(jsonata("Account.Order.Product{`Product Name`: Price}").evaluate(INVOICE)
+                                                                              .asText()).isEqualTo("{\"Bowler Hat\":[34.45,34.45],\"Trilby hat\":21.67,\"Cloak\":107.99}");
+            assertThat(jsonata("""
+                               Account.Order.Product {
+                                   `Product Name`: {"Price": Price, "Qty": Quantity}
+                               }
+                               """).evaluate(INVOICE)
+                                   .asText()).isEqualTo("{\"Bowler Hat\":{\"Price\":[34.45,34.45],\"Qty\":[2,4]},\"Trilby hat\":{\"Price\":21.67,\"Qty\":1},\"Cloak\":{\"Price\":107.99,\"Qty\":1}}");
+            assertThat(jsonata("""
+                               Account.Order.Product {
+                                `Product Name`: $.{"Price": Price, "Qty": Quantity}
+                               }
+                               """).evaluate(INVOICE).asText()).isEqualTo("{\"Bowler Hat\":[{\"Price\":34.45,\"Qty\":2},{\"Price\":34.45,\"Qty\":4}],\"Trilby hat\":{\"Price\":21.67,\"Qty\":1},\"Cloak\":{\"Price\":107.99,\"Qty\":1}}");
+        }
+
+        @Test
+        void objectMapperTest() {
             assertThat(jsonata("""
                                Account.Order.Product.{
                                    `Product Name`: Price
                                }
-                               """).evaluate(HATS).asText()).isEqualTo("[{\"Bowler Hat\":50},{\"Trilby hat\":75},{\"Bowler Hat\":60},{\"Cloak\":150}]");
+                               """).evaluate(INVOICE).asText()).isEqualTo("[{\"Bowler Hat\":34.45},{\"Trilby hat\":21.67},{\"Bowler Hat\":34.45},{\"Cloak\":107.99}]");
         }
 
         @Test
@@ -221,15 +240,16 @@ class JSONataTest {
         @Test
         void literalTest() {
             assertThat(jsonata("""
-                {
-                    "string": "Hello World!",
-                    "integer": 3,
-                    "float": 2.4,
-                    "binary": 175e-2,
-                    "boolean": true,
-                    "null": null
-                }
-            """).evaluate("{}").asText()).isEqualTo("{\"string\":\"Hello World!\",\"integer\":3,\"float\":2.4,\"binary\":1.75,\"boolean\":true,\"null\":null}");
+                                   {
+                                       "string": "Hello World!",
+                                       "integer": 3,
+                                       "float": 2.4,
+                                       "binary": 175e-2,
+                                       "boolean": true,
+                                       "null": null
+                                   }
+                               """).evaluate("{}")
+                                   .asText()).isEqualTo("{\"string\":\"Hello World!\",\"integer\":3,\"float\":2.4,\"binary\":1.75,\"boolean\":true,\"null\":null}");
         }
     }
 
@@ -381,7 +401,8 @@ class JSONataTest {
                                Account.Order.Product.{
                                    `Product Name`: $.Price > 100 ? "Premium" : "Basic"
                                }
-                               """).evaluate(HATS).asText()).isEqualTo("[{\"Bowler Hat\":\"Basic\"},{\"Trilby hat\":\"Basic\"},{\"Bowler Hat\":\"Basic\"},{\"Cloak\":\"Premium\"}]");
+                               """).evaluate(INVOICE)
+                                   .asText()).isEqualTo("[{\"Bowler Hat\":\"Basic\"},{\"Trilby hat\":\"Basic\"},{\"Bowler Hat\":\"Basic\"},{\"Cloak\":\"Premium\"}]");
         }
     }
 
@@ -404,65 +425,82 @@ class JSONataTest {
                                    .asText()).isEqualTo("{\"FirstName\":\"Fred\",\"Surname\":\"Smith\",\"Age\":28,\"Address\":{\"Street\":\"Hursley Park\",\"City\":\"Winchester\",\"Postcode\":\"SO21 2JN\"}}");
         }
     }
-    private static final String HATS = """
-                                       {
-                                         "Account": {
-                                           "AccountID": "ACC12345",
-                                           "Customer": {
-                                             "Name": "John Doe",
-                                             "Email": "john.doe@example.com",
-                                             "Address": {
-                                               "Street": "123 Main St",
-                                               "City": "Anytown",
-                                               "State": "CA",
-                                               "Zip": "90210"
-                                             }
-                                           },
-                                           "Order": [
-                                             {
-                                               "OrderID": "ORD67890",
-                                               "OrderDate": "2023-10-01",
-                                               "Product": [
-                                                 {
-                                                   "ProductID": "PROD001",
-                                                   "Product Name": "Bowler Hat",
-                                                   "Category": "Headwear",
-                                                   "Price": 50,
-                                                   "Quantity": 2
-                                                 },
-                                                 {
-                                                   "ProductID": "PROD002",
-                                                   "Product Name": "Trilby hat",
-                                                   "Category": "Headwear",
-                                                   "Price": 75,
-                                                   "Quantity": 1
-                                                 }
-                                               ]
-                                             },
-                                             {
-                                               "OrderID": "ORD67891",
-                                               "OrderDate": "2023-10-05",
-                                               "Product": [
-                                                 {
-                                                   "ProductID": "PROD001",
-                                                   "Product Name": "Bowler Hat",
-                                                   "Category": "Headwear",
-                                                   "Price": 60,
-                                                   "Quantity": 1
-                                                 },
-                                                 {
-                                                   "ProductID": "PROD003",
-                                                   "Product Name": "Cloak",
-                                                   "Category": "Clothing",
-                                                   "Price": 150,
-                                                   "Quantity": 1
-                                                 }
-                                               ]
-                                             }
-                                           ]
-                                         }
-                                       }
-                                       """;
+
+    private static final String INVOICE = """
+                                          {
+                                            "Account": {
+                                              "Account Name": "Firefly",
+                                              "Order": [
+                                                {
+                                                  "OrderID": "order103",
+                                                  "Product": [
+                                                    {
+                                                      "Product Name": "Bowler Hat",
+                                                      "ProductID": 858383,
+                                                      "SKU": "0406654608",
+                                                      "Description": {
+                                                        "Colour": "Purple",
+                                                        "Width": 300,
+                                                        "Height": 200,
+                                                        "Depth": 210,
+                                                        "Weight": 0.75
+                                                      },
+                                                      "Price": 34.45,
+                                                      "Quantity": 2
+                                                    },
+                                                    {
+                                                      "Product Name": "Trilby hat",
+                                                      "ProductID": 858236,
+                                                      "SKU": "0406634348",
+                                                      "Description": {
+                                                        "Colour": "Orange",
+                                                        "Width": 300,
+                                                        "Height": 200,
+                                                        "Depth": 210,
+                                                        "Weight": 0.6
+                                                      },
+                                                      "Price": 21.67,
+                                                      "Quantity": 1
+                                                    }
+                                                  ]
+                                                },
+                                                {
+                                                  "OrderID": "order104",
+                                                  "Product": [
+                                                    {
+                                                      "Product Name": "Bowler Hat",
+                                                      "ProductID": 858383,
+                                                      "SKU": "040657863",
+                                                      "Description": {
+                                                        "Colour": "Purple",
+                                                        "Width": 300,
+                                                        "Height": 200,
+                                                        "Depth": 210,
+                                                        "Weight": 0.75
+                                                      },
+                                                      "Price": 34.45,
+                                                      "Quantity": 4
+                                                    },
+                                                    {
+                                                      "ProductID": 345664,
+                                                      "SKU": "0406654603",
+                                                      "Product Name": "Cloak",
+                                                      "Description": {
+                                                        "Colour": "Black",
+                                                        "Width": 30,
+                                                        "Height": 20,
+                                                        "Depth": 210,
+                                                        "Weight": 2
+                                                      },
+                                                      "Price": 107.99,
+                                                      "Quantity": 1
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          }
+                                          """;
 
     private static final String ACCOUNT = """
                                           {

@@ -76,21 +76,12 @@ public class JsonFactory {
         return array;
     }
 
-    private JsonFactory() {
-    }
+    private JsonFactory() {}
 
-    public static class ObjectBuilder {
-
-        private final ObjectNode root;
-        private final boolean groupRecordsInArray;
+    public static record ObjectBuilder(ObjectNode root, boolean groupRecordsInArray) {
 
         private ObjectBuilder(ObjectNode root) {
             this(root, false);
-        }
-
-        private ObjectBuilder(ObjectNode root, boolean groupRecordsInArray) {
-            this.root = root;
-            this.groupRecordsInArray = groupRecordsInArray;
         }
 
         public Data build() {
@@ -98,9 +89,15 @@ public class JsonFactory {
         }
 
         public void set(String field, Data value) {
+            set(field, value, false);
+        }
+
+        public void set(String field, Data value, boolean merge) {
             if (groupRecordsInArray && root.has(field)) {
                 var previousValue = root.get(field);
-                if (previousValue.isArray()) {
+                if (merge && previousValue.isObject()) {
+                    merge((ObjectNode) previousValue, (ObjectNode) value.toJson());
+                } else if (previousValue.isArray()) {
                     var arrValue = value.toJson();
                     if (arrValue.isArray()) {
                         ((ArrayNode) previousValue).addAll((ArrayNode) arrValue);
@@ -118,6 +115,33 @@ public class JsonFactory {
             }
         }
 
+        private void merge(ObjectNode prevValue, ObjectNode newValue) {
+            newValue.fields()
+                    .forEachRemaining(field -> {
+                        var fieldName = field.getKey();
+                        var fieldValue = field.getValue();
+                        if (prevValue.has(fieldName)) {
+                            var prevField = prevValue.get(fieldName);
+                            if (prevField.isObject()) {
+                                merge((ObjectNode) prevField, (ObjectNode) fieldValue);
+                            } else if (prevField.isArray()) {
+                                if (fieldValue.isArray()) {
+                                    ((ArrayNode) prevField).addAll((ArrayNode) fieldValue);
+                                } else {
+                                    ((ArrayNode) prevField).add(fieldValue);
+                                }
+                            } else {
+                                var arr = root.arrayNode();
+                                arr.add(prevField);
+                                arr.add(fieldValue);
+                                prevValue.set(fieldName, arr);
+                            }
+                        } else {
+                            prevValue.set(fieldName, fieldValue);
+                        }
+                    });
+        }
+
         public void add(String field, Data value) {
             if (root.has(field)) {
                 ((ArrayNode) root.get(field)).add(value.toJson());
@@ -126,10 +150,6 @@ public class JsonFactory {
                 arr.add(value.toJson());
                 root.set(field, arr);
             }
-        }
-
-        public JsonNode root() {
-            return root;
         }
     }
 
