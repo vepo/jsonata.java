@@ -2,7 +2,11 @@ package dev.vepo.jsonata.functions;
 
 import static dev.vepo.jsonata.functions.json.JsonFactory.numberValue;
 
+import java.util.Objects;
 import java.util.stream.IntStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -11,13 +15,17 @@ import dev.vepo.jsonata.functions.data.GroupedData;
 
 public record AlgebraicJSONataFunction(JSONataFunction left, AlgebraicOperator operator, JSONataFunction right) implements JSONataFunction {
 
+    private static final Logger logger = LoggerFactory.getLogger(AlgebraicJSONataFunction.class);
     @Override
     public Data map(Data original, Data current) {
         return execute(left.map(original, current).toJson(), right.map(original, current).toJson());
     }
 
     private Data execute(JsonNode left, JsonNode right) {
-        if (left.isArray() && right.isArray()) {
+        logger.atDebug().log("Executing {} {} {}", left, operator, right);
+        if (Objects.isNull(left) || Objects.isNull(right) || left.isNull() || right.isNull()) {
+            return JSONataFunction.empty();
+        } else if (left.isArray() && right.isArray()) {
             if (left.size() != right.size()) {
                 throw new IllegalArgumentException("Arrays must have the same size!");
             }

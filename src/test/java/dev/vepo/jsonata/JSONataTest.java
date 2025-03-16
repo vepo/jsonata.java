@@ -190,7 +190,12 @@ class JSONataTest {
                                Account.Order.Product {
                                 `Product Name`: $.{"Price": Price, "Qty": Quantity}
                                }
-                               """).evaluate(INVOICE).asText()).isEqualTo("{\"Bowler Hat\":[{\"Price\":34.45,\"Qty\":2},{\"Price\":34.45,\"Qty\":4}],\"Trilby hat\":{\"Price\":21.67,\"Qty\":1},\"Cloak\":{\"Price\":107.99,\"Qty\":1}}");
+                               """).evaluate(INVOICE)
+                                   .asText()).isEqualTo("{\"Bowler Hat\":[{\"Price\":34.45,\"Qty\":2},{\"Price\":34.45,\"Qty\":4}],\"Trilby hat\":{\"Price\":21.67,\"Qty\":1},\"Cloak\":{\"Price\":107.99,\"Qty\":1}}");
+            assertThat(jsonata("Account.Order.Product{`Product Name`: $.(Price*Quantity)}").evaluate(INVOICE)
+                                                                                           .asText()).isEqualTo("{\"Bowler Hat\":[68.9,137.8],\"Trilby hat\":21.67,\"Cloak\":107.99}");
+            assertThat(jsonata("Account.Order.Product{`Product Name`: $sum($.(Price*Quantity))}").evaluate(INVOICE)
+                                                                                                 .asText()).isEqualTo("{\"Bowler Hat\":206.7,\"Trilby hat\":21.67,\"Cloak\":107.99}");
         }
 
         @Test
@@ -199,7 +204,8 @@ class JSONataTest {
                                Account.Order.Product.{
                                    `Product Name`: Price
                                }
-                               """).evaluate(INVOICE).asText()).isEqualTo("[{\"Bowler Hat\":34.45},{\"Trilby hat\":21.67},{\"Bowler Hat\":34.45},{\"Cloak\":107.99}]");
+                               """).evaluate(INVOICE)
+                                   .asText()).isEqualTo("[{\"Bowler Hat\":34.45},{\"Trilby hat\":21.67},{\"Bowler Hat\":34.45},{\"Cloak\":107.99}]");
         }
 
         @Test

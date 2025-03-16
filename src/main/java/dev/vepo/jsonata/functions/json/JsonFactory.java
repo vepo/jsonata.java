@@ -2,6 +2,7 @@ package dev.vepo.jsonata.functions.json;
 
 import static java.util.Spliterators.spliteratorUnknownSize;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -51,6 +52,13 @@ public class JsonFactory {
     }
 
     public static Data numberValue(Integer value) {
+        return new ObjectData(mapper.getNodeFactory().numberNode(value));
+    }
+    public static Data numberValue(BigDecimal value) {
+        return new ObjectData(mapper.getNodeFactory().numberNode(value));
+    }
+
+    public static Data numberValue(Long value) {
         return new ObjectData(mapper.getNodeFactory().numberNode(value));
     }
 
