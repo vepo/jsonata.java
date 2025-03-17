@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.slf4j.Logger;
@@ -88,29 +87,7 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.VariableAssignm
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.VariableUsageContext;
 
 public class JSONataGrammarListener extends JSONataGrammarBaseListener {
-    public enum BuiltInFunction {
-        SORT("$sort"),
-        SUM("$sum"),
-        STRING("$string"),
-        LENGTH("$length"),
-        SUBSTRING("$substring"),
-        SUBSTRINGBEFORE("$substringBefore"),
-        SUBSTRINGAFTER("$substringAfter"),
-        LOWERCASE("$lowercase"),
-        UPPERCASE("$uppercase");
-
-        public static Optional<BuiltInFunction> get(String name) {
-            return Stream.of(values())
-                         .filter(n -> n.name.compareToIgnoreCase(name) == 0)
-                         .findAny();
-        }
-
-        private String name;
-
-        BuiltInFunction(String name) {
-            this.name = name;
-        }
-    }
+    private static final String VARIABLE_NOT_DEFINED_IN_BLOCK = "Variable should only be defined in blocks!";
 
     private static final Logger logger = LoggerFactory.getLogger(JSONataGrammarListener.class);
 
@@ -151,14 +128,6 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                                                this.expressions.removeLast()));
     }
 
-    private List<JSONataFunction> previous(int size) {
-        var fns = new ArrayList<JSONataFunction>(size);
-        for (int i = 0; i < size; ++i) {
-            fns.addFirst(expressions.removeLast());
-        }
-        return fns;
-    }
-
     @Override
     public void exitFunctionCall(FunctionCallContext ctx) {
         logger.atInfo().setMessage("Function call! {}").addArgument(ctx::getText).log();
@@ -183,10 +152,10 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                              case SUBSTRING -> new SubstringJSONataFunction(previous(ctx.functionStatement()
                                                                                                         .parameterStatement()
                                                                                                         .size()));
-                                             case SUBSTRINGBEFORE -> new SubstringBeforeJSONataFunction(previous(ctx.functionStatement()
+                                             case SUBSTRING_BEFORE -> new SubstringBeforeJSONataFunction(previous(ctx.functionStatement()
                                                                                                                     .parameterStatement()
                                                                                                                     .size()));
-                                             case SUBSTRINGAFTER -> new SubstringAfterJSONataFunction(previous(ctx.functionStatement()
+                                             case SUBSTRING_AFTER -> new SubstringAfterJSONataFunction(previous(ctx.functionStatement()
                                                                                                                   .parameterStatement()
                                                                                                                   .size()));
                                              case LOWERCASE -> new LowecaseJSONataFunction(previous(ctx.functionStatement()
@@ -215,7 +184,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         if (blocks.isEmpty()) {
             expressions.offer(new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER())));
         } else {
-            expressions.offer(Objects.requireNonNull(this.blocks.peek(), "Variable should only be defined in blocks!")
+            expressions.offer(Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK)
                                      .variable(ctx.IDENTIFIER().getText())
                                      .orElseGet(() -> new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER()))));
         }
@@ -412,7 +381,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     @Override
     public void exitVariableUsage(VariableUsageContext ctx) {
         logger.atInfo().setMessage("Variable usage! {}").addArgument(ctx::getText).log();
-        expressions.offer(Objects.requireNonNull(this.blocks.peek(), "Variable should only be defined in blocks!")
+        expressions.offer(Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK)
                                  .variable(ctx.IDENTIFIER().getText())
                                  .orElseThrow(() -> new JSONataException("Variable not found: " + ctx.IDENTIFIER().getText())));
     }
@@ -421,16 +390,24 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     public void exitVariableAssignment(VariableAssignmentContext ctx) {
         logger.atInfo().setMessage("Variable assignment! {}").addArgument(ctx::getText).log();
         if (Objects.nonNull(ctx.expression())) {
-            Objects.requireNonNull(this.blocks.peek(), "Variable should only be defined in blocks!")
+            Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK)
                    .defineVariable(ctx.IDENTIFIER().getText(), expressions.removeLast());
         } else {
-            Objects.requireNonNull(this.blocks.peek(), "Variable should only be defined in blocks!")
+            Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK)
                    .defineFunction(ctx.IDENTIFIER().getText(), functionsDeclared.removeLast());
         }
     }
 
     public List<JSONataFunction> getExpressions() {
         return expressions.stream().toList();
+    }
+
+    private List<JSONataFunction> previous(int size) {
+        var fns = new ArrayList<JSONataFunction>(size);
+        for (int i = 0; i < size; ++i) {
+            fns.addFirst(expressions.removeLast());
+        }
+        return fns;
     }
 
     private List<FieldContent> objectFields(FieldListContext ctx) {
