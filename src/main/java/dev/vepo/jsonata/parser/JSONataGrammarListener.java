@@ -50,6 +50,7 @@ import dev.vepo.jsonata.functions.StringConcatJSONataFunction;
 import dev.vepo.jsonata.functions.SubstringAfterJSONataFunction;
 import dev.vepo.jsonata.functions.SubstringBeforeJSONataFunction;
 import dev.vepo.jsonata.functions.SubstringJSONataFunction;
+import dev.vepo.jsonata.functions.TrimJSONataFunction;
 import dev.vepo.jsonata.functions.UppercaseJSONataFunction;
 import dev.vepo.jsonata.functions.UserDefinedFunctionJSONataFunction;
 import dev.vepo.jsonata.functions.WildcardJSONataFunction;
@@ -153,17 +154,20 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                                                                                         .parameterStatement()
                                                                                                         .size()));
                                              case SUBSTRING_BEFORE -> new SubstringBeforeJSONataFunction(previous(ctx.functionStatement()
-                                                                                                                    .parameterStatement()
-                                                                                                                    .size()));
+                                                                                                                     .parameterStatement()
+                                                                                                                     .size()));
                                              case SUBSTRING_AFTER -> new SubstringAfterJSONataFunction(previous(ctx.functionStatement()
-                                                                                                                  .parameterStatement()
-                                                                                                                  .size()));
+                                                                                                                   .parameterStatement()
+                                                                                                                   .size()));
                                              case LOWERCASE -> new LowecaseJSONataFunction(previous(ctx.functionStatement()
                                                                                                        .parameterStatement()
                                                                                                        .size()));
                                              case UPPERCASE -> new UppercaseJSONataFunction(previous(ctx.functionStatement()
                                                                                                         .parameterStatement()
                                                                                                         .size()));
+                                             case TRIM -> new TrimJSONataFunction(previous(ctx.functionStatement()
+                                                                                              .parameterStatement()
+                                                                                              .size()));
                                          })
                                          .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
                                                                   .flatMap(block -> block.function(fnName))

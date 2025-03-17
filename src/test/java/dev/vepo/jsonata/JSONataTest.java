@@ -281,6 +281,12 @@ class JSONataTest {
             assertThat(jsonata("$lowercase(\"ABCDEF\")").evaluate("{}").asText()).isEqualTo("abcdef");
         }
 
+
+        @Test 
+        void stringTrimTest() {
+            assertThat(jsonata("$trim(\"   abcdef\t\")").evaluate("{}").asText()).isEqualTo("abcdef");
+        }
+
         @Test
         void sortTest() {
             assertThat(jsonata("""
