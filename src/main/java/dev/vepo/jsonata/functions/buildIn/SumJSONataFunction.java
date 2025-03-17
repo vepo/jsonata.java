@@ -1,4 +1,4 @@
-package dev.vepo.jsonata.functions;
+package dev.vepo.jsonata.functions.buildIn;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -9,15 +9,17 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.vepo.jsonata.functions.JSONataAggregateFunction;
+import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
-public record BuiltInSumJSONataFunction(List<JSONataFunction> providers) implements JSONataAggregateFunction {
-    private static final Logger logger = LoggerFactory.getLogger(BuiltInSumJSONataFunction.class);
+public record SumJSONataFunction(List<JSONataFunction> providers) implements JSONataAggregateFunction {
+    private static final Logger logger = LoggerFactory.getLogger(SumJSONataFunction.class);
 
-    public BuiltInSumJSONataFunction {
+    public SumJSONataFunction {
         if (providers.size() != 1) {
-            throw new IllegalArgumentException("Sum function must have 1 argument");
+            throw new IllegalArgumentException("$sum function must have 1 argument");
         }
     }
 

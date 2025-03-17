@@ -1,14 +1,15 @@
-package dev.vepo.jsonata.functions;
+package dev.vepo.jsonata.functions.buildIn;
 
 import java.util.List;
 
+import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
 public record LowecaseJSONataFunction(List<JSONataFunction> providers) implements JSONataFunction {
     public LowecaseJSONataFunction {
         if (providers.size() != 1) {
-            throw new IllegalArgumentException("StringCast function must have 1 argument");
+            throw new IllegalArgumentException("$lowecase function must have 1 argument!");
         }
     }
 

@@ -29,8 +29,6 @@ import dev.vepo.jsonata.functions.ArrayRangeJSONataFunction;
 import dev.vepo.jsonata.functions.BlockContext;
 import dev.vepo.jsonata.functions.BooleanExpressionJSONataFunction;
 import dev.vepo.jsonata.functions.BooleanOperator;
-import dev.vepo.jsonata.functions.BuiltInSortJSONataFunction;
-import dev.vepo.jsonata.functions.BuiltInSumJSONataFunction;
 import dev.vepo.jsonata.functions.CompareOperator;
 import dev.vepo.jsonata.functions.CompareValuesJSONataFunction;
 import dev.vepo.jsonata.functions.ContextValueJSONataFunction;
@@ -41,19 +39,22 @@ import dev.vepo.jsonata.functions.FieldMapJSONataFunction;
 import dev.vepo.jsonata.functions.InlineIfJSONataFunction;
 import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.JoinJSONataFunction;
-import dev.vepo.jsonata.functions.LengthJSONataFunction;
-import dev.vepo.jsonata.functions.LowecaseJSONataFunction;
 import dev.vepo.jsonata.functions.ObjectBuilderJSONataFunction;
 import dev.vepo.jsonata.functions.ObjectMapperJSONataFunction;
-import dev.vepo.jsonata.functions.StringCastJSONataFunction;
 import dev.vepo.jsonata.functions.StringConcatJSONataFunction;
-import dev.vepo.jsonata.functions.SubstringAfterJSONataFunction;
-import dev.vepo.jsonata.functions.SubstringBeforeJSONataFunction;
-import dev.vepo.jsonata.functions.SubstringJSONataFunction;
-import dev.vepo.jsonata.functions.TrimJSONataFunction;
-import dev.vepo.jsonata.functions.UppercaseJSONataFunction;
 import dev.vepo.jsonata.functions.UserDefinedFunctionJSONataFunction;
 import dev.vepo.jsonata.functions.WildcardJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.LengthJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.LowecaseJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.PadJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.SortJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.StringJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.SubstringAfterJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.SubstringBeforeJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.SubstringJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.SumJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.TrimJSONataFunction;
+import dev.vepo.jsonata.functions.buildIn.UppercaseJSONataFunction;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarBaseListener;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AlgebraicExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AllDescendantSearchContext;
@@ -143,17 +144,17 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         var fnName = ctx.functionStatement().FV_NAME().getText();
         expressions.offer(BuiltInFunction.get(fnName)
                                          .map(fn -> switch (fn) {
-                                             case SORT -> new BuiltInSortJSONataFunction(previous(ctx.functionStatement()
-                                                                                                     .parameterStatement()
-                                                                                                     .size()
+                                             case SORT -> new SortJSONataFunction(previous(ctx.functionStatement()
+                                                                                              .parameterStatement()
+                                                                                              .size()
                                                      - (maybeFn.isPresent() ? 1 : 0)),
-                                                                                         maybeFn);
-                                             case SUM -> new BuiltInSumJSONataFunction(previous(ctx.functionStatement()
-                                                                                                   .parameterStatement()
-                                                                                                   .size()));
-                                             case STRING -> new StringCastJSONataFunction(previous(ctx.functionStatement()
-                                                                                                      .parameterStatement()
-                                                                                                      .size()));
+                                                                                  maybeFn);
+                                             case SUM -> new SumJSONataFunction(previous(ctx.functionStatement()
+                                                                                            .parameterStatement()
+                                                                                            .size()));
+                                             case STRING -> new StringJSONataFunction(previous(ctx.functionStatement()
+                                                                                                  .parameterStatement()
+                                                                                                  .size()));
                                              case LENGTH -> new LengthJSONataFunction(previous(ctx.functionStatement()
                                                                                                   .parameterStatement()
                                                                                                   .size()));
@@ -175,6 +176,9 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                              case TRIM -> new TrimJSONataFunction(previous(ctx.functionStatement()
                                                                                               .parameterStatement()
                                                                                               .size()));
+                                             case PAD -> new PadJSONataFunction(previous(ctx.functionStatement()
+                                                                                            .parameterStatement()
+                                                                                            .size()));
                                          })
                                          .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
                                                                   .flatMap(block -> block.function(fnName))
@@ -192,7 +196,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     @Override
     public void exitIdentifier(IdentifierContext ctx) {
         logger.atInfo().setMessage("Identifier! {}").addArgument(ctx::getText).log();
-        expressions.offer(new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER())));        
+        expressions.offer(new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER())));
     }
 
     @Override

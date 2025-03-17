@@ -13,7 +13,8 @@ public enum BuiltInFunction {
     SUBSTRING_AFTER("$substringAfter"),
     LOWERCASE("$lowercase"),
     UPPERCASE("$uppercase"),
-    TRIM("$trim");
+    TRIM("$trim"),
+    PAD("$pad");
 
     public static Optional<BuiltInFunction> get(String name) {
         return Stream.of(values())

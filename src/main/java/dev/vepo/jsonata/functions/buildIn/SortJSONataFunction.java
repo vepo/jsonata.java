@@ -1,19 +1,21 @@
-package dev.vepo.jsonata.functions;
+package dev.vepo.jsonata.functions.buildIn;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
 import dev.vepo.jsonata.exception.JSONataException;
+import dev.vepo.jsonata.functions.DeclaredFunction;
+import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
-public record BuiltInSortJSONataFunction(List<JSONataFunction> providers, Optional<DeclaredFunction> function,
-                                         SortComparator comparator)
+public record SortJSONataFunction(List<JSONataFunction> providers, Optional<DeclaredFunction> function,
+                                  SortComparator comparator)
         implements JSONataFunction {
-    public BuiltInSortJSONataFunction {
+    public SortJSONataFunction {
         if (providers.size() != 1) {
-            throw new IllegalArgumentException("Sort function must have 1 argument");
+            throw new IllegalArgumentException("$sort function must have 1 argument");
         }
     }
 
@@ -22,7 +24,7 @@ public record BuiltInSortJSONataFunction(List<JSONataFunction> providers, Option
         int compare(Data original, Data current, Data left, Data right);
     }
 
-    public BuiltInSortJSONataFunction(List<JSONataFunction> providers, Optional<DeclaredFunction> function) {
+    public SortJSONataFunction(List<JSONataFunction> providers, Optional<DeclaredFunction> function) {
         this(providers, function, buildComparator(function));
     }
 
@@ -52,8 +54,8 @@ public record BuiltInSortJSONataFunction(List<JSONataFunction> providers, Option
     }
 
     private static SortComparator buildComparator(Optional<DeclaredFunction> fn) {
-        return fn.map(BuiltInSortJSONataFunction::buildComparator)
-                 .orElse(BuiltInSortJSONataFunction::defaultComparator);
+        return fn.map(SortJSONataFunction::buildComparator)
+                 .orElse(SortJSONataFunction::defaultComparator);
     }
 
     @Override

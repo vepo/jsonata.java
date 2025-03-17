@@ -287,6 +287,18 @@ class JSONataTest {
         }
 
         @Test
+        void stringPadTest() {
+            assertThat(jsonata("$pad(\"foo\",  5     )").evaluate("{}").asText()).isEqualTo("foo  ");
+            assertThat(jsonata("$pad(\"foo\", -5     )").evaluate("{}").asText()).isEqualTo("  foo");
+            assertThat(jsonata("$pad(\"foo\", -5, '#')").evaluate("{}").asText()).isEqualTo("##foo");
+            assertThat(jsonata("$pad(\"foo\",  5, '#')").evaluate("{}").asText()).isEqualTo("foo##");
+            assertThat(jsonata("$pad(\"foo\",  0     )").evaluate("{}").asText()).isEqualTo("foo");
+            assertThat(jsonata("$pad(\"foo\",  0     )").evaluate("{}").asText()).isEqualTo("foo");
+            assertThat(jsonata("$pad(\"foo\",  0, '#')").evaluate("{}").asText()).isEqualTo("foo");
+            assertThat(jsonata("$pad(\"foo\",  0, '#')").evaluate("{}").asText()).isEqualTo("foo");
+        }
+
+        @Test
         void sortTest() {
             assertThat(jsonata("""
                                $sort(Account.Order.Product, function($l, $r) {

@@ -1,7 +1,8 @@
-package dev.vepo.jsonata.functions;
+package dev.vepo.jsonata.functions.buildIn;
 
 import java.util.List;
 
+import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 

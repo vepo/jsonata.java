@@ -1,14 +1,15 @@
-package dev.vepo.jsonata.functions;
+package dev.vepo.jsonata.functions.buildIn;
 
 import java.util.List;
 
+import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
-public record StringCastJSONataFunction(List<JSONataFunction> providers) implements JSONataFunction {
-    public StringCastJSONataFunction {
+public record StringJSONataFunction(List<JSONataFunction> providers) implements JSONataFunction {
+    public StringJSONataFunction {
         if (providers.size() != 1) {
-            throw new IllegalArgumentException("StringCast function must have 1 argument");
+            throw new IllegalArgumentException("$string function must have 1 argument");
         }
     }
 

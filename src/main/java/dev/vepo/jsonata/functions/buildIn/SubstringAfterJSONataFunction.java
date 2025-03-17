@@ -1,14 +1,15 @@
-package dev.vepo.jsonata.functions;
+package dev.vepo.jsonata.functions.buildIn;
 
 import java.util.List;
 
+import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
 public record SubstringAfterJSONataFunction(List<JSONataFunction> valueProviders) implements JSONataFunction {
     public SubstringAfterJSONataFunction {
         if (valueProviders.size() != 2) {
-            throw new IllegalArgumentException("SubstringAfter function must have 2 arguments");
+            throw new IllegalArgumentException("$substringAfter function must have 2 arguments");
         }
     }
 
