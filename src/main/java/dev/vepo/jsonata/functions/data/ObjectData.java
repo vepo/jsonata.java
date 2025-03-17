@@ -54,21 +54,6 @@ public class ObjectData implements Data {
     }
 
     @Override
-    public boolean isArray() {
-        return false;
-    }
-
-    @Override
-    public boolean isList() {
-        return false;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    @Override
     public boolean isObject() {
         return true;
     }

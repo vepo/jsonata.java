@@ -312,6 +312,22 @@ class JSONataTest {
         }
 
         @Test
+        void containsTest() {
+            // $contains("abracadabra", "bra") => true
+            assertThat(jsonata("$contains(\"abracadabra\", \"bra\")").evaluate("{}").asBoolean()).isTrue();
+            // $contains("abracadabra", /a.*a/) => true
+            assertThat(jsonata("$contains(\"abracadabra\", /a.*a/)").evaluate("{}").asBoolean()).isTrue();
+            // $contains("abracadabra", /ar.*a/) => false
+            assertThat(jsonata("$contains(\"abracadabra\", /ar.*a/)").evaluate("{}").asBoolean()).isFalse();
+            // $contains("Hello World", /wo/) => false
+            assertThat(jsonata("$contains(\"Hello World\", /wo/)").evaluate("{}").asBoolean()).isFalse();
+            // $contains("Hello World", /wo/i) => true
+            assertThat(jsonata("$contains(\"Hello World\", /wo/i)").evaluate("{}").asBoolean()).isTrue();
+            // Phone[$contains(number, /^077/)] => { "type": "mobile", "number": "077 7700 1234" }
+            assertThat(jsonata("Phone[$contains(number, /^077/)]").evaluate(OBJECT).asText()).isEqualTo("{\"type\":\"mobile\",\"number\":\"077 7700 1234\"}");
+        }
+
+        @Test
         void sortTest() {
             assertThat(jsonata("""
                                $sort(Account.Order.Product, function($l, $r) {

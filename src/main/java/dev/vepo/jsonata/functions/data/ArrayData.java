@@ -65,21 +65,6 @@ public class ArrayData implements Data {
     }
 
     @Override
-    public boolean isList() {
-        return false;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return false;
-    }
-
-    @Override
-    public boolean isObject() {
-        return false;
-    }
-
-    @Override
     public int length() {
         return element.size();
     }

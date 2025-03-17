@@ -6,14 +6,14 @@ object: OBJ_OPEN fieldList OBJ_CLOSE                                          # 
     ;
 
 expression:
-    functionStatement                                                         # functionCall 
+    functionStatement                                                         # functionCall
     | ROOT                                                                    # rootPath
-    | IDENTIFIER                                                              # identifier 
+    | IDENTIFIER                                                              # identifier
     | FV_NAME                                                                 # variableUsage
     | '*'                                                                     # fieldValues
     | DESCEND                                                                 # allDescendantSearch
     | DOLLAR                                                                  # contextReferece
-    | ARR_OPEN expressionList ARR_CLOSE                                       # arrayConstructor    
+    | ARR_OPEN expressionList ARR_CLOSE                                       # arrayConstructor
     | expression DOT OBJ_OPEN fieldList OBJ_CLOSE                             # objectMapper
     | expression OBJ_OPEN fieldList OBJ_CLOSE                                 # objectConstructor
     | expression DOT expression                                               # path
@@ -24,26 +24,32 @@ expression:
     | expression op=('<' | '<=' | '>' | '>=' | '!=' | '=' | 'in') expression  # booleanCompare
     | expression op=('and' | 'or') expression                                 # booleanExpression
     | expression op=('+' | '-' | '*' | '/' | '%' | '^') expression            # algebraicExpression
-    | expression '?' expression (':' expression)?                             # inlineIfExpression 
+    | expression '?' expression (':' expression)?                             # inlineIfExpression
     | expression '&' expression                                               # concatValues
     | '(' expression ')'                                                      # contextValue
     | '(' expression ';' (expression ';')+ ')'                                # blockExpression
     | FV_NAME VAR_ASSIGN (expression|functionDeclaration)                     # variableAssignment
+    | regex                                                                   # regexValue
     | STRING                                                                  # stringValue
     | NUMBER                                                                  # numberValue
     | FLOAT                                                                   # floatValue
     | EXP_NUMBER                                                              # expNumberValue
-    | BOOLEAN                                                                 # booleanValue    
+    | BOOLEAN                                                                 # booleanValue
     ;
 
 functionStatement: FV_NAME (('(' parameterStatement (',' parameterStatement)*  ')') | '()' ) ;
 parameterStatement: expression | functionDeclaration;
-functionDeclaration: 
+functionDeclaration:
     'function' '(' FV_NAME (',' FV_NAME)* ')' '{' expression+ '}' # functionDeclarationBuilder
     ;
 expressionList: expression (',' expression)*;
 fieldList: expression ':' uniqueObj expOrObject  (',' expression ':' uniqueObj expOrObject)*;
 expOrObject: expression | object;
+
+regex : '/' regexPattern '/' REGEX_MODIFIER?;
+regexPattern : (~REGEX_BOUNDARY | '\\' REGEX_BOUNDARY)*;
+REGEX_BOUNDARY : '/' ;
+REGEX_MODIFIER: 'm' | 'i';
 
 rangePredicate: ARR_OPEN ARR_OPEN NUMBER '..' NUMBER  ARR_CLOSE ARR_CLOSE;
 BOOLEAN: 'true' | 'false';

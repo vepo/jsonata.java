@@ -48,7 +48,11 @@
             <artifactId>commons-text</artifactId>
             <version>1.13.0</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>15.6</version>
+        </dependency>
         <!-- TESTS -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

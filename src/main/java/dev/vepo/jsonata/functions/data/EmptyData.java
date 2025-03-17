@@ -35,23 +35,8 @@ public class EmptyData implements Data {
     }
 
     @Override
-    public boolean isArray() {
-        return false;
-    }
-
-    @Override
-    public boolean isList() {
-        return false;
-    }
-
-    @Override
     public boolean isEmpty() {
         return true;
-    }
-
-    @Override
-    public boolean isObject() {
-        return false;
     }
 
     @Override

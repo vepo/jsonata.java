@@ -44,6 +44,7 @@ import dev.vepo.jsonata.functions.ObjectMapperJSONataFunction;
 import dev.vepo.jsonata.functions.StringConcatJSONataFunction;
 import dev.vepo.jsonata.functions.UserDefinedFunctionJSONataFunction;
 import dev.vepo.jsonata.functions.WildcardJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.ContainsJSONataFunction;
 import dev.vepo.jsonata.functions.buildin.LengthJSONataFunction;
 import dev.vepo.jsonata.functions.buildin.LowecaseJSONataFunction;
 import dev.vepo.jsonata.functions.buildin.PadJSONataFunction;
@@ -82,11 +83,13 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectConstruct
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectMapperContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.PathContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RangeQueryContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RegexContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RootPathContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.StringValueContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ToArrayContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.VariableAssignmentContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.VariableUsageContext;
+import dev.vepo.jsonata.functions.json.JsonFactory;
 
 public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     private static final String VARIABLE_NOT_DEFINED_IN_BLOCK = "Variable should only be defined in blocks!";
@@ -176,6 +179,9 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                                                                               .parameterStatement()
                                                                                               .size()));
                                              case PAD -> new PadJSONataFunction(previous(ctx.functionStatement()
+                                                                                            .parameterStatement()
+                                                                                            .size()));
+                                             case CONTAINS -> new ContainsJSONataFunction(previous(ctx.functionStatement()
                                                                                             .parameterStatement()
                                                                                             .size()));
                                          })
@@ -400,6 +406,12 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         expressions.offer((original, current) -> block.variable(variableName)
                                                       .orElseThrow(() -> new JSONataException("Variable not found: " + variableName))
                                                       .map(original, current));
+    }
+
+    @Override
+    public void exitRegex(RegexContext ctx) {
+        logger.atInfo().setMessage("Regex! {}").addArgument(ctx::getText).log();
+        expressions.offer((original, current) -> JsonFactory.regex(ctx.getText()));
     }
 
     @Override

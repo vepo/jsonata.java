@@ -17,6 +17,7 @@ import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.functions.data.ArrayData;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.ObjectData;
+import dev.vepo.jsonata.functions.data.RegexData;
 
 public class JsonFactory {
 
@@ -79,14 +80,17 @@ public class JsonFactory {
         return new ObjectData(mapper.getNodeFactory().booleanNode(value));
     }
 
+    public static Data regex(String text) {
+        return new RegexData(mapper.getNodeFactory().textNode(text));
+    }
+
     public static ArrayNode arrayNode(List<JsonNode> elements) {
         var array = mapper.createArrayNode();
         array.addAll(elements);
         return array;
     }
 
-    private JsonFactory() {
-    }
+    private JsonFactory() {}
 
     public static record ObjectBuilder(ObjectNode root, boolean groupRecordsInArray) {
 

@@ -1,12 +1,13 @@
 package dev.vepo.jsonata.functions.data;
 
+import static dev.vepo.jsonata.functions.json.JsonFactory.fromString;
+
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.JSONataResult;
-
-import static dev.vepo.jsonata.functions.json.JsonFactory.fromString;
+import dev.vepo.jsonata.functions.regex.RegExp;
 
 public interface Data {
 
@@ -24,17 +25,33 @@ public interface Data {
 
     boolean hasField(String fieldName);
 
-    boolean isArray();
+    default boolean isArray() {
+        return false;
+    }
 
-    boolean isList();
+    default boolean isList() {
+        return false;
+    }
 
-    boolean isEmpty();
+    default boolean isEmpty() {
+        return false;
+    }
 
-    boolean isObject();
+    default boolean isObject() {
+        return false;
+    }
+
+    default boolean isRegex() {
+        return false;
+    }
 
     int length();
 
     JsonNode toJson();
 
     JSONataResult toNode();
+
+    default RegExp asRegex() {
+        throw new UnsupportedOperationException("Unimplemented method 'asRegex'");
+    }
 }
