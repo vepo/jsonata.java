@@ -5,8 +5,8 @@ import java.util.List;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
-public record StringCastJSONataFunction(List<JSONataFunction> providers) implements JSONataFunction {
-    public StringCastJSONataFunction {
+public record LowecaseJSONataFunction(List<JSONataFunction> providers) implements JSONataFunction {
+    public LowecaseJSONataFunction {
         if (providers.size() != 1) {
             throw new IllegalArgumentException("StringCast function must have 1 argument");
         }
@@ -14,7 +14,6 @@ public record StringCastJSONataFunction(List<JSONataFunction> providers) impleme
 
     @Override
     public Data map(Data original, Data current) {
-        return JsonFactory.stringValue(providers.get(0).map(original, current).toJson().asText());
+        return JsonFactory.stringValue(providers.get(0).map(original, current).toJson().asText().toLowerCase());
     }
-
 }

@@ -276,6 +276,12 @@ class JSONataTest {
         }
 
         @Test
+        void stringCaseTest() {
+            assertThat(jsonata("$uppercase(\"abcdef\")").evaluate("{}").asText()).isEqualTo("ABCDEF");
+            assertThat(jsonata("$lowercase(\"ABCDEF\")").evaluate("{}").asText()).isEqualTo("abcdef");
+        }
+
+        @Test
         void sortTest() {
             assertThat(jsonata("""
                                $sort(Account.Order.Product, function($l, $r) {

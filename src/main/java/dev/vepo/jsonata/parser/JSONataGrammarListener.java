@@ -43,6 +43,7 @@ import dev.vepo.jsonata.functions.InlineIfJSONataFunction;
 import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.JoinJSONataFunction;
 import dev.vepo.jsonata.functions.LengthJSONataFunction;
+import dev.vepo.jsonata.functions.LowecaseJSONataFunction;
 import dev.vepo.jsonata.functions.ObjectBuilderJSONataFunction;
 import dev.vepo.jsonata.functions.ObjectMapperJSONataFunction;
 import dev.vepo.jsonata.functions.StringCastJSONataFunction;
@@ -50,6 +51,7 @@ import dev.vepo.jsonata.functions.StringConcatJSONataFunction;
 import dev.vepo.jsonata.functions.SubstringAfterJSONataFunction;
 import dev.vepo.jsonata.functions.SubstringBeforeJSONataFunction;
 import dev.vepo.jsonata.functions.SubstringJSONataFunction;
+import dev.vepo.jsonata.functions.UppercaseJSONataFunction;
 import dev.vepo.jsonata.functions.UserDefinedFunctionJSONataFunction;
 import dev.vepo.jsonata.functions.WildcardJSONataFunction;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarBaseListener;
@@ -93,7 +95,9 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         LENGTH("$length"),
         SUBSTRING("$substring"),
         SUBSTRINGBEFORE("$substringBefore"),
-        SUBSTRINGAFTER("$substringAfter");
+        SUBSTRINGAFTER("$substringAfter"),
+        LOWERCASE("$lowercase"),
+        UPPERCASE("$uppercase");
 
         public static Optional<BuiltInFunction> get(String name) {
             return Stream.of(values())
@@ -162,19 +166,41 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         var fnName = ctx.functionStatement().IDENTIFIER().getText();
         expressions.offer(BuiltInFunction.get(fnName)
                                          .map(fn -> switch (fn) {
-                                             case SORT -> new BuiltInSortJSONataFunction(expressions.removeLast(), maybeFn);
-                                             case SUM -> new BuiltInSumJSONataFunction(expressions.removeLast());
-                                             case STRING -> new StringCastJSONataFunction(expressions.removeLast());
-                                             case LENGTH -> new LengthJSONataFunction(expressions.removeLast());
-                                             case SUBSTRING -> new SubstringJSONataFunction(previous(ctx.functionStatement().parameterStatement().size()));
-                                             case SUBSTRINGBEFORE -> new SubstringBeforeJSONataFunction(previous(ctx.functionStatement().parameterStatement()
-                                                                                                              .size()));
-                                             case SUBSTRINGAFTER -> new SubstringAfterJSONataFunction(previous(ctx.functionStatement().parameterStatement().size()));
+                                             case SORT -> new BuiltInSortJSONataFunction(previous(ctx.functionStatement()
+                                                                                                     .parameterStatement()
+                                                                                                     .size()
+                                                     - (maybeFn.isPresent() ? 1 : 0)),
+                                                                                         maybeFn);
+                                             case SUM -> new BuiltInSumJSONataFunction(previous(ctx.functionStatement()
+                                                                                                   .parameterStatement()
+                                                                                                   .size()));
+                                             case STRING -> new StringCastJSONataFunction(previous(ctx.functionStatement()
+                                                                                                      .parameterStatement()
+                                                                                                      .size()));
+                                             case LENGTH -> new LengthJSONataFunction(previous(ctx.functionStatement()
+                                                                                                  .parameterStatement()
+                                                                                                  .size()));
+                                             case SUBSTRING -> new SubstringJSONataFunction(previous(ctx.functionStatement()
+                                                                                                        .parameterStatement()
+                                                                                                        .size()));
+                                             case SUBSTRINGBEFORE -> new SubstringBeforeJSONataFunction(previous(ctx.functionStatement()
+                                                                                                                    .parameterStatement()
+                                                                                                                    .size()));
+                                             case SUBSTRINGAFTER -> new SubstringAfterJSONataFunction(previous(ctx.functionStatement()
+                                                                                                                  .parameterStatement()
+                                                                                                                  .size()));
+                                             case LOWERCASE -> new LowecaseJSONataFunction(previous(ctx.functionStatement()
+                                                                                                       .parameterStatement()
+                                                                                                       .size()));
+                                             case UPPERCASE -> new UppercaseJSONataFunction(previous(ctx.functionStatement()
+                                                                                                        .parameterStatement()
+                                                                                                        .size()));
                                          })
-                                         .orElseGet(() -> this.blocks.peek().function(fnName)
-                                                                     .map(fn -> new UserDefinedFunctionJSONataFunction(previous(fn.parameterNames().size()),
-                                                                                                                       fn))
-                                                                     .orElseThrow(() -> new JSONataException("Function not found: " + fnName))));
+                                         .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
+                                                                  .flatMap(block -> block.function(fnName))
+                                                                  .map(fn -> new UserDefinedFunctionJSONataFunction(previous(fn.parameterNames().size()),
+                                                                                                                    fn))
+                                                                  .orElseThrow(() -> new JSONataException("Function not found: " + fnName))));
     }
 
     @Override

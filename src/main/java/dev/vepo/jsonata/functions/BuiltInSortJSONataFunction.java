@@ -1,6 +1,7 @@
 package dev.vepo.jsonata.functions;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
@@ -8,11 +9,17 @@ import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
-public record BuiltInSortJSONataFunction(JSONataFunction extractor, Optional<DeclaredFunction> function,
+public record BuiltInSortJSONataFunction(List<JSONataFunction> providers, Optional<DeclaredFunction> function,
                                          Comparator<Data> comparator)
         implements JSONataFunction {
-    public BuiltInSortJSONataFunction(JSONataFunction extractor, Optional<DeclaredFunction> function) {
-        this(extractor, function, buildComparator(function));
+    public BuiltInSortJSONataFunction {
+        if (providers.size() != 1) {
+            throw new IllegalArgumentException("Sort function must have 1 argument");
+        }
+    }
+
+    public BuiltInSortJSONataFunction(List<JSONataFunction> providers, Optional<DeclaredFunction> function) {
+        this(providers, function, buildComparator(function));
     }
 
     private static Comparator<Data> buildComparator(DeclaredFunction fn) {
@@ -45,7 +52,7 @@ public record BuiltInSortJSONataFunction(JSONataFunction extractor, Optional<Dec
 
     @Override
     public Data map(Data original, Data current) {
-        var sortValue = extractor.map(original, current);
+        var sortValue = providers.get(0).map(original, current);
         if (sortValue.isArray()) {
             return new GroupedData(IntStream.range(0, sortValue.length())
                                             .mapToObj(sortValue::at)
