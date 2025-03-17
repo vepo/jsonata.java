@@ -1,7 +1,6 @@
 package dev.vepo.jsonata.functions.buildin;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.IntStream;
 
 import dev.vepo.jsonata.exception.JSONataException;
@@ -10,7 +9,7 @@ import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
-public record SortJSONataFunction(List<JSONataFunction> providers, Optional<DeclaredFunction> function,
+public record SortJSONataFunction(List<JSONataFunction> providers, List<DeclaredFunction> function,
                                   SortComparator comparator)
         implements JSONataFunction {
     public SortJSONataFunction {
@@ -24,7 +23,7 @@ public record SortJSONataFunction(List<JSONataFunction> providers, Optional<Decl
         int compare(Data original, Data current, Data left, Data right);
     }
 
-    public SortJSONataFunction(List<JSONataFunction> providers, Optional<DeclaredFunction> function) {
+    public SortJSONataFunction(List<JSONataFunction> providers, List<DeclaredFunction> function) {
         this(providers, function, buildComparator(function));
     }
 
@@ -53,8 +52,10 @@ public record SortJSONataFunction(List<JSONataFunction> providers, Optional<Decl
         }
     }
 
-    private static SortComparator buildComparator(Optional<DeclaredFunction> fn) {
-        return fn.map(SortJSONataFunction::buildComparator)
+    private static SortComparator buildComparator(List<DeclaredFunction> fn) {
+        return fn.stream()
+                 .findFirst()
+                 .map(SortJSONataFunction::buildComparator)
                  .orElse(SortJSONataFunction::defaultComparator);
     }
 

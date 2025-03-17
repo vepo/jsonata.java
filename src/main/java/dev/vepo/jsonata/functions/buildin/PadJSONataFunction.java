@@ -4,11 +4,14 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 
+import dev.vepo.jsonata.functions.DeclaredFunction;
 import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
-public record PadJSONataFunction(List<JSONataFunction> providers) implements JSONataFunction {
+public record PadJSONataFunction(List<JSONataFunction> providers,
+                                 List<DeclaredFunction> declaredFunctions)
+        implements JSONataFunction {
     public PadJSONataFunction {
         if (providers.size() < 2 || providers.size() > 3) {
             throw new IllegalArgumentException("$pad function must have 2 or 3 arguments");

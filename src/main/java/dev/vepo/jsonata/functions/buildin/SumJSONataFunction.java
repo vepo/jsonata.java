@@ -9,12 +9,15 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.vepo.jsonata.functions.DeclaredFunction;
 import dev.vepo.jsonata.functions.JSONataAggregateFunction;
 import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
-public record SumJSONataFunction(List<JSONataFunction> providers) implements JSONataAggregateFunction {
+public record SumJSONataFunction(List<JSONataFunction> providers,
+                                 List<DeclaredFunction> declaredFunctions)
+        implements JSONataAggregateFunction {
     private static final Logger logger = LoggerFactory.getLogger(SumJSONataFunction.class);
 
     public SumJSONataFunction {
