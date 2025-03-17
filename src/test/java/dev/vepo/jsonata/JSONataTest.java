@@ -262,6 +262,19 @@ class JSONataTest {
     @Nested
     class Functions {
         @Test
+        void argumentValidationTest() {
+            assertThatThrownBy(() -> jsonata("$string()")).isInstanceOf(IllegalArgumentException.class)
+                                                          .hasMessage("$string function must have 1 argument!");
+            assertThatThrownBy(() -> jsonata("$length()")).isInstanceOf(IllegalArgumentException.class)
+                                                          .hasMessage("$length function must have 1 argument!");
+            assertThatThrownBy(() -> jsonata("$lowercase()")).isInstanceOf(IllegalArgumentException.class)
+                                                             .hasMessage("$lowercase function must have 1 argument!");
+            assertThatThrownBy(() -> jsonata("$uppercase()")).isInstanceOf(IllegalArgumentException.class)
+                                                             .hasMessage("$uppercase function must have 1 argument!");
+
+        }
+
+        @Test
         void stringTest() {
             assertThat(jsonata("$string(5)").evaluate("{}").asText()).isEqualTo("5");
             assertThat(jsonata("$length(\"0123456789\")").evaluate("{}").asText()).isEqualTo("10");

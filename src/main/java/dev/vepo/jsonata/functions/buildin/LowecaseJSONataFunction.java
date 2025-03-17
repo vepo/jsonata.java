@@ -9,7 +9,7 @@ import dev.vepo.jsonata.functions.json.JsonFactory;
 public record LowecaseJSONataFunction(List<JSONataFunction> providers) implements JSONataFunction {
     public LowecaseJSONataFunction {
         if (providers.size() != 1) {
-            throw new IllegalArgumentException("$lowecase function must have 1 argument!");
+            throw new IllegalArgumentException("$lowercase function must have 1 argument!");
         }
     }
 

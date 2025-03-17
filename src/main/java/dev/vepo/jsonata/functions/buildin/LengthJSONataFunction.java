@@ -10,7 +10,7 @@ public record LengthJSONataFunction(List<JSONataFunction> providers) implements 
 
     public LengthJSONataFunction {
         if (providers.size() != 1) {
-            throw new IllegalArgumentException("$length function must have 1 argument");
+            throw new IllegalArgumentException("$length function must have 1 argument!");
         }
     }
 

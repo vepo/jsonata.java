@@ -36,7 +36,7 @@ expression:
     | BOOLEAN                                                                 # booleanValue    
     ;
 
-functionStatement: FV_NAME '(' parameterStatement (',' parameterStatement)*  ')' ;
+functionStatement: FV_NAME (('(' parameterStatement (',' parameterStatement)*  ')') | '()' ) ;
 parameterStatement: expression | functionDeclaration;
 functionDeclaration: 
     'function' '(' FV_NAME (',' FV_NAME)* ')' '{' expression+ '}' # functionDeclarationBuilder
