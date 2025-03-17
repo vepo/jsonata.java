@@ -44,17 +44,17 @@ import dev.vepo.jsonata.functions.ObjectMapperJSONataFunction;
 import dev.vepo.jsonata.functions.StringConcatJSONataFunction;
 import dev.vepo.jsonata.functions.UserDefinedFunctionJSONataFunction;
 import dev.vepo.jsonata.functions.WildcardJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.LengthJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.LowecaseJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.PadJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.SortJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.StringJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.SubstringAfterJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.SubstringBeforeJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.SubstringJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.SumJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.TrimJSONataFunction;
-import dev.vepo.jsonata.functions.buildIn.UppercaseJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.LengthJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.LowecaseJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.PadJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.SortJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.StringJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.SubstringAfterJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.SubstringBeforeJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.SubstringJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.SumJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.TrimJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.UppercaseJSONataFunction;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarBaseListener;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AlgebraicExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AllDescendantSearchContext;
@@ -146,8 +146,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                          .map(fn -> switch (fn) {
                                              case SORT -> new SortJSONataFunction(previous(ctx.functionStatement()
                                                                                               .parameterStatement()
-                                                                                              .size()
-                                                     - (maybeFn.isPresent() ? 1 : 0)),
+                                                                                              .size() - (maybeFn.isPresent() ? 1 : 0)),
                                                                                   maybeFn);
                                              case SUM -> new SumJSONataFunction(previous(ctx.functionStatement()
                                                                                             .parameterStatement()

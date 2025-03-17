@@ -1,4 +1,4 @@
-package dev.vepo.jsonata.functions.buildIn;
+package dev.vepo.jsonata.functions.buildin;
 
 import java.math.BigDecimal;
 import java.util.List;
