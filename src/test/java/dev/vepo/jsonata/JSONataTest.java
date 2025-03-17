@@ -264,7 +264,7 @@ class JSONataTest {
         @Test
         void stringTest() {
             assertThat(jsonata("$string(5)").evaluate("{}").asText()).isEqualTo("5");
-            assertThat(jsonata("$length(\"0123456789\")").evaluate("{}").asText()).isEqualTo("10");            
+            assertThat(jsonata("$length(\"0123456789\")").evaluate("{}").asText()).isEqualTo("10");
         }
 
         @Test
@@ -281,8 +281,7 @@ class JSONataTest {
             assertThat(jsonata("$lowercase(\"ABCDEF\")").evaluate("{}").asText()).isEqualTo("abcdef");
         }
 
-
-        @Test 
+        @Test
         void stringTrimTest() {
             assertThat(jsonata("$trim(\"   abcdef\t\")").evaluate("{}").asText()).isEqualTo("abcdef");
         }
@@ -461,6 +460,13 @@ class JSONataTest {
                                  $volume($v1, $x2, $abcdefghijlmnopqrstuvxz);
                                )
                                """).evaluate("{}").asInt()).isEqualTo(500_000);
+            assertThat(jsonata("""
+                               (
+                                   $x := 50;
+                                   $fn := function($a) { $a + x};
+                                   $fn($x);
+                               )
+                               """).evaluate("{\"x\":54}").asInt()).isEqualTo(104);
         }
 
         @Test

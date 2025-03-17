@@ -8,8 +8,8 @@ object: OBJ_OPEN fieldList OBJ_CLOSE                                          # 
 expression:
     functionStatement                                                         # functionCall 
     | ROOT                                                                    # rootPath
-    | DOLLAR IDENTIFIER                                                       # variableUsage
     | IDENTIFIER                                                              # identifier 
+    | FV_NAME                                                                 # variableUsage
     | '*'                                                                     # fieldValues
     | DESCEND                                                                 # allDescendantSearch
     | DOLLAR                                                                  # contextReferece
@@ -28,7 +28,7 @@ expression:
     | expression '&' expression                                               # concatValues
     | '(' expression ')'                                                      # contextValue
     | '(' expression ';' (expression ';')+ ')'                                # blockExpression
-    | IDENTIFIER VAR_ASSIGN (expression|functionDeclaration)                  # variableAssignment
+    | FV_NAME VAR_ASSIGN (expression|functionDeclaration)                     # variableAssignment
     | STRING                                                                  # stringValue
     | NUMBER                                                                  # numberValue
     | FLOAT                                                                   # floatValue
@@ -36,10 +36,10 @@ expression:
     | BOOLEAN                                                                 # booleanValue    
     ;
 
-functionStatement: IDENTIFIER '(' parameterStatement (',' parameterStatement)*  ')' ;
+functionStatement: FV_NAME '(' parameterStatement (',' parameterStatement)*  ')' ;
 parameterStatement: expression | functionDeclaration;
 functionDeclaration: 
-    'function' '(' IDENTIFIER (',' IDENTIFIER)* ')' '{' expression+ '}' # functionDeclarationBuilder
+    'function' '(' FV_NAME (',' FV_NAME)* ')' '{' expression+ '}' # functionDeclarationBuilder
     ;
 expressionList: expression (',' expression)*;
 fieldList: expression ':' uniqueObj expOrObject  (',' expression ':' uniqueObj expOrObject)*;
@@ -57,7 +57,9 @@ OBJ_CLOSE: '}';
 VAR_ASSIGN : ':=' ;
 uniqueObj: (DOLLAR DOT)?;
 
-IDENTIFIER: [\p{L}_$] [\p{L}0-9_$]*
+FV_NAME: DOLLAR IDENTIFIER;
+
+IDENTIFIER: [\p{L}_] [\p{L}0-9_$]*
 	        | BACK_QUOTE ~[`]* BACK_QUOTE;
 fragment BACK_QUOTE : '`';
 

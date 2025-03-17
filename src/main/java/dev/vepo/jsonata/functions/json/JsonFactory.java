@@ -54,6 +54,7 @@ public class JsonFactory {
     public static Data numberValue(Integer value) {
         return new ObjectData(mapper.getNodeFactory().numberNode(value));
     }
+
     public static Data numberValue(BigDecimal value) {
         return new ObjectData(mapper.getNodeFactory().numberNode(value));
     }
@@ -84,7 +85,8 @@ public class JsonFactory {
         return array;
     }
 
-    private JsonFactory() {}
+    private JsonFactory() {
+    }
 
     public static record ObjectBuilder(ObjectNode root, boolean groupRecordsInArray) {
 
@@ -158,6 +160,16 @@ public class JsonFactory {
                 arr.add(value.toJson());
                 root.set(field, arr);
             }
+        }
+
+        public void fill(Data current) {
+            current.toJson()
+                   .fields()
+                   .forEachRemaining(entry -> root.set(entry.getKey(), entry.getValue()));
+        }
+
+        public boolean hasValue(String key) {
+            return root.has(key);
         }
     }
 

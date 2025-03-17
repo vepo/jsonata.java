@@ -26,7 +26,7 @@ import dev.vepo.jsonata.functions.ArrayConstructorJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayIndexJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayQueryJSONataFunction;
 import dev.vepo.jsonata.functions.ArrayRangeJSONataFunction;
-import dev.vepo.jsonata.functions.BockContext;
+import dev.vepo.jsonata.functions.BlockContext;
 import dev.vepo.jsonata.functions.BooleanExpressionJSONataFunction;
 import dev.vepo.jsonata.functions.BooleanOperator;
 import dev.vepo.jsonata.functions.BuiltInSortJSONataFunction;
@@ -111,7 +111,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
 
     private final Deque<JSONataFunction> expressions;
     private final Deque<DeclaredFunction> functionsDeclared;
-    private final Queue<BockContext> blocks;
+    private final Queue<BlockContext> blocks;
 
     public JSONataGrammarListener() {
         this.expressions = new LinkedList<>();
@@ -120,12 +120,19 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     }
 
     @Override
+    public void enterFunctionDeclarationBuilder(FunctionDeclarationBuilderContext ctx) {
+        logger.atInfo().setMessage("Enter Function Declaration! {}").addArgument(ctx::getText).log();
+        blocks.offer(new BlockContext(blocks));
+    }
+
+    @Override
     public void exitFunctionDeclarationBuilder(FunctionDeclarationBuilderContext ctx) {
-        logger.atInfo().setMessage("Function declaration builder! {}").addArgument(ctx::getText).log();
-        this.functionsDeclared.offerFirst(new DeclaredFunction(ctx.IDENTIFIER()
+        logger.atInfo().setMessage("Exit Function declaration builder! {}").addArgument(ctx::getText).log();
+        this.functionsDeclared.offerFirst(new DeclaredFunction(ctx.FV_NAME()
                                                                   .stream()
                                                                   .map(TerminalNode::getText)
                                                                   .toList(),
+                                                               this.blocks.poll(),
                                                                this.expressions.removeLast()));
     }
 
@@ -133,7 +140,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     public void exitFunctionCall(FunctionCallContext ctx) {
         logger.atInfo().setMessage("Function call! {}").addArgument(ctx::getText).log();
         Optional<DeclaredFunction> maybeFn = functionsDeclared.isEmpty() ? Optional.empty() : Optional.of(functionsDeclared.removeLast());
-        var fnName = ctx.functionStatement().IDENTIFIER().getText();
+        var fnName = ctx.functionStatement().FV_NAME().getText();
         expressions.offer(BuiltInFunction.get(fnName)
                                          .map(fn -> switch (fn) {
                                              case SORT -> new BuiltInSortJSONataFunction(previous(ctx.functionStatement()
@@ -185,13 +192,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     @Override
     public void exitIdentifier(IdentifierContext ctx) {
         logger.atInfo().setMessage("Identifier! {}").addArgument(ctx::getText).log();
-        if (blocks.isEmpty()) {
-            expressions.offer(new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER())));
-        } else {
-            expressions.offer(Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK)
-                                     .variable(ctx.IDENTIFIER().getText())
-                                     .orElseGet(() -> new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER()))));
-        }
+        expressions.offer(new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER())));        
     }
 
     @Override
@@ -377,17 +378,25 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     }
 
     @Override
+    public void exitBlockExpression(BlockExpressionContext ctx) {
+        logger.atInfo().setMessage("Exit block declaration! {}").addArgument(ctx::getText).log();
+        this.blocks.poll();
+    }
+
+    @Override
     public void enterBlockExpression(BlockExpressionContext ctx) {
-        logger.atInfo().setMessage("Block expression! {}").addArgument(ctx::getText).log();
-        this.blocks.offer(new BockContext());
+        logger.atInfo().setMessage("Enter Block expression! {}").addArgument(ctx::getText).log();
+        this.blocks.offer(new BlockContext(this.blocks));
     }
 
     @Override
     public void exitVariableUsage(VariableUsageContext ctx) {
         logger.atInfo().setMessage("Variable usage! {}").addArgument(ctx::getText).log();
-        expressions.offer(Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK)
-                                 .variable(ctx.IDENTIFIER().getText())
-                                 .orElseThrow(() -> new JSONataException("Variable not found: " + ctx.IDENTIFIER().getText())));
+        var block = Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK);
+        var variableName = ctx.FV_NAME().getText();
+        expressions.offer((original, current) -> block.variable(variableName)
+                                                      .orElseThrow(() -> new JSONataException("Variable not found: " + variableName))
+                                                      .map(original, current));
     }
 
     @Override
@@ -395,10 +404,10 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("Variable assignment! {}").addArgument(ctx::getText).log();
         if (Objects.nonNull(ctx.expression())) {
             Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK)
-                   .defineVariable(ctx.IDENTIFIER().getText(), expressions.removeLast());
+                   .defineVariable(ctx.FV_NAME().getText(), expressions.removeLast());
         } else {
             Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK)
-                   .defineFunction(ctx.IDENTIFIER().getText(), functionsDeclared.removeLast());
+                   .defineFunction(ctx.FV_NAME().getText(), functionsDeclared.removeLast());
         }
     }
 
