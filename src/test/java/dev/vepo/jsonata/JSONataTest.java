@@ -262,6 +262,20 @@ class JSONataTest {
     @Nested
     class Functions {
         @Test
+        void stringTest() {
+            assertThat(jsonata("$string(5)").evaluate("{}").asText()).isEqualTo("5");
+            assertThat(jsonata("$length(\"0123456789\")").evaluate("{}").asText()).isEqualTo("10");            
+        }
+
+        @Test
+        void substringTest() {
+            assertThat(jsonata("$substring(\"abcdef\",2)").evaluate("{}").asText()).isEqualTo("cdef");
+            assertThat(jsonata("$substring(\"abcdef\",2,4)").evaluate("{}").asText()).isEqualTo("cd");
+            assertThat(jsonata("$substringBefore(\"abcdef\", \"c\")").evaluate("{}").asText()).isEqualTo("ab");
+            assertThat(jsonata("$substringAfter(\"abcdef\", \"c\")").evaluate("{}").asText()).isEqualTo("def");
+        }
+
+        @Test
         void sortTest() {
             assertThat(jsonata("""
                                $sort(Account.Order.Product, function($l, $r) {
