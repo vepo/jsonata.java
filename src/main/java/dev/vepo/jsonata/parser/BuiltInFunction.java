@@ -15,7 +15,8 @@ public enum BuiltInFunction {
     UPPERCASE("$uppercase"),
     TRIM("$trim"),
     PAD("$pad"),
-    CONTAINS("$contains");
+    CONTAINS("$contains"),
+    SPLIT("$split"),;
 
     public static Optional<BuiltInFunction> get(String name) {
         return Stream.of(values())

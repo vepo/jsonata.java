@@ -5,6 +5,7 @@ module jsonata.java {
     requires org.apache.commons.lang3;
     requires org.slf4j;
     requires java.scripting;
+    requires org.openjdk.nashorn;
 
     exports dev.vepo.jsonata;
 }

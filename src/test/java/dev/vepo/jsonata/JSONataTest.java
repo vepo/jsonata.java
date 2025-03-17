@@ -328,6 +328,16 @@ class JSONataTest {
         }
 
         @Test
+        void splitTest() {
+            // $split("so many words", " ") => [ "so", "many", "words" ]
+            assertThat(jsonata("$split(\"so many words\", \" \")").evaluate("{}").multi().asText()).containsExactly("so", "many", "words");
+            // $split("so many words", " ", 2) => [ "so", "many" ]
+            assertThat(jsonata("$split(\"so many words\", \" \", 2)").evaluate("{}").multi().asText()).containsExactly("so", "many");
+            // $split("too much, punctuation. hard; to read", /[ ,.;]+/) => ["too", "much", "punctuation", "hard", "to", "read"]
+            assertThat(jsonata("$split(\"too much, punctuation. hard; to read\", /[ ,.;]+/)").evaluate("{}").multi().asText()).containsExactly("too", "much", "punctuation", "hard", "to", "read");
+        }
+
+        @Test
         void sortTest() {
             assertThat(jsonata("""
                                $sort(Account.Order.Product, function($l, $r) {

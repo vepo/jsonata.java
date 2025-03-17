@@ -49,6 +49,7 @@ import dev.vepo.jsonata.functions.buildin.LengthJSONataFunction;
 import dev.vepo.jsonata.functions.buildin.LowecaseJSONataFunction;
 import dev.vepo.jsonata.functions.buildin.PadJSONataFunction;
 import dev.vepo.jsonata.functions.buildin.SortJSONataFunction;
+import dev.vepo.jsonata.functions.buildin.SplitJSONataFunction;
 import dev.vepo.jsonata.functions.buildin.StringJSONataFunction;
 import dev.vepo.jsonata.functions.buildin.SubstringAfterJSONataFunction;
 import dev.vepo.jsonata.functions.buildin.SubstringBeforeJSONataFunction;
@@ -83,7 +84,7 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectConstruct
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectMapperContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.PathContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RangeQueryContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RegexContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RegexValueContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RootPathContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.StringValueContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ToArrayContext;
@@ -182,8 +183,11 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                                                                             .parameterStatement()
                                                                                             .size()));
                                              case CONTAINS -> new ContainsJSONataFunction(previous(ctx.functionStatement()
-                                                                                            .parameterStatement()
-                                                                                            .size()));
+                                                                                                      .parameterStatement()
+                                                                                                      .size()));
+                                             case SPLIT -> new SplitJSONataFunction(previous(ctx.functionStatement()
+                                                                                                .parameterStatement()
+                                                                                                .size()));
                                          })
                                          .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
                                                                   .flatMap(block -> block.function(fnName))
@@ -409,7 +413,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     }
 
     @Override
-    public void exitRegex(RegexContext ctx) {
+    public void exitRegexValue(RegexValueContext ctx) {
         logger.atInfo().setMessage("Regex! {}").addArgument(ctx::getText).log();
         expressions.offer((original, current) -> JsonFactory.regex(ctx.getText()));
     }

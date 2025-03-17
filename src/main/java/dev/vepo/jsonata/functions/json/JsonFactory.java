@@ -52,6 +52,13 @@ public class JsonFactory {
         }
     }
 
+    public static Data arrayValue(String[] values) {
+        var array = mapper.createArrayNode();
+        Stream.of(values)
+              .forEach(array::add);
+        return new ArrayData(array);
+    }
+
     public static Data numberValue(Integer value) {
         return new ObjectData(mapper.getNodeFactory().numberNode(value));
     }

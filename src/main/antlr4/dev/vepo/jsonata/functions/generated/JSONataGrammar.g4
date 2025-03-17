@@ -29,7 +29,7 @@ expression:
     | '(' expression ')'                                                      # contextValue
     | '(' expression ';' (expression ';')+ ')'                                # blockExpression
     | FV_NAME VAR_ASSIGN (expression|functionDeclaration)                     # variableAssignment
-    | regex                                                                   # regexValue
+    | REGEX                                                                   # regexValue
     | STRING                                                                  # stringValue
     | NUMBER                                                                  # numberValue
     | FLOAT                                                                   # floatValue
@@ -45,11 +45,6 @@ functionDeclaration:
 expressionList: expression (',' expression)*;
 fieldList: expression ':' uniqueObj expOrObject  (',' expression ':' uniqueObj expOrObject)*;
 expOrObject: expression | object;
-
-regex : '/' regexPattern '/' REGEX_MODIFIER?;
-regexPattern : (~REGEX_BOUNDARY | '\\' REGEX_BOUNDARY)*;
-REGEX_BOUNDARY : '/' ;
-REGEX_MODIFIER: 'm' | 'i';
 
 rangePredicate: ARR_OPEN ARR_OPEN NUMBER '..' NUMBER  ARR_CLOSE ARR_CLOSE;
 BOOLEAN: 'true' | 'false';
@@ -73,6 +68,10 @@ STRING:
     '\'' (ESC | ~['\\])* '\''
 	| '"'  (ESC | ~["\\])* '"'
 	;
+
+REGEX:
+    '/' (ESC | ~['/])* '/' ('m' | 'i' | 'g' | 'd')?
+    ;    
 
 NUMBER: '-'? [0-9]+;
 FLOAT: '-'? [0-9]+ '.' [0-9]+;
