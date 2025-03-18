@@ -1,4 +1,4 @@
-package dev.vepo.jsonata.functions.buildin;
+package dev.vepo.jsonata.functions.builtin;
 
 import java.util.List;
 
@@ -7,19 +7,18 @@ import dev.vepo.jsonata.functions.JSONataFunction;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
-public record LengthJSONataFunction(List<JSONataFunction> providers,
+public record StringJSONataFunction(List<JSONataFunction> providers,
                                     List<DeclaredFunction> declaredFunctions)
         implements JSONataFunction {
-
-    public LengthJSONataFunction {
+    public StringJSONataFunction {
         if (providers.size() != 1) {
-            throw new IllegalArgumentException("$length function must have 1 argument!");
+            throw new IllegalArgumentException("$string function must have 1 argument!");
         }
     }
 
     @Override
     public Data map(Data original, Data current) {
-        return JsonFactory.numberValue(providers.get(0).map(original, current).toJson().asText().length());
+        return JsonFactory.stringValue(providers.get(0).map(original, current).toJson().asText());
     }
 
 }

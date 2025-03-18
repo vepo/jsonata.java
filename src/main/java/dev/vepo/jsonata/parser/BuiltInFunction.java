@@ -6,20 +6,20 @@ import java.util.stream.Stream;
 
 import dev.vepo.jsonata.functions.DeclaredFunction;
 import dev.vepo.jsonata.functions.JSONataFunction;
-import dev.vepo.jsonata.functions.buildin.BuiltInSupplier;
-import dev.vepo.jsonata.functions.buildin.ContainsJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.LengthJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.LowecaseJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.PadJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.SortJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.SplitJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.StringJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.SubstringAfterJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.SubstringBeforeJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.SubstringJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.SumJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.TrimJSONataFunction;
-import dev.vepo.jsonata.functions.buildin.UppercaseJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.BuiltInSupplier;
+import dev.vepo.jsonata.functions.builtin.ContainsJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.LengthJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.LowecaseJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.PadJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.SortJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.SplitJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.StringJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.SubstringAfterJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.SubstringBeforeJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.SubstringJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.SumJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.TrimJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.UppercaseJSONataFunction;
 
 public enum BuiltInFunction {
     SORT("$sort", SortJSONataFunction::new),
