@@ -123,7 +123,7 @@ public class TestData {
                                        ]
                                        """;
 
-    public static final String OBJECT = """
+    public static final String ADDRESS = """
                                         {
                                             "FirstName": "Fred",
                                             "Surname": "Smith",

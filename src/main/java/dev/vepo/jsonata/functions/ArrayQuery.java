@@ -1,6 +1,8 @@
 package dev.vepo.jsonata.functions;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
@@ -10,16 +12,28 @@ public record ArrayQuery(Mapping mapFunction, Mapping filterFunction) implements
     @Override
     public Data map(Data original, Data current) {
         var mapped = mapFunction.map(original, current);
-        if (mapped.isArray() || mapped.isList()) {
-            var filteredData = new ArrayList<Data>();
-            for (int i = 0; i < mapped.length(); ++i) {
-                var currData = mapped.at(i);
-                var currResult = filterFunction.map(original, currData).toJson();
-                if (currResult.isBoolean() && currResult.asBoolean()) {
-                    filteredData.add(mapped.at(i));
-                }
+        if (filterFunction instanceof ArrayExpansion || filterFunction instanceof ArrayConstructor) {
+            List<Integer> indexes = filterFunction.map(original, current)
+                                                  .stream()
+                                                  .map(Data::toJson)
+                                                  .map(node -> node.asInt())
+                                                  .collect(Collectors.toList());
+            if (!(mapped.isArray() || mapped.isList()) && indexes.contains(0)) {
+                return mapped;
             }
-            return new GroupedData(filteredData);
+            return new GroupedData(indexes.stream()
+                                          .map(i -> i >= 0 ? i : (mapped.length() + i))
+                                          .filter(i -> i < mapped.length())
+                                          .sorted()
+                                          .map(mapped::at)
+                                          .toList());
+        } else if (mapped.isArray() || mapped.isList()) {
+            return new GroupedData(IntStream.range(0, mapped.length())
+                                            .mapToObj(mapped::at)
+                                            .filter(currData -> {
+                                                var currResult = filterFunction.map(original, currData).toJson();
+                                                return currResult.isBoolean() && currResult.asBoolean();
+                                            }).toList());
         } else {
             return Mapping.empty();
         }

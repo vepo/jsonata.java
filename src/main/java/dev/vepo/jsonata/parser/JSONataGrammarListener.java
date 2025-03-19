@@ -5,7 +5,6 @@ import static dev.vepo.jsonata.functions.json.JsonFactory.numberValue;
 import static dev.vepo.jsonata.functions.json.JsonFactory.stringValue;
 import static org.apache.commons.text.StringEscapeUtils.unescapeJson;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
@@ -23,14 +22,15 @@ import dev.vepo.jsonata.functions.AlgebraicOperation;
 import dev.vepo.jsonata.functions.AlgebraicOperator;
 import dev.vepo.jsonata.functions.ArrayCast;
 import dev.vepo.jsonata.functions.ArrayConstructor;
+import dev.vepo.jsonata.functions.ArrayExpansion;
 import dev.vepo.jsonata.functions.ArrayIndex;
 import dev.vepo.jsonata.functions.ArrayQuery;
-import dev.vepo.jsonata.functions.ArrayRange;
 import dev.vepo.jsonata.functions.BlockContext;
 import dev.vepo.jsonata.functions.BooleanExpression;
 import dev.vepo.jsonata.functions.BooleanOperator;
 import dev.vepo.jsonata.functions.CompareOperator;
 import dev.vepo.jsonata.functions.CompareValues;
+import dev.vepo.jsonata.functions.Concatenation;
 import dev.vepo.jsonata.functions.ContextValue;
 import dev.vepo.jsonata.functions.DeclaredFunction;
 import dev.vepo.jsonata.functions.DeepFind;
@@ -41,13 +41,13 @@ import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.MappingJoin;
 import dev.vepo.jsonata.functions.ObjectBuilder;
 import dev.vepo.jsonata.functions.ObjectMapper;
-import dev.vepo.jsonata.functions.Concatenation;
 import dev.vepo.jsonata.functions.UserDefinedFunction;
 import dev.vepo.jsonata.functions.Wildcard;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarBaseListener;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AlgebraicExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AllDescendantSearchContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayConstructorContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayExpansionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayIndexQueryContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayQueryContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.BlockExpressionContext;
@@ -72,7 +72,6 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectConstruct
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectMapperContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ParameterStatementContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.PathContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RangeQueryContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RegexValueContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RootPathContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.StringValueContext;
@@ -206,7 +205,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("[EXIT] [BEGIN] Path! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
         var previousFunction = expressions.removeLast();
-        expressions.offer(new MappingJoin(previousFunction, currentFunction));
+        expressions.offer(new MappingJoin(previousFunction,currentFunction));
         logger.atInfo().setMessage("[EXIT] [END  ] Path! {}").addArgument(expressions).log();
     }
 
@@ -226,7 +225,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     public void exitToArray(ToArrayContext ctx) {
         logger.atInfo().setMessage("To array! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
-        expressions.offer(new MappingJoin(currentFunction, new ArrayCast()));
+        expressions.offer(currentFunction.andThen(new ArrayCast()));
     }
 
     @Override
@@ -236,7 +235,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
             expressions.offer(new ArrayIndex(Integer.valueOf(ctx.NUMBER().getText())));
         } else {
             var previousFunction = expressions.removeLast();
-            expressions.offer(new MappingJoin(previousFunction, new ArrayIndex(Integer.valueOf(ctx.NUMBER().getText()))));
+            expressions.offer(previousFunction.andThen(new ArrayIndex(Integer.valueOf(ctx.NUMBER().getText()))));
         }
     }
 
@@ -275,10 +274,11 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
 
     @Override
     public void exitArrayQuery(ArrayQueryContext ctx) {
-        logger.atInfo().setMessage("Array query! {}").addArgument(ctx::getText).log();
+        logger.atInfo().setMessage("[EXIT] [BEGIN] Array query! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
         var previousFunction = expressions.removeLast();
         this.expressions.offer(new ArrayQuery(previousFunction, currentFunction));
+        logger.atInfo().setMessage("[EXIT] [END  ] Array query! {}").addArgument(ctx::getText).log();
     }
 
     @Override
@@ -309,25 +309,6 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     public void exitBooleanValue(BooleanValueContext ctx) {
         logger.atInfo().setMessage("Boolean value! {}").addArgument(ctx::getText).log();
         expressions.offer((original, current) -> booleanValue(Boolean.valueOf(ctx.getText())));
-    }
-
-    @Override
-    public void exitRangeQuery(RangeQueryContext ctx) {
-        logger.atInfo().setMessage("Range query! {}").addArgument(ctx::getText).log();
-        var startIndex = Integer.valueOf(ctx.rangePredicate().NUMBER(0).getText());
-        var endIndex = Integer.valueOf(ctx.rangePredicate().NUMBER(1).getText());
-        if (startIndex < 0) {
-            throw new InvalidParameterException("Start index should be greather than 0!");
-        }
-        if (endIndex < 0) {
-            throw new InvalidParameterException("End index should be greather than 0!");
-        }
-        if (endIndex < startIndex) {
-            throw new InvalidParameterException("End index should be greather than start index!");
-        }
-
-        var currentFunction = expressions.removeLast();
-        expressions.offer(new MappingJoin(currentFunction, new ArrayRange(startIndex, endIndex)));
     }
 
     @Override
@@ -367,7 +348,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("Object mapper! {}").addArgument(ctx::getText).log();
         var fieldList = objectFields(ctx.fieldList());
         var previousFunction = expressions.removeLast();
-        expressions.offer(new MappingJoin(previousFunction, new ObjectMapper(fieldList)));
+        expressions.offer(previousFunction.andThen(new ObjectMapper(fieldList)));
     }
 
     @Override
@@ -375,7 +356,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("Object constructor! {}").addArgument(ctx::getText).log();
         var fieldList = objectFields(ctx.fieldList());
         var previousFunction = expressions.removeLast();
-        expressions.offer(new MappingJoin(previousFunction, new ObjectBuilder(fieldList)));
+        expressions.offer(previousFunction.andThen(new ObjectBuilder(fieldList)));
     }
 
     @Override
@@ -422,6 +403,15 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
             Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK)
                    .defineFunction(ctx.FV_NAME().getText(), functionsDeclared.removeLast());
         }
+    }
+
+    @Override
+    public void exitArrayExpansion(ArrayExpansionContext ctx) {
+        logger.atInfo().setMessage("[EXIT] [BEGIN] Array Expansion! {}").addArgument(expressions).log();;
+        var rightExpression = expressions.removeLast();
+        var leftExpression = expressions.removeLast();
+        expressions.offer(new ArrayExpansion(leftExpression, rightExpression));
+        logger.atInfo().setMessage("[EXIT] [END  ] Array Expansion! {}").addArgument(expressions).log();;
     }
 
     public List<Mapping> getExpressions() {

@@ -24,10 +24,15 @@ public class ObjectData implements Data {
 
     @Override
     public Data all() {
-        return new GroupedData(StreamSupport.stream(spliteratorUnknownSize(element.fields(), 0), false)
-                                            .map(Entry::getValue)
-                                            .map(ObjectData::new)
-                                            .map(v -> (Data) v).toList());
+        if (element.isObject()) {
+            return new GroupedData(StreamSupport.stream(spliteratorUnknownSize(element.fields(), 0), false)
+                                                .map(Entry::getValue)
+                                                .map(ObjectData::new)
+                                                .map(v -> (Data) v)
+                                                .toList());
+        } else {
+            return this;
+        }
     }
 
     @Override

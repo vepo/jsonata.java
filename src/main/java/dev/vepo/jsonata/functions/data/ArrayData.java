@@ -87,6 +87,11 @@ public class ArrayData implements Data {
     }
 
     @Override
+    public Stream<Data> stream() {
+        return toStream(element).map(JsonFactory::json2Value);
+    }
+
+    @Override
     public String toString() {
         return String.format("Grouped [%s]", element);
     }

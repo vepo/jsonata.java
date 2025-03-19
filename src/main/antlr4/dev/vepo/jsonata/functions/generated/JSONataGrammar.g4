@@ -11,16 +11,15 @@ expression:
     | '*'                                                                     # fieldValues
     | DESCEND                                                                 # allDescendantSearch
     | DOLLAR                                                                  # contextReferece
-    | ARR_OPEN expressionList ARR_CLOSE                                       # arrayConstructor
-    | expression DOT functionStatement                                        # functionFeed
     | functionStatement                                                       # functionCall
-    | expression DOT expression                                               # path
-    | expression DOT OBJ_OPEN fieldList OBJ_CLOSE                             # objectMapper
-    | expression OBJ_OPEN fieldList OBJ_CLOSE                                 # objectConstructor
+    | ARR_OPEN expressionList ARR_CLOSE                                       # arrayConstructor
     | expression ARR_OPEN ARR_CLOSE                                           # toArray
     | expression ARR_OPEN NUMBER ARR_CLOSE                                    # arrayIndexQuery
     | expression ARR_OPEN expression ARR_CLOSE                                # arrayQuery
-    | expression rangePredicate                                               # rangeQuery
+    | expression DOT functionStatement                                        # functionFeed
+    | expression DOT expression                                               # path
+    | expression DOT OBJ_OPEN fieldList OBJ_CLOSE                             # objectMapper
+    | expression OBJ_OPEN fieldList OBJ_CLOSE                                 # objectConstructor
     | expression op=('<' | '<=' | '>' | '>=' | '!=' | '=' | 'in') expression  # booleanCompare
     | expression op=('and' | 'or') expression                                 # booleanExpression
     | expression op=('+' | '-' | '*' | '/' | '%' | '^') expression            # algebraicExpression
@@ -29,6 +28,8 @@ expression:
     | '(' expression ')'                                                      # contextValue
     | '(' expression ';' (expression ';')+ ')'                                # blockExpression
     | FV_NAME VAR_ASSIGN (expression|functionDeclaration)                     # variableAssignment
+    // | ARR_OPEN expression '..' expression ARR_CLOSE                           # arrayExpansion
+    | expression '..' expression                                              # arrayExpansion
     | FV_NAME                                                                 # variableUsage
     | REGEX                                                                   # regexValue
     | STRING                                                                  # stringValue
@@ -43,11 +44,10 @@ parameterStatement: expression | functionDeclaration;
 functionDeclaration:
     'function' '(' FV_NAME (',' FV_NAME)* ')' '{' expression+ '}' # functionDeclarationBuilder
     ;
-expressionList: expression (',' expression)*;
+expressionList: (expression (',' expression)*)?;
 fieldList: expression ':' uniqueObj expOrObject  (',' expression ':' uniqueObj expOrObject)*;
 expOrObject: expression | object;
 
-rangePredicate: ARR_OPEN ARR_OPEN NUMBER '..' NUMBER  ARR_CLOSE ARR_CLOSE;
 BOOLEAN: 'true' | 'false';
 ROOT : '$$' ;
 DOLLAR: '$';

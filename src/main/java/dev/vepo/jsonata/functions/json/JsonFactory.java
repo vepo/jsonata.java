@@ -4,6 +4,7 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -55,6 +56,14 @@ public class JsonFactory {
     public static Data arrayValue(String[] values) {
         var array = mapper.createArrayNode();
         Stream.of(values)
+              .forEach(array::add);
+        return new ArrayData(array);
+    }
+    
+
+    public static Data arrayValue(int[] values) {
+        var array = mapper.createArrayNode();
+        IntStream.of(values)
               .forEach(array::add);
         return new ArrayData(array);
     }

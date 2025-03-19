@@ -10,4 +10,8 @@ public interface Mapping {
     public static Data empty() {
         return new EmptyData();
     }
+
+    default Mapping andThen(Mapping after) {
+        return (original, current) -> after.map(original, map(original, current));
+    }
 }

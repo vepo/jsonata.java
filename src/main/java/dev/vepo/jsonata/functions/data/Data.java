@@ -4,6 +4,7 @@ import static dev.vepo.jsonata.functions.json.JsonFactory.fromString;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -57,4 +58,8 @@ public interface Data {
     }
 
     Data map(Function<JsonNode, Data> function);
+
+    default Stream<Data> stream() {
+        return Stream.of(this);
+    }
 }
