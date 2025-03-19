@@ -13,7 +13,7 @@ import java.util.function.Predicate;
 import dev.vepo.jsonata.functions.data.Data;
 
 public class BlockContext {
-    private final Map<String, JSONataFunction> variables;
+    private final Map<String, Mapping> variables;
     private final Map<String, DeclaredFunction> functions;
     private final List<BlockContext> parentContexts;
 
@@ -23,7 +23,7 @@ public class BlockContext {
         this.parentContexts = new ArrayList<>(parentContexts);
     }
 
-    public void defineVariable(String identifier, JSONataFunction variableExpression) {
+    public void defineVariable(String identifier, Mapping variableExpression) {
         variables.put(identifier, variableExpression);
     }
 
@@ -35,7 +35,7 @@ public class BlockContext {
         return Optional.ofNullable(functions.get(identifier)).or(() -> findFunctionOnParent(identifier));
     }
 
-    public Optional<JSONataFunction> variable(String identifier) {
+    public Optional<Mapping> variable(String identifier) {
         return Optional.ofNullable(variables.get(identifier)).or(() -> findVariableOnParent(identifier));
     }
 
@@ -58,7 +58,7 @@ public class BlockContext {
                              .findFirst();
     }
 
-    private Optional<JSONataFunction> findVariableOnParent(String identifier) {
+    private Optional<Mapping> findVariableOnParent(String identifier) {
         return parentContexts.stream()
                              .map(c -> c.variable(identifier))
                              .filter(Predicate.not(Optional::isEmpty))

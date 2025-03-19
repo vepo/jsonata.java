@@ -72,6 +72,11 @@ class JSONataEmptyResult implements JSONataResult {
             public List<Boolean> asBoolean() {
                 return emptyList();
             }
+
+            @Override
+            public List<Double> asDouble() {
+                return emptyList();
+            }
         };
     }
 }

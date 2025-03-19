@@ -5,12 +5,13 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 
 import java.util.Map.Entry;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.JSONataResult;
-import dev.vepo.jsonata.functions.JSONataFunction;
+import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.results.JSONataResults;
 
 public class ObjectData implements Data {
@@ -24,23 +25,23 @@ public class ObjectData implements Data {
     @Override
     public Data all() {
         return new GroupedData(StreamSupport.stream(spliteratorUnknownSize(element.fields(), 0), false)
-                .map(Entry::getValue)
-                .map(ObjectData::new)
-                .map(v -> (Data) v).toList());
+                                            .map(Entry::getValue)
+                                            .map(ObjectData::new)
+                                            .map(v -> (Data) v).toList());
     }
 
     @Override
     public Data at(int index) {
-        return JSONataFunction.empty();
+        return Mapping.empty();
     }
 
     @Override
     public void forEachChild(Consumer<Data> action) {
         StreamSupport.stream(spliteratorUnknownSize(element.fields(), 0), false)
-                .map(Entry::getValue)
-                .filter(JsonNode::isObject)
-                .map(ObjectData::new)
-                .forEach(action);
+                     .map(Entry::getValue)
+                     .filter(JsonNode::isObject)
+                     .map(ObjectData::new)
+                     .forEach(action);
     }
 
     @Override
@@ -71,6 +72,11 @@ public class ObjectData implements Data {
     @Override
     public JSONataResult toNode() {
         return JSONataResults.object(element);
+    }
+
+    @Override
+    public Data map(Function<JsonNode, Data> function) {
+        return function.apply(element);
     }
 
     @Override

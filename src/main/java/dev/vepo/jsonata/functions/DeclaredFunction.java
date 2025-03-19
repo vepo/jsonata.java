@@ -6,7 +6,7 @@ import java.util.List;
 
 import dev.vepo.jsonata.functions.data.Data;
 
-public record DeclaredFunction(List<String> parameterNames, BlockContext context, JSONataFunction functions) {
+public record DeclaredFunction(List<String> parameterNames, BlockContext context, Mapping functions) {
 
     public Data accept(Data original, Data current, BlockContext context) {
         var builder = objectBuilder();

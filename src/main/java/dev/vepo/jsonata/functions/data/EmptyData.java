@@ -1,6 +1,7 @@
 package dev.vepo.jsonata.functions.data;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -53,7 +54,12 @@ public class EmptyData implements Data {
     public JSONataResult toNode() {
         return JSONataResults.empty();
     }
-    
+
+    @Override
+    public Data map(Function<JsonNode, Data> function) {
+        return this;
+    }
+
     @Override
     public String toString() {
         return "Empty []";

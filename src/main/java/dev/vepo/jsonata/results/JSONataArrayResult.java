@@ -77,6 +77,14 @@ class JSONataArrayResult implements JSONataResult {
             }
 
             @Override
+            public List<Double> asDouble() {
+                return IntStream.range(0, element.size())
+                                .mapToObj(element::get)
+                                .map(JsonNode::asDouble)
+                                .toList();
+            }
+
+            @Override
             public List<Boolean> asBoolean() {
                 return IntStream.range(0, element.size())
                                 .mapToObj(element::get)

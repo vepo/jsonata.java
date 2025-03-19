@@ -4,6 +4,7 @@ import static dev.vepo.jsonata.functions.json.JsonFactory.arrayNode;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -74,6 +75,13 @@ public class GroupedData implements Data {
         return JSONataResults.group(elements.stream()
                                             .map(Data::toNode)
                                             .toList());
+    }
+
+    @Override
+    public Data map(Function<JsonNode, Data> function) {
+        return new GroupedData(elements.stream()
+                                      .map(e -> e.map(function))
+                                      .toList());
     }
     
     @Override

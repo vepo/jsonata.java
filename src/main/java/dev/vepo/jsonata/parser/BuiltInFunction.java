@@ -5,36 +5,36 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import dev.vepo.jsonata.functions.DeclaredFunction;
-import dev.vepo.jsonata.functions.JSONataFunction;
+import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.builtin.BuiltInSupplier;
-import dev.vepo.jsonata.functions.builtin.ContainsJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.LengthJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.LowecaseJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.PadJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.SortJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.SplitJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.StringJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.SubstringAfterJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.SubstringBeforeJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.SubstringJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.SumJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.TrimJSONataFunction;
-import dev.vepo.jsonata.functions.builtin.UppercaseJSONataFunction;
+import dev.vepo.jsonata.functions.builtin.Contains;
+import dev.vepo.jsonata.functions.builtin.Length;
+import dev.vepo.jsonata.functions.builtin.Lowecase;
+import dev.vepo.jsonata.functions.builtin.Pad;
+import dev.vepo.jsonata.functions.builtin.Sort;
+import dev.vepo.jsonata.functions.builtin.Split;
+import dev.vepo.jsonata.functions.builtin.FnString;
+import dev.vepo.jsonata.functions.builtin.SubstringAfter;
+import dev.vepo.jsonata.functions.builtin.SubstringBefore;
+import dev.vepo.jsonata.functions.builtin.Substring;
+import dev.vepo.jsonata.functions.builtin.Sum;
+import dev.vepo.jsonata.functions.builtin.Trim;
+import dev.vepo.jsonata.functions.builtin.Uppercase;
 
 public enum BuiltInFunction {
-    SORT("$sort", SortJSONataFunction::new),
-    SUM("$sum", SumJSONataFunction::new),
-    STRING("$string", StringJSONataFunction::new),
-    LENGTH("$length", LengthJSONataFunction::new),
-    SUBSTRING("$substring", SubstringJSONataFunction::new),
-    SUBSTRING_BEFORE("$substringBefore", SubstringBeforeJSONataFunction::new),
-    SUBSTRING_AFTER("$substringAfter", SubstringAfterJSONataFunction::new),
-    LOWERCASE("$lowercase", LowecaseJSONataFunction::new),
-    UPPERCASE("$uppercase", UppercaseJSONataFunction::new),
-    TRIM("$trim", TrimJSONataFunction::new),
-    PAD("$pad", PadJSONataFunction::new),
-    CONTAINS("$contains", ContainsJSONataFunction::new),
-    SPLIT("$split", SplitJSONataFunction::new);
+    SORT("$sort", Sort::new),
+    SUM("$sum", Sum::new),
+    STRING("$string", FnString::new),
+    LENGTH("$length", Length::new),
+    SUBSTRING("$substring", Substring::new),
+    SUBSTRING_BEFORE("$substringBefore", SubstringBefore::new),
+    SUBSTRING_AFTER("$substringAfter", SubstringAfter::new),
+    LOWERCASE("$lowercase", Lowecase::new),
+    UPPERCASE("$uppercase", Uppercase::new),
+    TRIM("$trim", Trim::new),
+    PAD("$pad", Pad::new),
+    CONTAINS("$contains", Contains::new),
+    SPLIT("$split", Split::new);
 
     public static Optional<BuiltInFunction> get(String name) {
         return Stream.of(values())
@@ -50,7 +50,7 @@ public enum BuiltInFunction {
         this.supplier = supplier;
     }
 
-    JSONataFunction instantiate(List<JSONataFunction> valueProviders, List<DeclaredFunction> functions) {
+    Mapping instantiate(List<Mapping> valueProviders, List<DeclaredFunction> functions) {
         return supplier.instantiate(valueProviders, functions);
     }
 }

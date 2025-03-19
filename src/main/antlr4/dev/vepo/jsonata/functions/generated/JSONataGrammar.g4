@@ -6,17 +6,17 @@ object: OBJ_OPEN fieldList OBJ_CLOSE                                          # 
     ;
 
 expression:
-    functionStatement                                                         # functionCall
-    | ROOT                                                                    # rootPath
+    ROOT                                                                      # rootPath
     | IDENTIFIER                                                              # identifier
-    | FV_NAME                                                                 # variableUsage
     | '*'                                                                     # fieldValues
     | DESCEND                                                                 # allDescendantSearch
     | DOLLAR                                                                  # contextReferece
     | ARR_OPEN expressionList ARR_CLOSE                                       # arrayConstructor
+    | expression DOT functionStatement                                        # functionFeed
+    | functionStatement                                                       # functionCall
+    | expression DOT expression                                               # path
     | expression DOT OBJ_OPEN fieldList OBJ_CLOSE                             # objectMapper
     | expression OBJ_OPEN fieldList OBJ_CLOSE                                 # objectConstructor
-    | expression DOT expression                                               # path
     | expression ARR_OPEN ARR_CLOSE                                           # toArray
     | expression ARR_OPEN NUMBER ARR_CLOSE                                    # arrayIndexQuery
     | expression ARR_OPEN expression ARR_CLOSE                                # arrayQuery
@@ -29,6 +29,7 @@ expression:
     | '(' expression ')'                                                      # contextValue
     | '(' expression ';' (expression ';')+ ')'                                # blockExpression
     | FV_NAME VAR_ASSIGN (expression|functionDeclaration)                     # variableAssignment
+    | FV_NAME                                                                 # variableUsage
     | REGEX                                                                   # regexValue
     | STRING                                                                  # stringValue
     | NUMBER                                                                  # numberValue

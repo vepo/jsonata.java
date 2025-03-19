@@ -75,6 +75,11 @@ class JSONataObjectResult implements JSONataResult {
                 return singletonList(JSONataObjectResult.this.asBoolean());
             }
 
+            @Override
+            public List<Double> asDouble() {
+                return singletonList(JSONataObjectResult.this.asDouble());
+            }
+
         };
     }
 

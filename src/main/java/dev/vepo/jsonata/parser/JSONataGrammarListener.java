@@ -19,31 +19,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.vepo.jsonata.exception.JSONataException;
-import dev.vepo.jsonata.functions.AlgebraicJSONataFunction;
+import dev.vepo.jsonata.functions.AlgebraicOperation;
 import dev.vepo.jsonata.functions.AlgebraicOperator;
-import dev.vepo.jsonata.functions.ArrayCastTransformerJSONataFunction;
-import dev.vepo.jsonata.functions.ArrayConstructorJSONataFunction;
-import dev.vepo.jsonata.functions.ArrayIndexJSONataFunction;
-import dev.vepo.jsonata.functions.ArrayQueryJSONataFunction;
-import dev.vepo.jsonata.functions.ArrayRangeJSONataFunction;
+import dev.vepo.jsonata.functions.ArrayCast;
+import dev.vepo.jsonata.functions.ArrayConstructor;
+import dev.vepo.jsonata.functions.ArrayIndex;
+import dev.vepo.jsonata.functions.ArrayQuery;
+import dev.vepo.jsonata.functions.ArrayRange;
 import dev.vepo.jsonata.functions.BlockContext;
-import dev.vepo.jsonata.functions.BooleanExpressionJSONataFunction;
+import dev.vepo.jsonata.functions.BooleanExpression;
 import dev.vepo.jsonata.functions.BooleanOperator;
 import dev.vepo.jsonata.functions.CompareOperator;
-import dev.vepo.jsonata.functions.CompareValuesJSONataFunction;
-import dev.vepo.jsonata.functions.ContextValueJSONataFunction;
+import dev.vepo.jsonata.functions.CompareValues;
+import dev.vepo.jsonata.functions.ContextValue;
 import dev.vepo.jsonata.functions.DeclaredFunction;
-import dev.vepo.jsonata.functions.DeepFindByFieldNameJSONataFunction;
+import dev.vepo.jsonata.functions.DeepFind;
 import dev.vepo.jsonata.functions.FieldContent;
-import dev.vepo.jsonata.functions.FieldMapJSONataFunction;
-import dev.vepo.jsonata.functions.InlineIfJSONataFunction;
-import dev.vepo.jsonata.functions.JSONataFunction;
-import dev.vepo.jsonata.functions.JoinJSONataFunction;
-import dev.vepo.jsonata.functions.ObjectBuilderJSONataFunction;
-import dev.vepo.jsonata.functions.ObjectMapperJSONataFunction;
-import dev.vepo.jsonata.functions.StringConcatJSONataFunction;
-import dev.vepo.jsonata.functions.UserDefinedFunctionJSONataFunction;
-import dev.vepo.jsonata.functions.WildcardJSONataFunction;
+import dev.vepo.jsonata.functions.FieldMap;
+import dev.vepo.jsonata.functions.InlineIf;
+import dev.vepo.jsonata.functions.Mapping;
+import dev.vepo.jsonata.functions.MappingJoin;
+import dev.vepo.jsonata.functions.ObjectBuilder;
+import dev.vepo.jsonata.functions.ObjectMapper;
+import dev.vepo.jsonata.functions.Concatenation;
+import dev.vepo.jsonata.functions.UserDefinedFunction;
+import dev.vepo.jsonata.functions.Wildcard;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarBaseListener;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AlgebraicExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AllDescendantSearchContext;
@@ -63,6 +63,7 @@ import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FieldValuesCont
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FloatValueContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FunctionCallContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FunctionDeclarationBuilderContext;
+import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FunctionFeedContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.IdentifierContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.InlineIfExpressionContext;
 import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.NumberValueContext;
@@ -102,7 +103,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         }
     }
 
-    private final Deque<JSONataFunction> expressions;
+    private final Deque<Mapping> expressions;
     private final Deque<DeclaredFunction> functionsDeclared;
     private final Queue<BlockContext> blocks;
 
@@ -114,19 +115,53 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
 
     @Override
     public void enterFunctionDeclarationBuilder(FunctionDeclarationBuilderContext ctx) {
-        logger.atInfo().setMessage("Enter Function Declaration! {}").addArgument(ctx::getText).log();
+        logger.atInfo().setMessage("[ENTER] [BEGIN] Enter Function Declaration! {}").addArgument(ctx::getText).log();
         blocks.offer(new BlockContext(blocks));
+        logger.atInfo().setMessage("[ENTER] [END  ] Enter Function Declaration! {}").addArgument(expressions).log();
     }
 
     @Override
     public void exitFunctionDeclarationBuilder(FunctionDeclarationBuilderContext ctx) {
-        logger.atInfo().setMessage("Exit Function declaration builder! {}").addArgument(ctx::getText).log();
+        logger.atInfo().setMessage("[EXIT] [BEGIN] Exit Function declaration builder! {}").addArgument(ctx::getText).log();
         this.functionsDeclared.offerFirst(new DeclaredFunction(ctx.FV_NAME()
                                                                   .stream()
                                                                   .map(TerminalNode::getText)
                                                                   .toList(),
                                                                this.blocks.poll(),
                                                                this.expressions.removeLast()));
+        logger.atInfo().setMessage("[EXIT] [END  ] Exit Function declaration builder! {}").addArgument(expressions).log();
+    }
+
+    @Override
+    public void enterFunctionFeed(FunctionFeedContext ctx) {
+        logger.atInfo().setMessage("[ENTER] [BEGIN] Enter Function feed! {}").addArgument(ctx::getText).log();
+        logger.atInfo().setMessage("[ENTER] [END  ] Enter Function feed! {}").addArgument(expressions).log();
+    }
+
+    @Override
+    public void exitFunctionFeed(FunctionFeedContext ctx) {
+        logger.atInfo().setMessage("[EXIT] [BEGIN] Function feed! {}").addArgument(ctx::getText).log();
+        var valueProviders = previousExpressions((int) ctx.functionStatement()
+                                                          .parameterStatement()
+                                                          .stream()
+                                                          .map(ParameterStatementContext::expression)
+                                                          .filter(Objects::nonNull)
+                                                          .count());
+        valueProviders.addFirst(expressions.removeLast());
+        var functions = previousFunctions((int) ctx.functionStatement()
+                                                   .parameterStatement()
+                                                   .stream()
+                                                   .map(ParameterStatementContext::functionDeclaration)
+                                                   .filter(Objects::nonNull)
+                                                   .count());
+        var fnName = ctx.functionStatement().FV_NAME().getText();
+        expressions.offer(BuiltInFunction.get(fnName)
+                                         .map(fn -> fn.instantiate(valueProviders, functions))
+                                         .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
+                                                                  .flatMap(block -> block.function(fnName))
+                                                                  .map(fn -> new UserDefinedFunction(valueProviders, fn))
+                                                                  .orElseThrow(() -> new JSONataException("Function not found: " + fnName))));
+        logger.atInfo().setMessage("[EXIT] [END  ] Function feed! {}").addArgument(expressions).log();
     }
 
     @Override
@@ -149,7 +184,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
                                          .map(fn -> fn.instantiate(valueProviders, functions))
                                          .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
                                                                   .flatMap(block -> block.function(fnName))
-                                                                  .map(fn -> new UserDefinedFunctionJSONataFunction(valueProviders, fn))
+                                                                  .map(fn -> new UserDefinedFunction(valueProviders, fn))
                                                                   .orElseThrow(() -> new JSONataException("Function not found: " + fnName))));
     }
 
@@ -161,45 +196,47 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
 
     @Override
     public void exitIdentifier(IdentifierContext ctx) {
-        logger.atInfo().setMessage("Identifier! {}").addArgument(ctx::getText).log();
-        expressions.offer(new FieldMapJSONataFunction(fieldName2Text(ctx.IDENTIFIER())));
+        logger.atInfo().setMessage("[EXIT] [BEGIN] Identifier! {}").addArgument(ctx::getText).log();
+        expressions.offer(new FieldMap(fieldName2Text(ctx.IDENTIFIER())));
+        logger.atInfo().setMessage("[EXIT] [END  ] Identifier! {}").addArgument(expressions).log();
     }
 
     @Override
     public void exitPath(PathContext ctx) {
-        logger.atInfo().setMessage("Path! {}").addArgument(ctx::getText).log();
+        logger.atInfo().setMessage("[EXIT] [BEGIN] Path! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
         var previousFunction = expressions.removeLast();
-        expressions.offer(new JoinJSONataFunction(previousFunction, currentFunction));
+        expressions.offer(new MappingJoin(previousFunction, currentFunction));
+        logger.atInfo().setMessage("[EXIT] [END  ] Path! {}").addArgument(expressions).log();
     }
 
     @Override
     public void exitFieldValues(FieldValuesContext ctx) {
         logger.atInfo().setMessage("Field values! {}").addArgument(ctx::getText).log();
-        expressions.offer(new WildcardJSONataFunction());
+        expressions.offer(new Wildcard());
     }
 
     @Override
     public void exitAllDescendantSearch(AllDescendantSearchContext ctx) {
         logger.atInfo().setMessage("All descendant search! {}").addArgument(ctx::getText).log();
-        expressions.offer(new DeepFindByFieldNameJSONataFunction());
+        expressions.offer(new DeepFind());
     }
 
     @Override
     public void exitToArray(ToArrayContext ctx) {
         logger.atInfo().setMessage("To array! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
-        expressions.offer(new JoinJSONataFunction(currentFunction, new ArrayCastTransformerJSONataFunction()));
+        expressions.offer(new MappingJoin(currentFunction, new ArrayCast()));
     }
 
     @Override
     public void exitArrayIndexQuery(ArrayIndexQueryContext ctx) {
         logger.atInfo().setMessage("Array index query! {}").addArgument(ctx::getText).log();
         if (expressions.isEmpty()) {
-            expressions.offer(new ArrayIndexJSONataFunction(Integer.valueOf(ctx.NUMBER().getText())));
+            expressions.offer(new ArrayIndex(Integer.valueOf(ctx.NUMBER().getText())));
         } else {
             var previousFunction = expressions.removeLast();
-            expressions.offer(new JoinJSONataFunction(previousFunction, new ArrayIndexJSONataFunction(Integer.valueOf(ctx.NUMBER().getText()))));
+            expressions.offer(new MappingJoin(previousFunction, new ArrayIndex(Integer.valueOf(ctx.NUMBER().getText()))));
         }
     }
 
@@ -208,7 +245,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("Boolean compare! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
         var previousFunction = expressions.removeLast();
-        this.expressions.offer(new CompareValuesJSONataFunction(previousFunction, CompareOperator.get(ctx.op.getText()), currentFunction));
+        this.expressions.offer(new CompareValues(previousFunction, CompareOperator.get(ctx.op.getText()), currentFunction));
     }
 
     @Override
@@ -216,7 +253,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("Boolean expression! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
         var previousFunction = expressions.removeLast();
-        this.expressions.offer(new BooleanExpressionJSONataFunction(previousFunction, BooleanOperator.get(ctx.op.getText()), currentFunction));
+        this.expressions.offer(new BooleanExpression(previousFunction, BooleanOperator.get(ctx.op.getText()), currentFunction));
     }
 
     @Override
@@ -224,7 +261,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("Algebraic expression! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
         var previousFunction = expressions.removeLast();
-        this.expressions.offer(new AlgebraicJSONataFunction(previousFunction, AlgebraicOperator.get(ctx.op.getText()), currentFunction));
+        this.expressions.offer(new AlgebraicOperation(previousFunction, AlgebraicOperator.get(ctx.op.getText()), currentFunction));
     }
 
     @Override
@@ -233,7 +270,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         var falseValueProvider = Optional.ofNullable(ctx.expression().size() == 3 ? expressions.removeLast() : null);
         var trueValueProvider = expressions.removeLast();
         var testProvider = expressions.removeLast();
-        this.expressions.offer(new InlineIfJSONataFunction(testProvider, trueValueProvider, falseValueProvider));
+        this.expressions.offer(new InlineIf(testProvider, trueValueProvider, falseValueProvider));
     }
 
     @Override
@@ -241,7 +278,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("Array query! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
         var previousFunction = expressions.removeLast();
-        this.expressions.offer(new ArrayQueryJSONataFunction(previousFunction, currentFunction));
+        this.expressions.offer(new ArrayQuery(previousFunction, currentFunction));
     }
 
     @Override
@@ -290,14 +327,14 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         }
 
         var currentFunction = expressions.removeLast();
-        expressions.offer(new JoinJSONataFunction(currentFunction, new ArrayRangeJSONataFunction(startIndex, endIndex)));
+        expressions.offer(new MappingJoin(currentFunction, new ArrayRange(startIndex, endIndex)));
     }
 
     @Override
     public void exitContextValue(ContextValueContext ctx) {
         logger.atInfo().setMessage("Context value! {}").addArgument(ctx::getText).log();
         var contextFunction = expressions.removeLast();
-        this.expressions.offer(new ContextValueJSONataFunction(contextFunction));
+        this.expressions.offer(new ContextValue(contextFunction));
     }
 
     @Override
@@ -311,18 +348,18 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("Concat values! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
         var previousFunction = expressions.removeLast();
-        expressions.offer(new StringConcatJSONataFunction(previousFunction, currentFunction));
+        expressions.offer(new Concatenation(previousFunction, currentFunction));
     }
 
     @Override
     public void exitArrayConstructor(ArrayConstructorContext ctx) {
         logger.atInfo().setMessage("Array constructor! {}").addArgument(ctx::getText).log();
         var expresisonCounter = ctx.expressionList().expression().size();
-        var fns = new ArrayList<JSONataFunction>(expresisonCounter);
+        var fns = new ArrayList<Mapping>(expresisonCounter);
         for (int i = 0; i < expresisonCounter; ++i) {
             fns.addFirst(expressions.removeLast());
         }
-        expressions.offer(new ArrayConstructorJSONataFunction(fns));
+        expressions.offer(new ArrayConstructor(fns));
     }
 
     @Override
@@ -330,7 +367,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("Object mapper! {}").addArgument(ctx::getText).log();
         var fieldList = objectFields(ctx.fieldList());
         var previousFunction = expressions.removeLast();
-        expressions.offer(new JoinJSONataFunction(previousFunction, new ObjectMapperJSONataFunction(fieldList)));
+        expressions.offer(new MappingJoin(previousFunction, new ObjectMapper(fieldList)));
     }
 
     @Override
@@ -338,13 +375,13 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         logger.atInfo().setMessage("Object constructor! {}").addArgument(ctx::getText).log();
         var fieldList = objectFields(ctx.fieldList());
         var previousFunction = expressions.removeLast();
-        expressions.offer(new JoinJSONataFunction(previousFunction, new ObjectBuilderJSONataFunction(fieldList)));
+        expressions.offer(new MappingJoin(previousFunction, new ObjectBuilder(fieldList)));
     }
 
     @Override
     public void exitObjectBuilder(ObjectBuilderContext ctx) {
         logger.atInfo().setMessage("Object builder! {}").addArgument(ctx::getText).log();
-        expressions.offer(new ObjectBuilderJSONataFunction(objectFields(ctx.fieldList())));
+        expressions.offer(new ObjectBuilder(objectFields(ctx.fieldList())));
     }
 
     @Override
@@ -387,7 +424,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         }
     }
 
-    public List<JSONataFunction> getExpressions() {
+    public List<Mapping> getExpressions() {
         return expressions.stream().toList();
     }
 
@@ -399,8 +436,8 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
         return fns;
     }
 
-    private List<JSONataFunction> previousExpressions(int size) {
-        var fns = new ArrayList<JSONataFunction>(size);
+    private List<Mapping> previousExpressions(int size) {
+        var fns = new ArrayList<Mapping>(size);
         for (int i = 0; i < size; ++i) {
             fns.addFirst(expressions.removeLast());
         }

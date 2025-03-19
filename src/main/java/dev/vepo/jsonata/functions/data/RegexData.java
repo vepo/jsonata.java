@@ -1,6 +1,7 @@
 package dev.vepo.jsonata.functions.data;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -66,8 +67,12 @@ public class RegexData implements Data {
     }
 
     @Override
+    public Data map(Function<JsonNode, Data> function) {
+        throw new UnsupportedOperationException("Unimplemented method 'map'");
+    }
+
+    @Override
     public String toString() {
         return String.format("RegexData [%s]", node);
     }
-
 }

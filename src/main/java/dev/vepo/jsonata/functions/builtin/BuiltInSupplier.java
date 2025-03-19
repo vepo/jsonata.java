@@ -3,9 +3,9 @@ package dev.vepo.jsonata.functions.builtin;
 import java.util.List;
 
 import dev.vepo.jsonata.functions.DeclaredFunction;
-import dev.vepo.jsonata.functions.JSONataFunction;
+import dev.vepo.jsonata.functions.Mapping;
 
 @FunctionalInterface
 public interface BuiltInSupplier {
-    JSONataFunction instantiate(List<JSONataFunction> providers, List<DeclaredFunction> declaredFunctions);
+    Mapping instantiate(List<Mapping> providers, List<DeclaredFunction> declaredFunctions);
 }

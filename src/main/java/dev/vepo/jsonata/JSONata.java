@@ -2,8 +2,8 @@ package dev.vepo.jsonata;
 
 import java.util.List;
 
-import dev.vepo.jsonata.functions.JSONataFunction;
-import dev.vepo.jsonata.functions.JSONataFunctionsParser;
+import dev.vepo.jsonata.functions.Mapping;
+import dev.vepo.jsonata.functions.MappingParser;
 import dev.vepo.jsonata.functions.data.Data;
 
 /**
@@ -27,14 +27,14 @@ import dev.vepo.jsonata.functions.data.Data;
  *   <li>{@link #evaluate(String)} - Evaluates the provided JSON content against the parsed expressions and returns the result as a Node.</li>
  * </ul>
  *
- * @see JSONataFunction
+ * @see Mapping
  * @see JSONataResult
  */
 public class JSONata {
 
-    private final List<JSONataFunction> functions;
+    private final List<Mapping> functions;
 
-    private JSONata(List<JSONataFunction> expressions) {
+    private JSONata(List<Mapping> expressions) {
         this.functions = expressions;
     }
 
@@ -46,7 +46,7 @@ public class JSONata {
      * @return a new JSONata instance
      */
     public static JSONata jsonata(String content) {
-        return new JSONata(JSONataFunctionsParser.parse(content));
+        return new JSONata(MappingParser.parse(content));
     }
 
     public JSONataResult evaluate(String contents) {

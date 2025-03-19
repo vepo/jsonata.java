@@ -82,6 +82,13 @@ class JSONataGroupResult implements JSONataResult {
                                .toList();
             }
 
+            @Override
+            public List<Double> asDouble() {
+                return elements.stream()
+                               .flatMap(n -> n.multi().asDouble().stream())
+                               .toList();
+            }
+
         };
     }
 }

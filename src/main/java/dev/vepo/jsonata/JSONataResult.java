@@ -95,5 +95,7 @@ public interface JSONataResult {
          * @return the list of boolean representations of the multi-value node
          */
         List<Boolean> asBoolean();
+
+        List<Double> asDouble();
     }
 }

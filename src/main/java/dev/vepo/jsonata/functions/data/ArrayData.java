@@ -5,6 +5,7 @@ import static dev.vepo.jsonata.results.JSONataResults.array;
 
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -77,6 +78,12 @@ public class ArrayData implements Data {
     @Override
     public JSONataResult toNode() {
         return array(element);
+    }
+
+    @Override
+    public Data map(Function<JsonNode, Data> function) {
+        return new GroupedData(toStream(element).map(function)
+                                                .toList());
     }
 
     @Override

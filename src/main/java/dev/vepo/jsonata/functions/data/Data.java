@@ -3,6 +3,7 @@ package dev.vepo.jsonata.functions.data;
 import static dev.vepo.jsonata.functions.json.JsonFactory.fromString;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -54,4 +55,6 @@ public interface Data {
     default RegExp asRegex() {
         throw new UnsupportedOperationException("Unimplemented method 'asRegex'");
     }
+
+    Data map(Function<JsonNode, Data> function);
 }
