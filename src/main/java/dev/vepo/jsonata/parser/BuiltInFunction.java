@@ -11,6 +11,7 @@ import dev.vepo.jsonata.functions.builtin.BuiltInSupplier;
 import dev.vepo.jsonata.functions.builtin.Contains;
 import dev.vepo.jsonata.functions.builtin.Count;
 import dev.vepo.jsonata.functions.builtin.FnString;
+import dev.vepo.jsonata.functions.builtin.Join;
 import dev.vepo.jsonata.functions.builtin.Length;
 import dev.vepo.jsonata.functions.builtin.Lowecase;
 import dev.vepo.jsonata.functions.builtin.Max;
@@ -42,7 +43,8 @@ public enum BuiltInFunction {
     MAX("$max", Max::new),
     MIN("$min", Min::new),
     AVERAGE("$average", Average::new),
-    COUNT("$count", Count::new);
+    COUNT("$count", Count::new),
+    JOIN("$join", Join::new);
 
     public static Optional<BuiltInFunction> get(String name) {
         return Stream.of(values())

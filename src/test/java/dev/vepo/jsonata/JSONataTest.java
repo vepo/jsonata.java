@@ -278,6 +278,8 @@ class JSONataTest {
                                                              .hasMessage("$lowercase function must have 1 argument!");
             assertThatThrownBy(() -> jsonata("$uppercase()")).isInstanceOf(IllegalArgumentException.class)
                                                              .hasMessage("$uppercase function must have 1 argument!");
+            assertThatThrownBy(() -> jsonata("$join()")).isInstanceOf(IllegalArgumentException.class)
+                                                        .hasMessage("$join function must have 1 argument!");
 
         }
 
@@ -336,6 +338,14 @@ class JSONataTest {
                                                                                                                                                "punctuation",
                                                                                                                                                "hard", "to",
                                                                                                                                                "read");
+        }
+
+        @Test
+        void joinTest() {
+            assertThat(jsonata("$join(['a','b','c'])").evaluate("{}").asText()).isEqualTo("abc");
+            assertThat(jsonata("$join([])").evaluate("{}").asText()).isEmpty();
+            // $split("too much, punctuation. hard; to read", /[ ,.;]+/, 3) ~> $join(', ') => "too, much, punctuation"
+            assertThat(jsonata("$join($split(\"too much, punctuation. hard; to read\", /[ ,.;]+/, 3), ', ')").evaluate("{}").asText()).isEqualTo("too, much, punctuation");
         }
 
         @Test
