@@ -25,10 +25,11 @@ expression:
     | expression op=('+' | '-' | '*' | '/' | '%' | '^') expression            # algebraicExpression
     | expression '?' expression (':' expression)?                             # inlineIfExpression
     | expression '&' expression                                               # concatValues
+    | expression CHAIN_OP functionStatement                                   # chainExpression
     | '(' expression ')'                                                      # contextValue
-    | '(' expression ';' (expression ';')+ ')'                                # blockExpression
+    | '(' (expression ';')+ expression ';'? ')'                               # blockExpression
+    | FV_NAME VAR_ASSIGN FV_NAME (CHAIN_OP FV_NAME)+                          # functionComposition
     | FV_NAME VAR_ASSIGN (expression|functionDeclaration)                     # variableAssignment
-    // | ARR_OPEN expression '..' expression ARR_CLOSE                           # arrayExpansion
     | expression '..' expression                                              # arrayExpansion
     | FV_NAME                                                                 # variableUsage
     | REGEX                                                                   # regexValue
@@ -56,7 +57,8 @@ ARR_OPEN: '[';
 ARR_CLOSE: ']';
 OBJ_OPEN: '{';
 OBJ_CLOSE: '}';
-VAR_ASSIGN : ':=' ;
+VAR_ASSIGN: ':=' ;
+CHAIN_OP: '~>';
 uniqueObj: (DOLLAR DOT)?;
 
 FV_NAME: DOLLAR IDENTIFIER;

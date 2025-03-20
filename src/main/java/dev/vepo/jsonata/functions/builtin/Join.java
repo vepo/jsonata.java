@@ -16,7 +16,7 @@ public record Join(List<Mapping> providers,
 
     public Join {
         if (providers.size() < 1 || providers.size() > 2) {
-            throw new IllegalArgumentException("$join function must have 1 or 2 argument!");
+            throw new IllegalArgumentException("$join function must have 1 or 2 arguments!");
         }
     }
 

@@ -43,6 +43,7 @@ import dev.vepo.jsonata.functions.ObjectBuilder;
 import dev.vepo.jsonata.functions.ObjectMapper;
 import dev.vepo.jsonata.functions.UserDefinedFunction;
 import dev.vepo.jsonata.functions.Wildcard;
+import dev.vepo.jsonata.functions.builtin.CompoundFunction;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsBaseListener;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.AlgebraicExpressionContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.AllDescendantSearchContext;
@@ -54,6 +55,7 @@ import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BlockExpres
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BooleanCompareContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BooleanExpressionContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BooleanValueContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ChainExpressionContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ConcatValuesContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ContextRefereceContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ContextValueContext;
@@ -62,6 +64,7 @@ import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FieldListCo
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FieldValuesContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FloatValueContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FunctionCallContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FunctionCompositionContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FunctionDeclarationBuilderContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FunctionFeedContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.IdentifierContext;
@@ -165,7 +168,7 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
 
     @Override
     public void exitFunctionCall(FunctionCallContext ctx) {
-        logger.atInfo().setMessage("Function call! {}").addArgument(ctx::getText).log();
+        logger.atInfo().setMessage("[EXIT] [BEGIN] Function call! {}").addArgument(ctx::getText).log();
         var valueProviders = previousExpressions((int) ctx.functionStatement()
                                                           .parameterStatement()
                                                           .stream()
@@ -181,10 +184,14 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
         var fnName = ctx.functionStatement().FV_NAME().getText();
         expressions.offer(BuiltInFunction.get(fnName)
                                          .map(fn -> fn.instantiate(valueProviders, functions))
+                                         .or(() -> Optional.ofNullable(this.blocks.peek())
+                                                           .flatMap(block -> block.function(fnName))
+                                                           .map(fn -> new UserDefinedFunction(valueProviders, fn)))
                                          .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
-                                                                  .flatMap(block -> block.function(fnName))
-                                                                  .map(fn -> new UserDefinedFunction(valueProviders, fn))
+                                                                  .flatMap(block -> block.compoundFunction(fnName))
+                                                                  .map(fn -> fn.withProviders(valueProviders))
                                                                   .orElseThrow(() -> new JSONataException("Function not found: " + fnName))));
+        logger.atInfo().setMessage("[EXIT] [END  ] Function call! {}").addArgument(expressions).log();
     }
 
     @Override
@@ -205,7 +212,7 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
         logger.atInfo().setMessage("[EXIT] [BEGIN] Path! {}").addArgument(ctx::getText).log();
         var currentFunction = expressions.removeLast();
         var previousFunction = expressions.removeLast();
-        expressions.offer(new MappingJoin(previousFunction,currentFunction));
+        expressions.offer(new MappingJoin(previousFunction, currentFunction));
         logger.atInfo().setMessage("[EXIT] [END  ] Path! {}").addArgument(expressions).log();
     }
 
@@ -388,6 +395,49 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
     }
 
     @Override
+    public void exitChainExpression(ChainExpressionContext ctx) {
+        logger.atInfo().setMessage("[EXIT] [BEGIN] Chain expression! {}").addArgument(ctx::getText).log();
+        var valueProviders = previousExpressions((int) ctx.functionStatement()
+                                                          .parameterStatement()
+                                                          .stream()
+                                                          .map(ParameterStatementContext::expression)
+                                                          .filter(Objects::nonNull)
+                                                          .count());
+        valueProviders.addFirst(expressions.removeLast());
+        var functions = previousFunctions((int) ctx.functionStatement()
+                                                   .parameterStatement()
+                                                   .stream()
+                                                   .map(ParameterStatementContext::functionDeclaration)
+                                                   .filter(Objects::nonNull)
+                                                   .count());
+        var fnName = ctx.functionStatement().FV_NAME().getText();
+        expressions.offer(BuiltInFunction.get(fnName)
+                                         .map(fn -> fn.instantiate(valueProviders, functions))
+                                         .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
+                                                                  .flatMap(block -> block.function(fnName))
+                                                                  .map(fn -> new UserDefinedFunction(valueProviders, fn))
+                                                                  .orElseThrow(() -> new JSONataException("Function not found: " + fnName))));
+        logger.atInfo().setMessage("[EXIT] [END  ] Chain expression! {}").addArgument(expressions).log();
+    }
+
+    @Override
+    public void exitFunctionComposition(FunctionCompositionContext ctx) {
+        logger.atInfo().setMessage("[EXIT] [BEGIN] Function composition! {}").addArgument(ctx::getText).log();
+        var fnNames = ctx.FV_NAME().stream().skip(1l).toList();
+        var fnName = ctx.FV_NAME().get(0).getText();
+        var block = Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK);
+        var context = new CompoundFunction.CompoundContext();
+        block.defineCompoundFunction(fnName, new CompoundFunction(fnNames.stream().map(TerminalNode::getText).map(BuiltInFunction::get).map(maybeFn -> {
+            if (maybeFn.isPresent()) {
+                return maybeFn.get().instantiate(List.of((original, current) -> context.getPreviousFunctionResult()), List.of());
+            } else {
+                throw new JSONataException("Function not found: " + fnName);
+            }
+        }).toList(), context));
+        logger.atInfo().setMessage("[EXIT] [END  ] Function composition! {}").addArgument(expressions).log();
+    }
+
+    @Override
     public void exitRegexValue(RegexValueContext ctx) {
         logger.atInfo().setMessage("Regex! {}").addArgument(ctx::getText).log();
         expressions.offer((original, current) -> JsonFactory.regex(ctx.getText()));
@@ -407,11 +457,13 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
 
     @Override
     public void exitArrayExpansion(ArrayExpansionContext ctx) {
-        logger.atInfo().setMessage("[EXIT] [BEGIN] Array Expansion! {}").addArgument(expressions).log();;
+        logger.atInfo().setMessage("[EXIT] [BEGIN] Array Expansion! {}").addArgument(expressions).log();
+        ;
         var rightExpression = expressions.removeLast();
         var leftExpression = expressions.removeLast();
         expressions.offer(new ArrayExpansion(leftExpression, rightExpression));
-        logger.atInfo().setMessage("[EXIT] [END  ] Array Expansion! {}").addArgument(expressions).log();;
+        logger.atInfo().setMessage("[EXIT] [END  ] Array Expansion! {}").addArgument(expressions).log();
+        ;
     }
 
     public List<Mapping> getExpressions() {

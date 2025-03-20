@@ -10,16 +10,19 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.function.Predicate;
 
+import dev.vepo.jsonata.functions.builtin.CompoundFunction;
 import dev.vepo.jsonata.functions.data.Data;
 
 public class BlockContext {
     private final Map<String, Mapping> variables;
     private final Map<String, DeclaredFunction> functions;
     private final List<BlockContext> parentContexts;
+    private final Map<String, CompoundFunction> compoundFunctions;
 
     public BlockContext(Queue<BlockContext> parentContexts) {
         this.variables = new HashMap<>();
         this.functions = new HashMap<>();
+        this.compoundFunctions = new HashMap<>();
         this.parentContexts = new ArrayList<>(parentContexts);
     }
 
@@ -31,12 +34,20 @@ public class BlockContext {
         functions.put(identifier, fn);
     }
 
+    public void defineCompoundFunction(String fnName, CompoundFunction compoundFunction) {
+        compoundFunctions.put(fnName, compoundFunction);
+    }
+
     public Optional<DeclaredFunction> function(String identifier) {
         return Optional.ofNullable(functions.get(identifier)).or(() -> findFunctionOnParent(identifier));
     }
 
     public Optional<Mapping> variable(String identifier) {
         return Optional.ofNullable(variables.get(identifier)).or(() -> findVariableOnParent(identifier));
+    }
+
+    public Optional<CompoundFunction> compoundFunction(String fnName) {
+        return Optional.ofNullable(compoundFunctions.get(fnName));
     }
 
     public Data variables(Data original, Data current) {

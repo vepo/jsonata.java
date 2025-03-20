@@ -279,7 +279,7 @@ class JSONataTest {
             assertThatThrownBy(() -> jsonata("$uppercase()")).isInstanceOf(IllegalArgumentException.class)
                                                              .hasMessage("$uppercase function must have 1 argument!");
             assertThatThrownBy(() -> jsonata("$join()")).isInstanceOf(IllegalArgumentException.class)
-                                                        .hasMessage("$join function must have 1 argument!");
+                                                        .hasMessage("$join function must have 1 or 2 arguments!");
 
         }
 
