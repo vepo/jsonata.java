@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
@@ -16,8 +18,8 @@ public record ArrayQuery(Mapping mapFunction, Mapping filterFunction) implements
             List<Integer> indexes = filterFunction.map(original, current)
                                                   .stream()
                                                   .map(Data::toJson)
-                                                  .map(node -> node.asInt())
-                                                  .collect(Collectors.toList());
+                                                  .map(JsonNode::asInt)
+                                                  .toList();
             if (!(mapped.isArray() || mapped.isList()) && indexes.contains(0)) {
                 return mapped;
             }

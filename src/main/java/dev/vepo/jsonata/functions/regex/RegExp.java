@@ -16,6 +16,10 @@ public class RegExp {
         return engineManager.getEngineByName("nashorn");
     }
 
+    private static void invalidPattern(String pattern, ScriptException e) {
+        throw new IllegalArgumentException("Invalid pattern: " + pattern, e);
+    }
+
     private final Function<String, Boolean> isContainedFn;
     private final Function<String, String[]> splitFn;
     private final ScriptEngine engine;
@@ -38,7 +42,8 @@ public class RegExp {
                     bindings.put("content", content);
                     return (Boolean) engine.eval("isContained(content)", bindings);
                 } catch (ScriptException e) {
-                    throw new IllegalArgumentException("Invalid pattern: " + pattern, e);
+                    invalidPattern(pattern, e);
+                    return false;
                 }
             };
             splitFn = content -> {
@@ -48,7 +53,8 @@ public class RegExp {
                     ScriptObjectMirror ret = (ScriptObjectMirror) engine.eval("split(content)", bindings);
                     return ret.to(String[].class);
                 } catch (ScriptException e) {
-                    throw new IllegalArgumentException("Invalid pattern: " + pattern, e);
+                    invalidPattern(pattern, e);
+                    return new String[] { content };
                 }
             };
 

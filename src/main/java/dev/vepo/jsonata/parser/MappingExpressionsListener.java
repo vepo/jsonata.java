@@ -43,47 +43,47 @@ import dev.vepo.jsonata.functions.ObjectBuilder;
 import dev.vepo.jsonata.functions.ObjectMapper;
 import dev.vepo.jsonata.functions.UserDefinedFunction;
 import dev.vepo.jsonata.functions.Wildcard;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarBaseListener;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AlgebraicExpressionContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.AllDescendantSearchContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayConstructorContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayExpansionContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayIndexQueryContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ArrayQueryContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.BlockExpressionContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.BooleanCompareContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.BooleanExpressionContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.BooleanValueContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ConcatValuesContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ContextRefereceContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ContextValueContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ExpNumberValueContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FieldListContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FieldValuesContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FloatValueContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FunctionCallContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FunctionDeclarationBuilderContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.FunctionFeedContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.IdentifierContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.InlineIfExpressionContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.NumberValueContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectBuilderContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectConstructorContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ObjectMapperContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ParameterStatementContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.PathContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RegexValueContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.RootPathContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.StringValueContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.ToArrayContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.VariableAssignmentContext;
-import dev.vepo.jsonata.functions.generated.JSONataGrammarParser.VariableUsageContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsBaseListener;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.AlgebraicExpressionContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.AllDescendantSearchContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ArrayConstructorContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ArrayExpansionContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ArrayIndexQueryContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ArrayQueryContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BlockExpressionContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BooleanCompareContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BooleanExpressionContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BooleanValueContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ConcatValuesContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ContextRefereceContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ContextValueContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ExpNumberValueContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FieldListContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FieldValuesContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FloatValueContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FunctionCallContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FunctionDeclarationBuilderContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.FunctionFeedContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.IdentifierContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.InlineIfExpressionContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.NumberValueContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ObjectBuilderContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ObjectConstructorContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ObjectMapperContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ParameterStatementContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.PathContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.RegexValueContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.RootPathContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.StringValueContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ToArrayContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.VariableAssignmentContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.VariableUsageContext;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
-public class JSONataGrammarListener extends JSONataGrammarBaseListener {
+public class MappingExpressionsListener extends MappingExpressionsBaseListener {
     private static final String VARIABLE_NOT_DEFINED_IN_BLOCK = "Variable should only be defined in blocks!";
 
-    private static final Logger logger = LoggerFactory.getLogger(JSONataGrammarListener.class);
+    private static final Logger logger = LoggerFactory.getLogger(MappingExpressionsListener.class);
 
     private static String fieldName2Text(TerminalNode ctx) {
         if (!ctx.getText().startsWith("`")) {
@@ -106,7 +106,7 @@ public class JSONataGrammarListener extends JSONataGrammarBaseListener {
     private final Deque<DeclaredFunction> functionsDeclared;
     private final Queue<BlockContext> blocks;
 
-    public JSONataGrammarListener() {
+    public MappingExpressionsListener() {
         this.expressions = new LinkedList<>();
         this.functionsDeclared = new LinkedList<>();
         this.blocks = new LinkedList<>();

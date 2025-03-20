@@ -1,4 +1,4 @@
-grammar JSONataGrammar;
+grammar MappingExpressions;
 
 expressions: (expression+ | object) EOF;
 
