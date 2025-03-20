@@ -320,29 +320,18 @@ class JSONataTest {
 
         @Test
         void containsTest() {
-            // $contains("abracadabra", "bra") => true
             assertThat(jsonata("$contains(\"abracadabra\", \"bra\")").evaluate("{}").asBoolean()).isTrue();
-            // $contains("abracadabra", /a.*a/) => true
             assertThat(jsonata("$contains(\"abracadabra\", /a.*a/)").evaluate("{}").asBoolean()).isTrue();
-            // $contains("abracadabra", /ar.*a/) => false
             assertThat(jsonata("$contains(\"abracadabra\", /ar.*a/)").evaluate("{}").asBoolean()).isFalse();
-            // $contains("Hello World", /wo/) => false
             assertThat(jsonata("$contains(\"Hello World\", /wo/)").evaluate("{}").asBoolean()).isFalse();
-            // $contains("Hello World", /wo/i) => true
             assertThat(jsonata("$contains(\"Hello World\", /wo/i)").evaluate("{}").asBoolean()).isTrue();
-            // Phone[$contains(number, /^077/)] => { "type": "mobile", "number": "077 7700
-            // 1234" }
             assertThat(jsonata("Phone[$contains(number, /^077/)]").evaluate(ADDRESS).asText()).isEqualTo("{\"type\":\"mobile\",\"number\":\"077 7700 1234\"}");
         }
 
         @Test
         void splitTest() {
-            // $split("so many words", " ") => [ "so", "many", "words" ]
             assertThat(jsonata("$split(\"so many words\", \" \")").evaluate("{}").multi().asText()).containsExactly("so", "many", "words");
-            // $split("so many words", " ", 2) => [ "so", "many" ]
             assertThat(jsonata("$split(\"so many words\", \" \", 2)").evaluate("{}").multi().asText()).containsExactly("so", "many");
-            // $split("too much, punctuation. hard; to read", /[ ,.;]+/) => ["too", "much",
-            // "punctuation", "hard", "to", "read"]
             assertThat(jsonata("$split(\"too much, punctuation. hard; to read\", /[ ,.;]+/)").evaluate("{}").multi().asText()).containsExactly("too", "much",
                                                                                                                                                "punctuation",
                                                                                                                                                "hard", "to",
@@ -402,7 +391,7 @@ class JSONataTest {
         @Test
         void minTest() {
             assertThat(jsonata("$min([])").evaluate(NUMBERS).isEmpty()).isTrue();
-            assertThat(jsonata("$min([0, 1, 2])").evaluate(NUMBERS).asInt()).isEqualTo(0);
+            assertThat(jsonata("$min([0, 1, 2])").evaluate(NUMBERS).asInt()).isZero();
         }
 
         @Test
@@ -529,7 +518,6 @@ class JSONataTest {
                                """).evaluate("{}").asInt()).isEqualTo(10);
         }
 
-        // @Disabled
         @Test
         void variableDefinitionTest() {
             assertThat(jsonata("""
