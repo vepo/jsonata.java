@@ -20,7 +20,7 @@
     </properties>
 
     <name>JSONata.java</name>
-    <description></description>
+    <description>Native JSONata query and transformation language for Java 21</description>
 
     <dependencies>
         <dependency>

@@ -52,6 +52,14 @@ Apply these on every Java change. Prefer compile-time safety over runtime checks
 - Know and use the standard library (`Objects`, `List.of`, `Stream`, `Pattern`, `Math`).
 - Avoid float/double for monetary or exact numeric semantics when precision matters.
 
+## Imports
+
+- Import only classes that are used — remove unused imports before finishing a change.
+- Every referenced type must have an explicit `import` at the top of the file.
+- Never use fully qualified class names in method bodies, fields, or signatures (e.g. avoid `java.util.List`, `dev.vepo.jsonata.exception.JSONataException` inline).
+- The only exception is a **name collision**: when two types share the same simple name, import one and use the fully qualified name for the other.
+- Do not use wildcard imports (`import java.util.*;`) — import each type explicitly.
+
 ## Exceptions
 
 - Use checked exceptions only when callers can recover; prefer unchecked for programming errors.
