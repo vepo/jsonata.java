@@ -1,0 +1,38 @@
+---
+description: Domain-Driven Design workflow and layer boundaries for JSONata.java
+alwaysApply: true
+---
+
+# DDD Workflow
+
+## Before Coding
+
+1. Identify the **ubiquitous language** term from the JSONata spec (e.g. mapping, aggregate, block context).
+2. Decide which layer owns the change: domain, application, or infrastructure.
+3. Name classes, methods, and tests after domain terms — not parser rule names or ANTLR tokens.
+
+## Layer Rules
+
+| Layer | Packages | Depends on |
+|-------|----------|------------|
+| Application | `dev.vepo.jsonata` (facade) | Domain |
+| Domain | `functions/`, `results/`, `exception/` | JDK only |
+| Infrastructure | `parser/`, `functions/json/`, `functions/regex/` | Domain + external libs |
+
+- Domain types (`Data`, `Mapping`, `JSONataResult`) define behavior; infrastructure implements I/O and parsing.
+- Never import ANTLR or Jackson classes from domain packages.
+- Cross-cutting errors use `JSONataException` with clear, user-facing messages.
+
+## Feature Checklist
+
+1. Domain model or behavior change (interface/class in `functions/` or `results/`).
+2. Wire through existing abstractions (`MappingParser`, `BuiltInSupplier`) — avoid bypassing domain APIs.
+3. Infrastructure only if grammar, JSON loading, or regex handling changes.
+4. Thin facade update in `JSONata` if public API surface changes.
+5. Tests express domain behavior in spec language, not implementation details.
+
+## Anti-patterns
+
+- Fat static utility classes holding domain logic.
+- Leaking `ParseTree`, `JsonNode`, or listener types into domain signatures.
+- Duplicating JSONata semantics in tests instead of referencing spec behavior.

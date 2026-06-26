@@ -1,0 +1,49 @@
+---
+description: Object-oriented design principles for Java domain code
+globs: "**/*.java"
+alwaysApply: false
+---
+
+# OOP Principles
+
+## Core Pillars
+
+- **Encapsulation** — Hide representation (`Data` subtypes), expose behavior (`map`, `evaluate`, `toNode`). No public mutable fields.
+- **Abstraction** — Program to interfaces (`Mapping`, `JSONataResult`, `BuiltInSupplier`), not concrete evaluators.
+- **Polymorphism** — Dispatch via interface methods and sealed/type hierarchies, not `instanceof` chains.
+- **Composition** — Build complex mappings by combining simpler ones (`MappingJoin`, `CompoundFunction`), not deep inheritance trees.
+
+## Tell, Don't Ask
+
+Objects own their behavior. Callers **tell** what to do; they do not **ask** for state and decide externally.
+
+```java
+// ❌ Ask — caller inspects type and branches
+if (data instanceof ArrayData array) {
+    for (var item : array.items()) { /* ... */ }
+} else {
+    /* ... */
+}
+
+// ✅ Tell — behavior stays on the object
+data.map(mapping, context);
+```
+
+- Push decisions into the type that holds the data (`Data.map`, `JSONataResult.toNode`).
+- Avoid getters followed by external `if/switch` — add an intent-revealing method instead.
+- Law of Demeter follows naturally: no `a.getB().getC().doD()` chains across layers.
+
+## Design Guidelines
+
+- Keep inheritance depth ≤ 2; favor `record` + interface for simple value carriers.
+- Replace switch-on-type with polymorphism only when behavior is stable and cross-cutting.
+- Co-locate behavior with data it operates on (methods on `Data`, not external static helpers).
+- Factory methods (`jsonata(...)`, `Data.load(...)`) hide construction complexity.
+
+## Red Flags
+
+- God classes accumulating unrelated JSONata features.
+- Static mutable state shared across evaluations.
+- Subclasses overriding methods to disable parent behavior.
+- Leaking internal collections that callers can mutate.
+- Callers that query object state and implement domain logic outside the object.

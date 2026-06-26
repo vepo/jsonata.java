@@ -1,0 +1,45 @@
+---
+description: Test-Driven Development workflow using JUnit 5 and AssertJ
+alwaysApply: true
+---
+
+# TDD Workflow
+
+## Cycle
+
+1. **Red** — Write a failing test first. Confirm failure (`mvn test -Dtest=ClassName#methodName`).
+2. **Green** — Implement the smallest change that passes.
+3. **Refactor** — Improve design; re-run `mvn test`.
+
+Skip TDD only when the user explicitly requests no tests or a docs-only change.
+
+## Test Structure
+
+```java
+class FeatureTest {
+    @Nested
+    class ScenarioGroup {
+        @Test
+        void describesExpectedBehavior() {
+            assertThat(jsonata("expr").evaluate(JSON).asText()).isEqualTo("expected");
+        }
+    }
+}
+```
+
+- Mirror `src/main/java` package paths under `src/test/java`.
+- Reuse fixtures from `TestData`; add shared fixtures there, not inline magic strings.
+- Use AssertJ (`assertThat`, `assertThatThrownBy`) — not JUnit legacy assertions.
+- Prefer `@ParameterizedTest` when many input/output pairs share one behavior.
+
+## What to Test
+
+- Happy path aligned with JSONata spec examples.
+- Empty/missing paths, invalid JSON, parse errors.
+- Regression for every bug fix.
+
+## Agent Behavior
+
+- Do not mark a feature complete until tests pass.
+- When fixing a bug, add a test that fails without the fix.
+- Avoid testing private methods; test observable behavior through public/domain APIs.

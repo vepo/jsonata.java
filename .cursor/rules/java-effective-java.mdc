@@ -1,0 +1,73 @@
+---
+description: Java quality checklist distilled from Effective Java (3rd ed.)
+globs: "**/*.java"
+alwaysApply: false
+---
+
+# Effective Java Checklist
+
+Apply these on every Java change. Prefer compile-time safety over runtime checks.
+
+## Creating & Destroying Objects
+
+- Prefer static factory methods over public constructors when names add clarity (`JSONata.jsonata(...)`).
+- Enforce singletons with `enum` or private constructor + static accessor — not mutable static fields.
+- Eliminate obsolete object references (clear collections, avoid unintentional leaks in long-lived parsers).
+- Avoid creating unnecessary objects in hot paths (reuse immutable instances, `String` constants).
+
+## Common Methods
+
+- Obey `equals`/`hashCode` contract together; use `Objects.equals` / `Objects.hash`.
+- Always override `toString` on value types and exceptions meant for debugging.
+- Override `clone` carefully or avoid it; prefer copy constructors/factories.
+
+## Classes & Interfaces
+
+- Minimize accessibility — prefer package-private or `private` until API need is proven.
+- Favor immutability: `final` fields, no setters, defensive copies on construction.
+- Prefer interfaces over abstract classes for type definitions (`Mapping`, `Data`).
+- Design interfaces for evolution; use default methods sparingly and document invariants.
+
+## Generics & Types
+
+- Eliminate raw types; never suppress unchecked warnings without justification.
+- Prefer bounded wildcards (`? extends T`, `? super T`) on public API collections.
+- Use `@SuppressWarnings("unchecked")` only on the smallest scope with a comment why.
+
+## Enums & Annotations
+
+- Use enums for fixed constant sets with behavior (operators, built-in identifiers).
+- Use `@Override` on every override; use `@FunctionalInterface` on single-method interfaces.
+
+## Methods
+
+- Check parameters for null/invalid state at entry; throw `NullPointerException` or `IllegalArgumentException` with message.
+- Make defensive copies when exposing mutable internals.
+- Return empty collections (`List.of()`, `Collections.emptyList()`) instead of `null`.
+- Use `Optional` only as a return type for absent values — never fields or parameters.
+
+## General Programming
+
+- Prefer primitives where null is impossible; use boxed types only in generics/collections.
+- Know and use the standard library (`Objects`, `List.of`, `Stream`, `Pattern`, `Math`).
+- Avoid float/double for monetary or exact numeric semantics when precision matters.
+
+## Exceptions
+
+- Use checked exceptions only when callers can recover; prefer unchecked for programming errors.
+- Wrap low-level exceptions with domain context (`JSONataException`) preserving cause.
+- Never swallow exceptions; never use exceptions for ordinary control flow.
+
+## Concurrency & Modules
+
+- Document thread-safety on public types. Prefer immutable, stateless evaluators.
+- Respect `module-info.java` exports/opens; do not break module boundaries.
+
+## Serialization
+
+- Avoid Java serialization for domain types; use JSON via existing Jackson adapters when persistence is needed.
+
+## Project-Specific
+
+- Java 21 features allowed: `var`, records (for immutable DTOs), pattern matching where it clarifies code.
+- Run `mvn test` before finishing; keep SonarCloud warnings in mind (complexity, duplication).
