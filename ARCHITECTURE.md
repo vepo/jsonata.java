@@ -52,6 +52,73 @@ Multi-statement expressions are composed by reducing the mapping list in `JSONat
 
 ---
 
+## Compile-Time vs Evaluation-Time
+
+The library follows **compile-then-evaluate**: parsing builds an executable `Mapping` tree; evaluation runs that tree against input data. Expression text is **not** re-parsed during normal evaluation.
+
+### Parse time (compile)
+
+Triggered only by `JSONata.jsonata(expr)` → `MappingParser.parse()`.
+
+| What happens | What does *not* happen |
+|--------------|------------------------|
+| ANTLR lex/parse of the JSONata expression | No input JSON is read |
+| `MappingExpressionsListener` assembles `Mapping` objects | No `Mapping.map()` against user data |
+| Variables, blocks, and lambdas captured in closures | No result values computed |
+
+The listener is a **compiler**, not an interpreter. Each grammar exit handler pushes evaluators onto a stack; the output is a `List<Mapping>` stored in `JSONata`.
+
+### Evaluation time (execute)
+
+Triggered by `evaluate()` / `evaluateData()`.
+
+| What happens | What does *not* happen |
+|--------------|------------------------|
+| Input JSON loaded via `Data.load()` (Jackson) | No ANTLR / `MappingParser` (except documented exceptions below) |
+| `Mapping.map(original, context)` walks the compiled tree | Expression text is not tokenized again |
+| `Data.toNode()` produces `JSONataResult` | Parse tree is not retained or re-walked |
+
+Entry point: `JSONata.evaluateData()` — only invokes pre-built mappings.
+
+### Evaluation strategy
+
+**Path and array steps are eager** — when a step is reached, `MappingJoin` maps over the current context (including array expansion). This matches JSONata semantics.
+
+**Conditional branches are lazy** — only the taken path runs:
+
+- `InlineIf` evaluates the test, then either the true or false branch (not both).
+- `Coalesce` evaluates the right side only when the left is empty.
+
+This is lazy *branch* evaluation at execute time, not lazy *compilation*.
+
+### Documented violations (runtime work at evaluate time)
+
+These are intentional departures from strict compile-once. Each is justified.
+
+| Violation | Location | Justification |
+|-----------|----------|---------------|
+| **`$eval` re-parses JSONata** | `Eval.map()` calls `MappingParser.parse(expr)` | JSONata spec requires dynamic evaluation of expression strings only known at runtime. The argument is data-dependent; it cannot be compiled when the outer expression is parsed. |
+| **Input JSON parsing** | `Data.load()` in `evaluate()` | Input document is external data, not part of the expression AST. Must be read when evaluation runs (and may change between calls on the same compiled `JSONata`). |
+| **Regex engine init** | `RegExp` constructor (Nashorn) on first use of a regex literal | Compiles the regex *pattern* for matching, not JSONata syntax. Pattern text is fixed at expression parse time; engine setup is deferred until the literal is evaluated. |
+| **Value parsing** | `ToMillis`, `ParseInteger`, etc. | Parses date/number *values* at execute time, not JSONata expressions. |
+| **Deep copy via JSON** | `Transform` uses `JsonFactory.fromString` for copy semantics | Serializes/deserializes `Data` to clone structure during transform; not expression re-parsing. |
+
+**Single ANTLR entry point:** `MappingParser` — called from `JSONata.jsonata()` and from `$eval` only.
+
+### Bindings after compile
+
+`JSONata.bind()` / `registerFunction()` merge into `EvaluationEnvironment` but **do not re-parse** the expression. Bindings that affect variable resolution must be supplied via `JSONata.jsonata(expr, env)` at compile time. Calling `bind()` after `jsonata()` reuses the existing `List<Mapping>` unchanged.
+
+### Agent rule
+
+When adding features:
+
+- **Do** build new behavior as `Mapping` implementations wired in the listener.
+- **Do not** call `MappingParser.parse()` from `map()` unless implementing spec-mandated dynamic evaluation (like `$eval`).
+- **Do not** evaluate against input JSON inside `MappingExpressionsListener`.
+
+---
+
 ## Layered Architecture
 
 | Layer | Package(s) | Responsibility |
@@ -219,8 +286,7 @@ mvn verify    # tests + JaCoCo report
 mvn test -Dtest=JsonataConformanceTest#printBaselineReport  # conformance baseline
 ```
 
-CI (`.github/workflows/build.yml`): JDK 17, `mvn verify` + SonarCloud analysis.  
-Local target: **Java 21** (`pom.xml` compiler source/target).
+CI (`.github/workflows/build.yml`): JDK 21, `mvn verify` + SonarCloud analysis on push/PR to `main`.
 
 ---
 
@@ -249,7 +315,8 @@ Local target: **Java 21** (`pom.xml` compiler source/target).
 Update in the **same change** when you:
 
 - Add/remove a package or shift layer boundaries
-- Change the parse → evaluate pipeline or key abstractions
+- Change the parse → evaluate pipeline, compile/evaluate boundaries, or key abstractions
+- Add a new documented violation or remove an existing one
 - Add a new extension point or public API entry
 - Introduce/remove a major dependency
 - Change build, CI, or module exports
