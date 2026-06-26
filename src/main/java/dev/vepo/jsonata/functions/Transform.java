@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.functions.data.Data;
-import dev.vepo.jsonata.functions.data.GroupedData;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
 public record Transform(Mapping pattern, Mapping update, Optional<Mapping> delete) implements Mapping {
