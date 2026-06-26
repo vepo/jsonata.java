@@ -286,7 +286,7 @@ mvn verify    # tests + JaCoCo report
 mvn test -Dtest=JsonataConformanceTest#printBaselineReport  # conformance baseline
 ```
 
-CI (`.github/workflows/build.yml`): JDK 21, `mvn verify` + SonarCloud analysis on push/PR to `main`.
+CI (`.github/workflows/build.yml`): JDK 21, `mvn verify` + SonarCloud analysis on every push; PRs to `main` also run the same pipeline.
 
 ---
 
