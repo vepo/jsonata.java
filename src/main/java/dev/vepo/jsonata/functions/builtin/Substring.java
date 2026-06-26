@@ -10,22 +10,16 @@ import dev.vepo.jsonata.functions.json.JsonFactory;
 public record Substring(List<Mapping> providers,
                         List<DeclaredFunction> declaredFunctions)
         implements Mapping {
-    public Substring {
-        if (providers.size() < 2 || providers.size() > 3) {
-            throw new IllegalArgumentException("$substring function must have 2 or 3 parameters");
-        }
-    }
 
     @Override
     public Data map(Data original, Data current) {
-        if (providers.size() == 2) {
-            return JsonFactory.stringValue(providers.get(0).map(original, current).toJson().asText()
-                                                    .substring(providers.get(1).map(original, current).toJson().asInt()));
+        var args = BuiltInArgs.evaluate(providers, 2, 3, false, original, current);
+        var text = args.get(0).toJson().asText();
+        var start = args.get(1).toJson().asInt();
+        if (args.size() == 2) {
+            return JsonFactory.stringValue(text.substring(start));
         } else {
-            return JsonFactory.stringValue(providers.get(0).map(original, current).toJson().asText()
-                                                    .substring(providers.get(1).map(original, current).toJson().asInt(),
-                                                               providers.get(2).map(original, current).toJson().asInt()));
+            return JsonFactory.stringValue(text.substring(start, args.get(2).toJson().asInt()));
         }
     }
-
 }

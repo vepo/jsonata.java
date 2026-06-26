@@ -20,12 +20,6 @@ public record Sum(List<Mapping> providers,
         implements AggregateMapping {
     private static final Logger logger = LoggerFactory.getLogger(Sum.class);
 
-    public Sum {
-        if (providers.size() != 1) {
-            throw new IllegalArgumentException("$sum function must have 1 argument");
-        }
-    }
-
     @Override
     public Data operation(Data sumValues) {
         logger.atDebug().log("Executing sum {}", sumValues);
@@ -44,6 +38,6 @@ public record Sum(List<Mapping> providers,
 
     @Override
     public Mapping extractor() {
-        return providers.get(0);
+        return BuiltInHelper.contextExtractor(providers);
     }
 }

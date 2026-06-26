@@ -22,12 +22,6 @@ public record Average(List<Mapping> providers,
 
     private static final Logger logger = LoggerFactory.getLogger(Sum.class);
 
-    public Average {
-        if (providers.size() != 1) {
-            throw new IllegalArgumentException("$average function must have 1 argument");
-        }
-    }
-
     @Override
     public Data operation(Data avgValues) {
         logger.atDebug().log("Executing max {}", avgValues);
@@ -47,6 +41,6 @@ public record Average(List<Mapping> providers,
 
     @Override
     public Mapping extractor() {
-        return providers.get(0);
+        return BuiltInHelper.contextExtractor(providers);
     }
 }

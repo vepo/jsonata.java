@@ -66,9 +66,11 @@ Apply when designing types, hierarchies, and APIs. See `.cursor/rules/oop-princi
 ## Commands
 
 ```bash
-mvn test                          # unit tests
-mvn verify                        # full build + coverage (JaCoCo)
-mvn -q test -Dtest=JSONataTest    # single test class
+git submodule update --init --recursive   # jsonata-js conformance suite
+mvn test                                  # unit tests
+mvn verify                                # full build + coverage (JaCoCo)
+mvn test -Dtest=JsonataConformanceTest#printBaselineReport  # conformance pass rate
+mvn -q test-compile exec:java -Dexec.mainClass=dev.vepo.jsonata.conformance.ConformanceDiagnostics -Dexec.classpathScope=test
 ```
 
 ## Agent Conventions
@@ -83,7 +85,8 @@ mvn -q test -Dtest=JSONataTest    # single test class
 
 | Rule | Scope | Purpose |
 |------|-------|---------|
-| `ddd-workflow.mdc` | Always | Layer boundaries, naming, feature workflow |
-| `tdd-workflow.mdc` | Always | Red-green-refactor, test structure |
+| `architecture.mdc` | Always | Structure, conformance harness, embedding API |
+| `ddd-workflow.mdc` | Always | Layer boundaries, domain language document |
+| `tdd-workflow.mdc` | Always | Feature-focused TDD, Gherkin scenarios |
 | `java-effective-java.mdc` | `**/*.java` | Java idioms and quality checklist |
 | `oop-principles.mdc` | `**/*.java` | Encapsulation, composition, Tell Don't Ask |

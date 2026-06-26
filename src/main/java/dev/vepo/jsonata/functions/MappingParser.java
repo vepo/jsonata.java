@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
+import dev.vepo.jsonata.EvaluationEnvironment;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsLexer;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser;
 import dev.vepo.jsonata.parser.JSONataValidator;
@@ -14,6 +15,10 @@ import dev.vepo.jsonata.parser.MappingExpressionsListener;
 public class MappingParser {
 
     public static List<Mapping> parse(String content) {
+        return parse(content, EvaluationEnvironment.empty());
+    }
+
+    public static List<Mapping> parse(String content, EvaluationEnvironment environment) {
         var validator = new JSONataValidator();
         var lexer = new MappingExpressionsLexer(CharStreams.fromString(content));
         lexer.addErrorListener(validator);
@@ -21,12 +26,11 @@ public class MappingParser {
         parser.addErrorListener(validator);
         var walker = new ParseTreeWalker();
 
-        var builder = new MappingExpressionsListener();
+        var builder = new MappingExpressionsListener(environment);
         walker.walk(builder, parser.expressions());
         return builder.getExpressions();
     }
 
     private MappingParser() {
     }
-
 }

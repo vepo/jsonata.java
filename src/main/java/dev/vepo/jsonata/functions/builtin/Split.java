@@ -12,21 +12,17 @@ import dev.vepo.jsonata.functions.json.JsonFactory;
 public record Split(List<Mapping> providers,
                     List<DeclaredFunction> declaredFunctions)
         implements Mapping {
-    public Split {
-        if (providers.size() < 2 || providers.size() > 3) {
-            throw new IllegalArgumentException("$split function must have 2 or 3 arguments!");
-        }
-    }
 
     @Override
     public Data map(Data original, Data current) {
-        var value = providers.get(0).map(original, current).toJson().asText();
-        var patternData = providers.get(1).map(original, current);
+        var args = BuiltInArgs.evaluate(providers, 2, 3, false, original, current);
+        var value = args.get(0).toJson().asText();
+        var patternData = args.get(1);
         Supplier<String[]> splitFunction = patternData.isRegex() ? () -> patternData.asRegex().split(value)
                                                                  : () -> value.split(patternData.toJson().asText());
 
-        if (providers.size() == 3) {
-            var limit = providers.get(2).map(original, current).toJson().asInt();
+        if (args.size() == 3) {
+            var limit = args.get(2).toJson().asInt();
             return JsonFactory.arrayValue(Stream.of(splitFunction.get())
                                                 .limit(limit)
                                                 .toArray(String[]::new));
@@ -34,5 +30,4 @@ public record Split(List<Mapping> providers,
             return JsonFactory.arrayValue(splitFunction.get());
         }
     }
-
 }

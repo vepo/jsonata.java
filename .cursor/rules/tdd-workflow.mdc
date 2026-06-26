@@ -1,5 +1,5 @@
 ---
-description: Test-Driven Development workflow using JUnit 5 and AssertJ
+description: Feature-focused TDD using domain language and Gherkin-style scenarios
 alwaysApply: true
 ---
 
@@ -7,39 +7,95 @@ alwaysApply: true
 
 ## Cycle
 
-1. **Red** — Write a failing test first. Confirm failure (`mvn test -Dtest=ClassName#methodName`).
-2. **Green** — Implement the smallest change that passes.
+1. **Red** — Write a failing scenario for the feature. Confirm failure (`mvn test -Dtest=FeatureNameTest`).
+2. **Green** — Minimal production code to pass the scenario.
 3. **Refactor** — Improve design; re-run `mvn test`.
 
 Skip TDD only when the user explicitly requests no tests or a docs-only change.
 
-## Test Structure
+## Feature-First Organization
+
+One test class per **feature**, not per production class.
+
+```
+src/test/java/dev/vepo/jsonata/features/
+  EvaluateMappingFeatureTest.java      # expression evaluation
+  BuiltInStringFunctionsFeatureTest.java
+  ArrayNavigationFeatureTest.java
+```
+
+- `@Nested` inner class = **Scenario** (one behavior slice).
+- `@Test` method = **Example** within that scenario.
+- Do not scatter tests across unrelated `@Nested` groups; each feature owns its scenarios.
+
+## Domain Model Language
+
+Name everything in **ubiquitous language** from the JSONata spec and domain model — not parser/ANTLR terms.
+
+| Use | Avoid |
+|-----|-------|
+| mapping, expression, evaluate, context, result | ParseTree, listener, JsonNode |
+| built-in function, predicate, wildcard, group | exitPath, FieldMap, token |
+| empty result, array expansion, block context | internal class names |
+
+- Test class: `BuiltInStringFunctionsFeatureTest`, not `FnStringTest`.
+- Scenario: `SubstringExtraction`, not `SubstringClassBehavior`.
+- Example method: `extractsTextAfterStartIndex`, not `testSubstring2`.
+
+Reference [JSONata docs](https://docs.jsonata.org) examples as the source of expected behavior.
+
+## Gherkin DSL (When Possible)
+
+Structure each test as **Given → When → Then**. Prefer readable Gherkin over clever setup.
+
+### JUnit + Gherkin comments (default)
 
 ```java
-class FeatureTest {
-    @Nested
-    class ScenarioGroup {
-        @Test
-        void describesExpectedBehavior() {
-            assertThat(jsonata("expr").evaluate(JSON).asText()).isEqualTo("expected");
-        }
+@Nested
+class SubstringExtraction {
+
+    @Test
+    void extractsTextFromStartIndex() {
+        // Given an expression that extracts a substring from a start index
+        var mapping = jsonata("$substring(\"abcdef\", 2)");
+
+        // When the mapping is evaluated against empty input
+        var result = mapping.evaluate("{}");
+
+        // Then the result is the suffix from that index
+        assertThat(result.asText()).isEqualTo("cdef");
     }
 }
 ```
 
-- Mirror `src/main/java` package paths under `src/test/java`.
-- Reuse fixtures from `TestData`; add shared fixtures there, not inline magic strings.
-- Use AssertJ (`assertThat`, `assertThatThrownBy`) — not JUnit legacy assertions.
-- Prefer `@ParameterizedTest` when many input/output pairs share one behavior.
+### Cucumber (when a feature has many scenarios)
 
-## What to Test
+Use `@Given` / `@When` / `@Then` step definitions when scenarios grow beyond a handful of examples or stakeholders need readable specs. Place feature files under `src/test/resources/features/`:
 
-- Happy path aligned with JSONata spec examples.
-- Empty/missing paths, invalid JSON, parse errors.
-- Regression for every bug fix.
+```gherkin
+Feature: Substring extraction
+  Scenario: Extract suffix from start index
+    Given expression "$substring(\"abcdef\", 2)"
+    When evaluated against empty JSON
+    Then result text is "cdef"
+```
+
+Keep step definitions thin — delegate to domain APIs (`JSONata.jsonata`, `evaluate`), not infrastructure.
+
+## Assertions & Fixtures
+
+- AssertJ only (`assertThat`, `assertThatThrownBy`).
+- Shared JSON fixtures in `TestData`; scenario-specific data stays in the feature test.
+- `@ParameterizedTest` for tables of domain examples (same scenario, multiple rows).
+
+## What to Test (per feature)
+
+- Primary behavior from the JSONata spec (happy path).
+- Domain edge cases: empty result, missing path, invalid JSON, parse errors.
+- One regression example per bug fix.
 
 ## Agent Behavior
 
-- Do not mark a feature complete until tests pass.
-- When fixing a bug, add a test that fails without the fix.
-- Avoid testing private methods; test observable behavior through public/domain APIs.
+- Do not mark a feature complete until its scenarios pass.
+- Bug fix = new failing scenario first, then fix.
+- Test observable domain behavior through public APIs — never private methods or parser internals.

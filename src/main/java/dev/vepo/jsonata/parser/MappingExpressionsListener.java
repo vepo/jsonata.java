@@ -17,8 +17,18 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dev.vepo.jsonata.EvaluationEnvironment;
 import dev.vepo.jsonata.exception.JSONataException;
+import dev.vepo.jsonata.functions.RegisteredFunction;
 import dev.vepo.jsonata.functions.AlgebraicOperation;
+import dev.vepo.jsonata.functions.Coalesce;
+import dev.vepo.jsonata.functions.ContextBind;
+import dev.vepo.jsonata.functions.OrderBy;
+import dev.vepo.jsonata.functions.OrderBy.OrderKey;
+import dev.vepo.jsonata.functions.ParentReference;
+import dev.vepo.jsonata.functions.PathBindings;
+import dev.vepo.jsonata.functions.PositionalBind;
+import dev.vepo.jsonata.functions.Transform;
 import dev.vepo.jsonata.functions.AlgebraicOperator;
 import dev.vepo.jsonata.functions.ArrayCast;
 import dev.vepo.jsonata.functions.ArrayConstructor;
@@ -56,7 +66,9 @@ import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BooleanComp
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BooleanExpressionContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.BooleanValueContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ChainExpressionContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.CoalesceExpressionContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ConcatValuesContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ContextBindContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ContextRefereceContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ContextValueContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ExpNumberValueContext;
@@ -73,12 +85,18 @@ import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.NumberValue
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ObjectBuilderContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ObjectConstructorContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ObjectMapperContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.OrderByExpressionContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.OrderKeyContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ParameterStatementContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ParentReferenceContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.PositionalBindContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.PathContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.RegexValueContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.RootPathContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.StringValueContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.ToArrayContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.TransformDefinitionContext;
+import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.TransformExpressionContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.VariableAssignmentContext;
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.VariableUsageContext;
 import dev.vepo.jsonata.functions.json.JsonFactory;
@@ -108,11 +126,20 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
     private final Deque<Mapping> expressions;
     private final Deque<DeclaredFunction> functionsDeclared;
     private final Queue<BlockContext> blocks;
+    private final EvaluationEnvironment environment;
 
     public MappingExpressionsListener() {
+        this(EvaluationEnvironment.empty());
+    }
+
+    public MappingExpressionsListener(EvaluationEnvironment environment) {
         this.expressions = new LinkedList<>();
         this.functionsDeclared = new LinkedList<>();
         this.blocks = new LinkedList<>();
+        this.environment = environment;
+        if (!environment.bindings().isEmpty()) {
+            blocks.offer(environment.rootBlockContext());
+        }
     }
 
     @Override
@@ -157,12 +184,7 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
                                                    .filter(Objects::nonNull)
                                                    .count());
         var fnName = ctx.functionStatement().FV_NAME().getText();
-        expressions.offer(BuiltInFunction.get(fnName)
-                                         .map(fn -> fn.instantiate(valueProviders, functions))
-                                         .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
-                                                                  .flatMap(block -> block.function(fnName))
-                                                                  .map(fn -> new UserDefinedFunction(valueProviders, fn))
-                                                                  .orElseThrow(() -> new JSONataException("Function not found: " + fnName))));
+        expressions.offer(resolveFunction(fnName, valueProviders, functions));
         logger.atInfo().setMessage("[EXIT] [END  ] Function feed! {}").addArgument(expressions).log();
     }
 
@@ -182,22 +204,14 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
                                                    .filter(Objects::nonNull)
                                                    .count());
         var fnName = ctx.functionStatement().FV_NAME().getText();
-        expressions.offer(BuiltInFunction.get(fnName)
-                                         .map(fn -> fn.instantiate(valueProviders, functions))
-                                         .or(() -> Optional.ofNullable(this.blocks.peek())
-                                                           .flatMap(block -> block.function(fnName))
-                                                           .map(fn -> new UserDefinedFunction(valueProviders, fn)))
-                                         .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
-                                                                  .flatMap(block -> block.compoundFunction(fnName))
-                                                                  .map(fn -> fn.withProviders(valueProviders))
-                                                                  .orElseThrow(() -> new JSONataException("Function not found: " + fnName))));
+        expressions.offer(resolveFunctionCall(fnName, valueProviders, functions));
         logger.atInfo().setMessage("[EXIT] [END  ] Function call! {}").addArgument(expressions).log();
     }
 
     @Override
     public void exitRootPath(RootPathContext ctx) {
         logger.atInfo().setMessage("Root path! {}").addArgument(ctx::getText).log();
-        expressions.offer((original, value) -> value);
+        expressions.offer((original, value) -> original);
     }
 
     @Override
@@ -387,37 +401,119 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
     @Override
     public void exitVariableUsage(VariableUsageContext ctx) {
         logger.atInfo().setMessage("Variable usage! {}").addArgument(ctx::getText).log();
-        var block = Objects.requireNonNull(this.blocks.peek(), VARIABLE_NOT_DEFINED_IN_BLOCK);
+        var block = this.blocks.peek();
         var variableName = ctx.FV_NAME().getText();
-        expressions.offer((original, current) -> block.variable(variableName)
-                                                      .orElseThrow(() -> new JSONataException("Variable not found: " + variableName))
-                                                      .map(original, current));
+        Mapping bindingAtParse = null;
+        if (block != null) {
+            bindingAtParse = block.variable(variableName).orElse(null);
+        }
+        final Mapping capturedBinding = bindingAtParse;
+        expressions.offer((original, current) -> {
+            var pathBinding = PathBindings.binding(variableName);
+            if (pathBinding.isPresent()) {
+                return pathBinding.get();
+            }
+            if (capturedBinding != null) {
+                return capturedBinding.map(original, current);
+            }
+            if (block != null) {
+                return block.variable(variableName)
+                            .orElseThrow(() -> new JSONataException("Variable not found: " + variableName))
+                            .map(original, current);
+            }
+            return BuiltInFunction.get(variableName)
+                                  .map(bif -> bif.instantiate(List.of((o, c) -> current), List.of())
+                                                   .map(original, current))
+                                  .orElseThrow(() -> new JSONataException("Variable not found: " + variableName));
+        });
+    }
+
+    @Override
+    public void exitCoalesceExpression(CoalesceExpressionContext ctx) {
+        logger.atInfo().setMessage("Coalesce expression! {}").addArgument(ctx::getText).log();
+        var right = expressions.removeLast();
+        var left = expressions.removeLast();
+        expressions.offer(new Coalesce(left, right));
+    }
+
+    @Override
+    public void exitOrderByExpression(OrderByExpressionContext ctx) {
+        logger.atInfo().setMessage("Order-by expression! {}").addArgument(ctx::getText).log();
+        var keys = new ArrayList<OrderKey>(ctx.orderKey().size());
+        for (int i = ctx.orderKey().size() - 1; i >= 0; i--) {
+            keys.addFirst(orderKeyFromContext(ctx.orderKey(i)));
+        }
+        var operand = expressions.removeLast();
+        expressions.offer(new OrderBy(operand, keys));
+    }
+
+    @Override
+    public void exitParentReference(ParentReferenceContext ctx) {
+        logger.atInfo().setMessage("Parent reference! {}").addArgument(ctx::getText).log();
+        expressions.offer(new ParentReference());
+    }
+
+    @Override
+    public void exitPositionalBind(PositionalBindContext ctx) {
+        logger.atInfo().setMessage("Positional bind! {}").addArgument(ctx::getText).log();
+        var operand = expressions.removeLast();
+        expressions.offer(new PositionalBind(operand, ctx.FV_NAME().getText()));
+    }
+
+    @Override
+    public void exitContextBind(ContextBindContext ctx) {
+        logger.atInfo().setMessage("Context bind! {}").addArgument(ctx::getText).log();
+        var operand = expressions.removeLast();
+        expressions.offer(new ContextBind(operand, ctx.FV_NAME().getText()));
+    }
+
+    @Override
+    public void exitTransformExpression(TransformExpressionContext ctx) {
+        logger.atInfo().setMessage("Transform expression! {}").addArgument(ctx::getText).log();
+        expressions.offer(buildTransform(ctx.transformDefinition()));
     }
 
     @Override
     public void exitChainExpression(ChainExpressionContext ctx) {
         logger.atInfo().setMessage("[EXIT] [BEGIN] Chain expression! {}").addArgument(ctx::getText).log();
-        var valueProviders = previousExpressions((int) ctx.functionStatement()
-                                                          .parameterStatement()
-                                                          .stream()
-                                                          .map(ParameterStatementContext::expression)
-                                                          .filter(Objects::nonNull)
-                                                          .count());
-        valueProviders.addFirst(expressions.removeLast());
-        var functions = previousFunctions((int) ctx.functionStatement()
-                                                   .parameterStatement()
-                                                   .stream()
-                                                   .map(ParameterStatementContext::functionDeclaration)
-                                                   .filter(Objects::nonNull)
-                                                   .count());
-        var fnName = ctx.functionStatement().FV_NAME().getText();
-        expressions.offer(BuiltInFunction.get(fnName)
-                                         .map(fn -> fn.instantiate(valueProviders, functions))
-                                         .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
-                                                                  .flatMap(block -> block.function(fnName))
-                                                                  .map(fn -> new UserDefinedFunction(valueProviders, fn))
-                                                                  .orElseThrow(() -> new JSONataException("Function not found: " + fnName))));
+        var target = ctx.chainTarget();
+        if (target.transformDefinition() != null) {
+            var left = expressions.removeLast();
+            var transform = buildTransform(target.transformDefinition());
+            expressions.offer((original, current) -> transform.map(original, left.map(original, current)));
+        } else {
+            var valueProviders = previousExpressions((int) target.functionStatement()
+                                                                  .parameterStatement()
+                                                                  .stream()
+                                                                  .map(ParameterStatementContext::expression)
+                                                                  .filter(Objects::nonNull)
+                                                                  .count());
+            var left = expressions.removeLast();
+            valueProviders.addFirst(left);
+            var functions = previousFunctions((int) target.functionStatement()
+                                                       .parameterStatement()
+                                                       .stream()
+                                                       .map(ParameterStatementContext::functionDeclaration)
+                                                       .filter(Objects::nonNull)
+                                                       .count());
+            var fnName = target.functionStatement().FV_NAME().getText();
+            expressions.offer(resolveFunctionCall(fnName, valueProviders, functions));
+        }
         logger.atInfo().setMessage("[EXIT] [END  ] Chain expression! {}").addArgument(expressions).log();
+    }
+
+    private Transform buildTransform(TransformDefinitionContext ctx) {
+        var deleteMapping = ctx.expression().size() == 3
+                ? Optional.of(expressions.removeLast())
+                : Optional.<Mapping>empty();
+        var update = expressions.removeLast();
+        var pattern = expressions.removeLast();
+        return new Transform(pattern, update, deleteMapping);
+    }
+
+    private OrderKey orderKeyFromContext(OrderKeyContext ctx) {
+        var descending = ctx.getChildCount() > 1 && ">".equals(ctx.getChild(0).getText());
+        return new OrderKey(expressions.removeLast(), descending);
     }
 
     @Override
@@ -468,6 +564,26 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
 
     public List<Mapping> getExpressions() {
         return expressions.stream().toList();
+    }
+
+    private Mapping resolveFunction(String fnName, List<Mapping> valueProviders, List<DeclaredFunction> functions) {
+        return BuiltInFunction.get(fnName)
+                              .map(fn -> fn.instantiate(valueProviders, functions))
+                              .orElseGet(() -> resolveFunctionCall(fnName, valueProviders, functions));
+    }
+
+    private Mapping resolveFunctionCall(String fnName, List<Mapping> valueProviders, List<DeclaredFunction> functions) {
+        return BuiltInFunction.get(fnName)
+                              .map(fn -> fn.instantiate(valueProviders, functions))
+                              .or(() -> Optional.ofNullable(this.blocks.peek())
+                                                .flatMap(block -> block.function(fnName))
+                                                .map(fn -> new UserDefinedFunction(valueProviders, fn)))
+                              .or(() -> Optional.ofNullable(environment.functions().get(fnName))
+                                                .map(fn -> new RegisteredFunction(fnName, valueProviders, environment)))
+                              .orElseGet(() -> Optional.ofNullable(this.blocks.peek())
+                                                       .flatMap(block -> block.compoundFunction(fnName))
+                                                       .map(fn -> fn.withProviders(valueProviders))
+                                                       .orElseThrow(() -> new JSONataException("Function not found: " + fnName)));
     }
 
     private List<DeclaredFunction> previousFunctions(int size) {

@@ -12,11 +12,6 @@ import dev.vepo.jsonata.functions.data.GroupedData;
 public record Sort(List<Mapping> providers, List<DeclaredFunction> function,
                    SortComparator comparator)
         implements Mapping {
-    public Sort {
-        if (providers.size() != 1) {
-            throw new IllegalArgumentException("$sort function must have 1 argument");
-        }
-    }
 
     @FunctionalInterface
     public interface SortComparator {
@@ -61,7 +56,7 @@ public record Sort(List<Mapping> providers, List<DeclaredFunction> function,
 
     @Override
     public Data map(Data original, Data current) {
-        var sortValue = providers.get(0).map(original, current);
+        var sortValue = BuiltInArgs.evaluateOne(providers, original, current);
         if (sortValue.isArray()) {
             return new GroupedData(IntStream.range(0, sortValue.length())
                                             .mapToObj(sortValue::at)

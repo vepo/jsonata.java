@@ -1,0 +1,42 @@
+---
+description: Project architecture document — read before structural work, update when architecture changes
+alwaysApply: true
+---
+
+# Architecture Document
+
+**Source of truth:** [`ARCHITECTURE.md`](../../ARCHITECTURE.md) at the project root.
+
+Companion docs: [`DOMAIN_LANGUAGE.md`](../../DOMAIN_LANGUAGE.md) (terms) · [`AGENTS.md`](../../AGENTS.md) (workflows)
+
+## Agent Obligations
+
+1. **Read** `ARCHITECTURE.md` before work that touches layers, packages, parse/eval flow, dependencies, public API, or extension points.
+2. **Update** it in the same change when architecture changes (see "When to Update" section in the doc).
+3. **Keep code aligned** — package placement, dependency direction, and new components must match the documented structure.
+
+If implementation and the document diverge, reconcile in the same PR (update code or doc — whichever reflects the intended design).
+
+## Quick Reference
+
+| Question | Where to look in ARCHITECTURE.md |
+|----------|----------------------------------|
+| Where does parsing happen? | Parse Pipeline |
+| Where does evaluation live? | Core Abstractions → Mapping |
+| Which package for a new built-in? | `functions/builtin/` + registry |
+| Can domain import ANTLR/Jackson? | Layered Architecture — no, use adapters |
+| How to add expression syntax? | Extension Points |
+| What is exported publicly? | Module & Dependencies |
+
+## Coordination with Other Rules
+
+- New domain terms → update `DOMAIN_LANGUAGE.md` (`ddd-workflow.mdc`)
+- New features → feature tests per `tdd-workflow.mdc`
+- Structural changes → update `ARCHITECTURE.md` first or alongside code
+
+## Anti-patterns
+
+- Adding packages or dependencies without updating `ARCHITECTURE.md`
+- Evaluation logic in `parser/` or `JSONata` facade beyond orchestration
+- Bypassing `Mapping` / `Data` abstractions for new expression behavior
+- Editing generated ANTLR output instead of grammar + listener

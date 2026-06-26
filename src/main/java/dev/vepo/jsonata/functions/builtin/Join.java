@@ -14,30 +14,20 @@ public record Join(List<Mapping> providers,
                    List<DeclaredFunction> declaredFunctions)
         implements Mapping {
 
-    public Join {
-        if (providers.size() < 1 || providers.size() > 2) {
-            throw new IllegalArgumentException("$join function must have 1 or 2 arguments!");
-        }
-    }
-
     @Override
     public Data map(Data original, Data current) {
-        var data = providers.get(0).map(original, current);
+        var args = BuiltInArgs.evaluate(providers, 0, 2, true, original, current);
+        var data = args.get(0);
         if (data.isArray() || data.isList()) {
             return JsonFactory.stringValue(data.stream()
-                                               .map(v -> v.toJson()
-                                                          .asText())
-                                               .collect(joinString(original, current)));
+                                               .map(v -> v.toJson().asText())
+                                               .collect(joinString(args, original, current)));
         } else {
             return data;
         }
     }
 
-    private Collector<CharSequence, ? extends Object, String> joinString(Data original, Data current) {
-        return providers.size() == 2 ? joining(providers.get(1)
-                                                        .map(original, current)
-                                                        .toJson()
-                                                        .asText())
-                                     : joining();
+    private Collector<CharSequence, ?, String> joinString(List<Data> args, Data original, Data current) {
+        return args.size() == 2 ? joining(args.get(1).toJson().asText()) : joining();
     }
 }

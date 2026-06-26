@@ -9,7 +9,7 @@ public record ContextValue(Mapping inner) implements Mapping {
 
     @Override
     public Data map(Data original, Data current) {
-        return Optional.ofNullable(inner.map(current, current))
+        return Optional.ofNullable(inner.map(original, current))
                        .map(Data::toJson)
                        .map(JsonFactory::json2Value)
                        .orElseGet(Mapping::empty);

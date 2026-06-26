@@ -10,16 +10,12 @@ import dev.vepo.jsonata.functions.json.JsonFactory;
 public record Contains(List<Mapping> providers,
                        List<DeclaredFunction> declaredFunctions)
         implements Mapping {
-    public Contains {
-        if (providers.size() != 2) {
-            throw new IllegalArgumentException("$contains function must have 1 argument!");
-        }
-    }
 
     @Override
     public Data map(Data original, Data current) {
-        var content = providers.get(0).map(original, current).toJson().asText();
-        var patternData = providers.get(1).map(original, current);
+        var args = BuiltInArgs.evaluate(providers, 2, 2, false, original, current);
+        var content = args.get(0).toJson().asText();
+        var patternData = args.get(1);
         if (patternData.isRegex()) {
             return JsonFactory.booleanValue(patternData.asRegex().isContainedIn(content));
         } else {
@@ -31,5 +27,4 @@ public record Contains(List<Mapping> providers,
             }
         }
     }
-
 }

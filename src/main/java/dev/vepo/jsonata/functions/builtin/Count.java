@@ -10,15 +10,10 @@ import dev.vepo.jsonata.functions.json.JsonFactory;
 public record Count(List<Mapping> providers,
                     List<DeclaredFunction> declaredFunctions)
         implements Mapping {
-    public Count {
-        if (providers.size() != 1) {
-            throw new IllegalArgumentException("$count function must have 1 parameter!");
-        }
-    }
 
     @Override
     public Data map(Data original, Data current) {
-        var data = providers.get(0).map(original, current);
+        var data = BuiltInArgs.evaluateOne(providers, original, current);
         if (data.isArray() || data.isList()) {
             return JsonFactory.numberValue(data.length());
         } else if (!data.isEmpty()) {
@@ -27,5 +22,4 @@ public record Count(List<Mapping> providers,
             return JsonFactory.numberValue(0);
         }
     }
-
 }

@@ -21,13 +21,6 @@ public record Max(List<Mapping> providers,
 
     private static final Logger logger = LoggerFactory.getLogger(Sum.class);
 
-    public Max
-    {
-        if (providers.size() != 1) {
-            throw new IllegalArgumentException("$max function must have 1 argument");
-        }
-    }
-
     @Override
     public Data operation(Data maxValues) {
         logger.atDebug().log("Executing max {}", maxValues);
@@ -48,6 +41,6 @@ public record Max(List<Mapping> providers,
 
     @Override
     public Mapping extractor() {
-        return providers.get(0);
+        return BuiltInHelper.contextExtractor(providers);
     }
 }

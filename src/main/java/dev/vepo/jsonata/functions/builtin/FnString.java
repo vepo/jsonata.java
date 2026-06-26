@@ -10,15 +10,13 @@ import dev.vepo.jsonata.functions.json.JsonFactory;
 public record FnString(List<Mapping> providers,
                        List<DeclaredFunction> declaredFunctions)
         implements Mapping {
-    public FnString {
-        if (providers.size() != 1) {
-            throw new IllegalArgumentException("$string function must have 1 argument!");
-        }
-    }
 
     @Override
     public Data map(Data original, Data current) {
-        return JsonFactory.stringValue(providers.get(0).map(original, current).toJson().asText());
+        var arg = BuiltInArgs.evaluateOne(providers, original, current);
+        if (BuiltInHelper.isUndefined(arg)) {
+            return Mapping.empty();
+        }
+        return JsonFactory.stringValue(arg.toJson().asText());
     }
-
 }

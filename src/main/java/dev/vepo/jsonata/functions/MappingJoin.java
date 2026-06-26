@@ -1,5 +1,6 @@
 package dev.vepo.jsonata.functions;
 
+import java.util.ArrayList;
 import java.util.function.Predicate;
 
 import org.slf4j.Logger;
@@ -14,18 +15,89 @@ public record MappingJoin(Mapping first, Mapping second) implements Mapping {
     @Override
     public Data map(Data original, Data current) {
         logger.atInfo().log("MappingJoin: first={} second={} current={}", first, second, current);
-        var value = first.map(original, current);
+        var left = unwrapBind(first);
+        var value = left.mapping().map(original, current);
         Data result;
-        if ((value.isArray() || value.isList()) && !(second instanceof ArrayConstructor)) {
+        if (left.indexVariable() != null) {
+            result = mapWithIndexBinding(original, current, value, left.indexVariable());
+        } else if (left.focusVariable() != null) {
+            result = mapWithFocusBinding(original, current, value, left.focusVariable());
+        } else if ((value.isArray() || value.isList()) && !(second instanceof ArrayConstructor)) {
             result = new GroupedData(value.stream()
-                                          .map(v -> second.map(original, v))
+                                          .map(v -> mapWithParent(v, original, v))
                                           .flatMap(Data::stream)
                                           .filter(Predicate.not(Data::isEmpty))
                                           .toList());
         } else {
-            result = second.map(original, value);
+            result = mapWithParent(value, original, value);
         }
-        logger.atInfo().log("MappingJoin: result={}", value);
+        logger.atInfo().log("MappingJoin: result={}", result);
         return result;
+    }
+
+    private Data mapWithIndexBinding(Data original, Data current, Data value, String indexVariable) {
+        if (!value.isArray() && !value.isList()) {
+            PathBindings.bindIndex(indexVariable, 0);
+            try {
+                return mapWithParent(value, original, value);
+            } finally {
+                PathBindings.removeBinding(indexVariable);
+            }
+        }
+        var results = new ArrayList<Data>();
+        for (int i = 0; i < value.length(); i++) {
+            PathBindings.bindIndex(indexVariable, i);
+            try {
+                var item = value.at(i);
+                results.addAll(mapWithParent(item, original, item).stream().toList());
+            } finally {
+                PathBindings.removeBinding(indexVariable);
+            }
+        }
+        return new GroupedData(results);
+    }
+
+    private Data mapWithFocusBinding(Data original, Data focusContext, Data value, String focusVariable) {
+        if (!value.isArray() && !value.isList()) {
+            PathBindings.bind(focusVariable, value);
+            try {
+                return second.map(original, focusContext);
+            } finally {
+                PathBindings.removeBinding(focusVariable);
+            }
+        }
+        var results = new ArrayList<Data>();
+        for (int i = 0; i < value.length(); i++) {
+            var item = value.at(i);
+            PathBindings.bind(focusVariable, item);
+            try {
+                results.addAll(second.map(original, focusContext).stream().toList());
+            } finally {
+                PathBindings.removeBinding(focusVariable);
+            }
+        }
+        return new GroupedData(results);
+    }
+
+    private Data mapWithParent(Data parent, Data original, Data current) {
+        PathBindings.pushParent(parent);
+        try {
+            return second.map(original, current);
+        } finally {
+            PathBindings.popParent();
+        }
+    }
+
+    private static BindInfo unwrapBind(Mapping mapping) {
+        if (mapping instanceof PositionalBind positional) {
+            return new BindInfo(positional.operand(), positional.variableName(), null);
+        }
+        if (mapping instanceof ContextBind context) {
+            return new BindInfo(context.operand(), null, context.variableName());
+        }
+        return new BindInfo(mapping, null, null);
+    }
+
+    private record BindInfo(Mapping mapping, String indexVariable, String focusVariable) {
     }
 }

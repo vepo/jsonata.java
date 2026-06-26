@@ -21,12 +21,6 @@ public record Min(List<Mapping> providers,
 
     private static final Logger logger = LoggerFactory.getLogger(Sum.class);
 
-    public Min {
-        if (providers.size() != 1) {
-            throw new IllegalArgumentException("$min function must have 1 argument");
-        }
-    }
-
     @Override
     public Data operation(Data minValues) {
         logger.atDebug().log("Executing min {}", minValues);
@@ -47,6 +41,6 @@ public record Min(List<Mapping> providers,
 
     @Override
     public Mapping extractor() {
-        return providers.get(0);
+        return BuiltInHelper.contextExtractor(providers);
     }
 }

@@ -1,15 +1,27 @@
 ---
-description: Domain-Driven Design workflow and layer boundaries for JSONata.java
+description: Domain-Driven Design workflow, domain language document, and layer boundaries
 alwaysApply: true
 ---
 
 # DDD Workflow
 
+## Domain Language Document
+
+**Source of truth:** [`DOMAIN_LANGUAGE.md`](../../DOMAIN_LANGUAGE.md) at the project root.
+
+### Agent obligations
+
+1. **Read** `DOMAIN_LANGUAGE.md` before any domain, feature, or naming work.
+2. **Update** it in the same change when introducing or altering domain vocabulary (new concept, built-in category, `Data` subtype, construct, or renamed type).
+3. **Align code** — class names, method names, test feature/scenario names, and error messages must use terms from `DOMAIN_LANGUAGE.md` or the JSONata spec.
+
+If code and the document disagree, fix the mismatch in the same PR (prefer updating code to match the document unless the spec changed).
+
 ## Before Coding
 
-1. Identify the **ubiquitous language** term from the JSONata spec (e.g. mapping, aggregate, block context).
-2. Decide which layer owns the change: domain, application, or infrastructure.
-3. Name classes, methods, and tests after domain terms — not parser rule names or ANTLR tokens.
+1. Confirm the relevant term exists in `DOMAIN_LANGUAGE.md`; add it first if missing.
+2. Decide which layer owns the change: application, domain, or infrastructure.
+3. Name types after domain terms — never after parser rule names or ANTLR tokens.
 
 ## Layer Rules
 
@@ -19,20 +31,22 @@ alwaysApply: true
 | Domain | `functions/`, `results/`, `exception/` | JDK only |
 | Infrastructure | `parser/`, `functions/json/`, `functions/regex/` | Domain + external libs |
 
-- Domain types (`Data`, `Mapping`, `JSONataResult`) define behavior; infrastructure implements I/O and parsing.
+- Domain types (`Data`, `Mapping`, `JSONataResult`) define behavior; infrastructure adapts inward.
 - Never import ANTLR or Jackson classes from domain packages.
-- Cross-cutting errors use `JSONataException` with clear, user-facing messages.
+- Cross-cutting errors use `JSONataException` with domain-language messages.
 
 ## Feature Checklist
 
-1. Domain model or behavior change (interface/class in `functions/` or `results/`).
-2. Wire through existing abstractions (`MappingParser`, `BuiltInSupplier`) — avoid bypassing domain APIs.
-3. Infrastructure only if grammar, JSON loading, or regex handling changes.
-4. Thin facade update in `JSONata` if public API surface changes.
-5. Tests express domain behavior in spec language, not implementation details.
+1. Update `DOMAIN_LANGUAGE.md` if vocabulary is new or changed.
+2. Domain model or behavior (`functions/` or `results/`).
+3. Wire through domain abstractions (`MappingParser`, `BuiltInSupplier`) — no bypassing.
+4. Infrastructure only for grammar, JSON loading, or regex changes.
+5. Thin facade update in `JSONata` if public API changes.
+6. Feature tests named in domain language (see `tdd-workflow.mdc`).
 
 ## Anti-patterns
 
-- Fat static utility classes holding domain logic.
+- Code or tests using parser/infrastructure names in domain-facing APIs.
+- New concepts without an entry in `DOMAIN_LANGUAGE.md`.
+- Fat static utilities holding domain logic.
 - Leaking `ParseTree`, `JsonNode`, or listener types into domain signatures.
-- Duplicating JSONata semantics in tests instead of referencing spec behavior.

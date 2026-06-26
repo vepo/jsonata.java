@@ -10,17 +10,13 @@ import dev.vepo.jsonata.functions.json.JsonFactory;
 public record SubstringAfter(List<Mapping> providers,
                              List<DeclaredFunction> declaredFunctions)
         implements Mapping {
-    public SubstringAfter {
-        if (providers.size() != 2) {
-            throw new IllegalArgumentException("$substringAfter function must have 2 arguments");
-        }
-    }
 
     @Override
     public Data map(Data original, Data current) {
-        var value = providers.get(0).map(original, current).toJson().asText();
-        var pattern = providers.get(1).map(original, current).toJson().asText();
-        return JsonFactory.stringValue(value.substring(value.indexOf(pattern) + pattern.length()));
+        var args = BuiltInArgs.evaluate(providers, 2, 2, false, original, current);
+        var value = args.get(0).toJson().asText();
+        var pattern = args.get(1).toJson().asText();
+        var index = value.indexOf(pattern);
+        return JsonFactory.stringValue(index >= 0 ? value.substring(index + pattern.length()) : value);
     }
-
 }

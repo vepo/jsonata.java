@@ -270,17 +270,14 @@ class JSONataTest {
     class Functions {
         @Test
         void argumentValidationTest() {
-            assertThatThrownBy(() -> jsonata("$string()")).isInstanceOf(IllegalArgumentException.class)
-                                                          .hasMessage("$string function must have 1 argument!");
-            assertThatThrownBy(() -> jsonata("$length()")).isInstanceOf(IllegalArgumentException.class)
-                                                          .hasMessage("$length function must have 1 argument!");
-            assertThatThrownBy(() -> jsonata("$lowercase()")).isInstanceOf(IllegalArgumentException.class)
-                                                             .hasMessage("$lowercase function must have 1 argument!");
-            assertThatThrownBy(() -> jsonata("$uppercase()")).isInstanceOf(IllegalArgumentException.class)
-                                                             .hasMessage("$uppercase function must have 1 argument!");
-            assertThatThrownBy(() -> jsonata("$join()")).isInstanceOf(IllegalArgumentException.class)
-                                                        .hasMessage("$join function must have 1 or 2 arguments!");
+            assertThatThrownBy(() -> jsonata("$substring(\"a\")").evaluate("{}"))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
 
+        @Test
+        void contextDefaultTest() {
+            assertThat(jsonata("$length()").evaluate("\"hello\"").asText()).isEqualTo("5");
+            assertThat(jsonata("$string()").evaluate("42").asText()).isEqualTo("42");
         }
 
         @Test

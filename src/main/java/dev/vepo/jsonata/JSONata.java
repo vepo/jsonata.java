@@ -1,61 +1,74 @@
 package dev.vepo.jsonata;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.MappingParser;
+import dev.vepo.jsonata.functions.PathBindings;
 import dev.vepo.jsonata.functions.data.Data;
+import dev.vepo.jsonata.functions.json.JsonFactory;
 
 /**
- * The JSONata class provides functionality to parse and evaluate JSONata expressions.
- * JSONata is a lightweight query and transformation language for JSON data.
- *
- * <p>This class allows creating a JSONata instance from a list of expressions or by parsing
- * a JSONata expression content string. It also provides a method to evaluate JSON content
- * against the parsed expressions.</p>
- *
- * <p>Example usage:</p>
- * <pre>{@code
- * JSONata jsonata = JSONata.jsonata("expression content");
- * Node result = jsonata.evaluate("json content");
- * }</pre>
- *
- * <p>Methods:</p>
- * <ul>
- *   <li>{@link #JSONata(List)} - Constructs a JSONata instance with a list of expressions.</li>
- *   <li>{@link #jsonata(String)} - Parses the provided JSONata expression content and returns a new JSONata instance.</li>
- *   <li>{@link #evaluate(String)} - Evaluates the provided JSON content against the parsed expressions and returns the result as a Node.</li>
- * </ul>
- *
- * @see Mapping
- * @see JSONataResult
+ * Facade for parsing and evaluating JSONata expressions.
  */
 public class JSONata {
 
-    private final List<Mapping> functions;
+    private final List<Mapping> mappings;
+    private final EvaluationEnvironment environment;
 
-    private JSONata(List<Mapping> expressions) {
-        this.functions = expressions;
+    private JSONata(List<Mapping> mappings, EvaluationEnvironment environment) {
+        this.mappings = mappings;
+        this.environment = environment;
     }
 
-    /**
-     * Creates a new JSONata instance by parsing the provided JSONata expression content.
-     *
-     * @param content the JSONata expression content to be parsed
-     *
-     * @return a new JSONata instance
-     */
     public static JSONata jsonata(String content) {
-        return new JSONata(MappingParser.parse(content));
+        return jsonata(content, EvaluationEnvironment.empty());
+    }
+
+    public static JSONata jsonata(String content, EvaluationEnvironment environment) {
+        return new JSONata(MappingParser.parse(content, environment), environment);
     }
 
     public JSONataResult evaluate(String contents) {
         var data = Data.load(contents);
-        return functions.stream()
-                        .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                        .map(f -> f.map(data, data)
-                                   .toNode())
-                        .orElse(data.toNode());
+        return evaluateData(data);
     }
 
+    public JSONataResult evaluateData(Data data) {
+        PathBindings.clearBindings();
+        PathBindings.clearParents();
+        try {
+            return mappings.stream()
+                           .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                           .map(f -> f.map(data, data).toNode())
+                           .orElse(data.toNode());
+        } finally {
+            PathBindings.clearBindings();
+            PathBindings.clearParents();
+        }
+    }
+
+    public JSONata bind(String name, JsonNode value) {
+        return new JSONata(mappings, environment.bind(name, value));
+    }
+
+    public JSONata bind(String name, String jsonValue) {
+        return bind(name, JsonFactory.fromString(jsonValue).toJson());
+    }
+
+    public JSONata registerFunction(String name, Function<EvaluationEnvironment.MappingCall, Data> implementation) {
+        return new JSONata(mappings, environment.registerFunction(name, implementation));
+    }
+
+    public EvaluationEnvironment environment() {
+        return environment;
+    }
+
+    List<Mapping> mappings() {
+        return mappings;
+    }
 }

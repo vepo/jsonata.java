@@ -14,7 +14,7 @@ public record CompareValues(Mapping left, CompareOperator operator, Mapping righ
     @Override
     public Data map(Data original, Data current) {
         return booleanValue(compare(left.map(original, current).toJson(),
-                                    right.map(original, original).toJson()));
+                                    right.map(original, current).toJson()));
     }
 
     private boolean compare(JsonNode left, JsonNode right) {
