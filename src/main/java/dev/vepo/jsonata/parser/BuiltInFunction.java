@@ -72,6 +72,10 @@ import dev.vepo.jsonata.functions.builtin.TypeOf;
 import dev.vepo.jsonata.functions.builtin.Uppercase;
 import dev.vepo.jsonata.functions.builtin.Zip;
 
+/**
+ * Registry mapping JSONata built-in names to {@link dev.vepo.jsonata.functions.builtin.BuiltInSupplier}
+ * factories used when resolving function calls in the parse tree.
+ */
 public enum BuiltInFunction {
     SORT("$sort", Sort::new),
     SUM("$sum", Sum::new),
@@ -138,6 +142,12 @@ public enum BuiltInFunction {
     DECODE_URL("$decodeUrl", DecodeUrl::new),
     DECODE_URL_COMPONENT("$decodeUrlComponent", DecodeUrlComponent::new);
 
+    /**
+     * Looks up a built-in by JSONata name (case-insensitive).
+     *
+     * @param name built-in name including {@code $} prefix
+     * @return matching registry entry, or empty when unknown
+     */
     public static Optional<BuiltInFunction> get(String name) {
         return Stream.of(values())
                      .filter(n -> n.name.compareToIgnoreCase(name) == 0)
@@ -152,6 +162,13 @@ public enum BuiltInFunction {
         this.supplier = supplier;
     }
 
+    /**
+     * Instantiates the built-in mapping for a call site.
+     *
+     * @param valueProviders argument expression mappings
+     * @param functions function-valued parameters
+     * @return configured {@link dev.vepo.jsonata.functions.Mapping}
+     */
     public Mapping instantiate(List<Mapping> valueProviders, List<DeclaredFunction> functions) {
         return supplier.instantiate(valueProviders, functions);
     }

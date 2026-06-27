@@ -9,6 +9,12 @@ import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata built-in {@code $pad}. Pads a string to a given width with optional fill character; positive width right-pads, negative left-pads.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record Pad(List<Mapping> providers,
                   List<DeclaredFunction> declaredFunctions)
         implements Mapping {
@@ -18,6 +24,7 @@ public record Pad(List<Mapping> providers,
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var padLength = providers.get(1).map(original, current).toJson().asInt();

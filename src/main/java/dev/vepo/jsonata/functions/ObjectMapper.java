@@ -11,8 +11,18 @@ import dev.vepo.jsonata.functions.data.ArrayData;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata object transform ({@code object{field: expr, ...}} applied to input).
+ *
+ * <p>Unlike {@link ObjectBuilder} (literal construction), {@code ObjectMapper} maps over
+ * the current focus: for an object input it produces one transformed object; for an array
+ * input it produces an array of transformed objects with optional field merge semantics.
+ *
+ * @param contents field name/value (and merge flag) definitions
+ */
 public record ObjectMapper(List<FieldContent> contents) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         if (current.isObject()) {

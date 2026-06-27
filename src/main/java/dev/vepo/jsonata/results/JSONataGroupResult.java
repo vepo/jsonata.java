@@ -5,6 +5,13 @@ import java.util.stream.Collectors;
 
 import dev.vepo.jsonata.JSONataResult;
 
+/**
+ * {@link JSONataResult} combining multiple child results from grouped evaluation.
+ * <p>
+ * Layer: <strong>domain</strong>. Created via {@link JSONataResults#group(List)}.
+ * Scalar accessors aggregate across members (sum for numbers, conjunction for booleans,
+ * comma-separated text); {@link #multi()} flattens each child's sequence into one list.
+ */
 class JSONataGroupResult implements JSONataResult {
 
     private final List<JSONataResult> elements;

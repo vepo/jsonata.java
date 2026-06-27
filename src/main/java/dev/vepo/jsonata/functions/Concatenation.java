@@ -8,8 +8,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.functions.data.Data;
 
+/**
+ * JSONata string concatenation ({@code &} operator).
+ *
+ * <p>Evaluates both operands and concatenates their string representations; null or
+ * missing JSON nodes contribute an empty string.
+ *
+ * @param firstValue  the left-hand string operand
+ * @param secondValue the right-hand string operand
+ */
 public record Concatenation(Mapping firstValue, Mapping secondValue) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         return stringValue(safeAsText(firstValue.map(original, current)) + safeAsText(secondValue.map(original, current)));

@@ -11,8 +11,15 @@ import dev.vepo.jsonata.functions.data.ArrayData;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata built-in {@code $keys}. Returns the keys of an object or the indices of an array. Uses context when none is supplied.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record Keys(List<Mapping> providers, List<DeclaredFunction> declaredFunctions) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var arg = BuiltInArgs.evaluateOne(providers, original, current);

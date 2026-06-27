@@ -7,10 +7,17 @@ import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata built-in {@code $contains}. Returns whether a string contains a substring or matches a regular expression.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record Contains(List<Mapping> providers,
                        List<DeclaredFunction> declaredFunctions)
         implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var args = BuiltInArgs.evaluate(providers, 2, 2, false, original, current);

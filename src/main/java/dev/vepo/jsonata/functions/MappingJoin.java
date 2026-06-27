@@ -11,9 +11,25 @@ import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata path join ({@code expr1 ~> expr2} or implicit composition after navigation).
+ *
+ * <p>Evaluates {@code first} to obtain a focus value, then applies {@code second} with
+ * appropriate context propagation:
+ * <ul>
+ *   <li>Array results are mapped element-wise with parent binding unless the right side
+ *       is an {@link ArrayConstructor} (preserving array shape).</li>
+ *   <li>{@link PositionalBind} and {@link ContextBind} on the left operand install
+ *       index or focus variables for the right operand.</li>
+ * </ul>
+ *
+ * @param first  the left-hand path operand
+ * @param second the right-hand path operand
+ */
 public record MappingJoin(Mapping first, Mapping second) implements Mapping {
     private static final Logger logger = LoggerFactory.getLogger(MappingJoin.class);
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         logger.atDebug().log("MappingJoin: first={} second={} current={}", first, second, current);

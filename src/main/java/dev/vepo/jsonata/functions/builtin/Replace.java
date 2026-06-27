@@ -9,8 +9,15 @@ import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 import dev.vepo.jsonata.functions.regex.RegExp;
 
+/**
+ * JSONata built-in {@code $replace}. Replaces substrings matching a regex, optionally invoking a function for each match.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record Replace(List<Mapping> providers, List<DeclaredFunction> declaredFunctions) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var args = BuiltInArgs.evaluate(providers, 3, 4, false, original, current);

@@ -10,8 +10,15 @@ import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.ObjectData;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata built-in {@code $merge}. Deep-merges one or more objects into a single object.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record Merge(List<Mapping> providers, List<DeclaredFunction> declaredFunctions) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         if (providers.isEmpty()) {

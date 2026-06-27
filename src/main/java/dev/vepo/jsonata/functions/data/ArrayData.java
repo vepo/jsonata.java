@@ -17,30 +17,51 @@ import dev.vepo.jsonata.functions.data.DataInspector;
 import dev.vepo.jsonata.functions.data.DataInspectors;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * Domain {@link Data} backed by a JSON array ({@link ArrayNode}).
+ * <p>
+ * Created by {@link JsonFactory} during JSON load and literal construction.
+ * Field projection ({@link #get(String)}) maps over elements and flattens nested arrays.
+ * The attached {@link DataInspector} governs whether underlying nodes may be mutated in place.
+ */
 public class ArrayData implements Data {
 
     private final ArrayNode element;
     private final DataInspector inspector;
 
+    /**
+     * Wraps {@code element} with the registered default {@link DataInspector}.
+     *
+     * @param element Jackson array node; must not be {@code null}
+     */
     public ArrayData(ArrayNode element) {
         this(element, DataInspectors.defaultInspector());
     }
 
+    /**
+     * Wraps {@code element} with the given session inspector.
+     *
+     * @param element Jackson array node; must not be {@code null}
+     * @param inspector backing-store adapter for copy and transform operations
+     */
     public ArrayData(ArrayNode element, DataInspector inspector) {
         this.element = element;
         this.inspector = inspector;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data all() {
         return this;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data at(int index) {
         return json2Value(element.get(index), inspector);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void forEachChild(Consumer<Data> action) {
         for (int i = 0; i < element.size(); ++i) {
@@ -53,6 +74,7 @@ public class ArrayData implements Data {
                         .mapToObj(node::get);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data get(String fieldName) {
         return new GroupedData(toStream(element).map(node -> node.get(fieldName))
@@ -62,43 +84,51 @@ public class ArrayData implements Data {
                                                 .toList());
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean hasField(String fieldName) {
         return IntStream.range(0, element.size())
                         .anyMatch(i -> element.get(i).has(fieldName));
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isArray() {
         return true;
     }
 
+    /** {@inheritDoc} */
     @Override
     public int length() {
         return element.size();
     }
 
+    /** {@inheritDoc} */
     @Override
     public JsonNode toJson() {
         return element;
     }
 
+    /** {@inheritDoc} */
     @Override
     public JSONataResult toNode() {
         return array(element);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Function<JsonNode, Data> function) {
         return new GroupedData(toStream(element).map(function)
                                                 .toList());
     }
 
+    /** {@inheritDoc} */
     @Override
     public Stream<Data> stream() {
         return toStream(element).map(node -> json2Value(node, inspector));
     }
 
+    /** {@inheritDoc} */
     @Override
     public DataInspector inspector() {
         return inspector;

@@ -3,99 +3,124 @@ package dev.vepo.jsonata;
 import java.util.List;
 
 /**
- * Represents a node in an expression tree.
+ * Caller-facing view of a JSONata evaluation outcome.
+ * <p>
+ * Layer: <strong>application</strong> (public result contract). Produced by {@link JSONata#evaluate}
+ * and {@link JSONata#evaluateData}; backed by domain implementations in {@code results}.
+ * <p>
+ * Scalar accessors coerce the primary value; {@link #multi()} exposes the JSONata sequence
+ * (zero or more values). Use {@link #isEmpty()} for the spec empty sequence and {@link #isNull()}
+ * for JSON {@code null}; they are distinct.
+ * <p>
+ * Invariants: instances are views over evaluation output; thread-safety follows the backing
+ * implementation (typically immutable after evaluation completes).
  */
 public interface JSONataResult {
 
     /**
-     * Converts the node to its textual representation.
+     * Primary value as a JSON text or serialized object representation.
      *
-     * @return the textual representation of the node
+     * @return textual form suitable for display or logging
+     * @throws IllegalStateException if this result is {@linkplain #isEmpty() empty}
      */
     String asText();
 
     /**
-     * Converts the node to its integer representation.
+     * Primary value coerced to {@code int} (Jackson numeric rules).
      *
-     * @return the integer representation of the node
+     * @return integer value
+     * @throws IllegalStateException if this result is {@linkplain #isEmpty() empty}
      */
     int asInt();
 
-    /*
-     * Checks if the node is an integer.
-     * 
-     * @return true if the node is an integer, false otherwise
+    /**
+     * Whether the primary value is an integer numeric type.
+     *
+     * @return {@code true} when the value is an integral number
      */
     boolean isInt();
 
-    /*
-     * Converts the node to its double representation.
-     * 
-     * @return true if the node is a double, false otherwise
+    /**
+     * Primary value coerced to {@code double} (Jackson numeric rules).
+     *
+     * @return floating-point value
+     * @throws IllegalStateException if this result is {@linkplain #isEmpty() empty}
      */
     double asDouble();
 
     /**
-     * Checks if the node is a double.
+     * Whether the primary value is a floating-point numeric type.
      *
-     * @return true if the node is a double, false otherwise
+     * @return {@code true} when the value is a double-precision number
      */
     boolean isDouble();
 
     /**
-     * Converts the node to its boolean representation.
+     * Primary value coerced to {@code boolean} (Jackson boolean rules).
      *
-     * @return the boolean representation of the node
+     * @return boolean value
+     * @throws IllegalStateException if this result is {@linkplain #isEmpty() empty}
      */
     boolean asBoolean();
 
     /**
-     * Checks if the node is null.
+     * Whether the primary value is JSON {@code null}.
      *
-     * @return true if the node is null, false otherwise
+     * @return {@code true} for JSON null; {@code false} for empty sequences and other types
      */
     boolean isNull();
 
     /**
-     * Checks if the node is empty.
+     * Whether this result represents the JSONata empty sequence (no value).
      *
-     * @return true if the node is empty, false otherwise
+     * @return {@code true} when no value is present; scalar accessors throw in this state
      */
     boolean isEmpty();
 
     /**
-     * Retrieves the multi-value representation of the node.
+     * Sequence view of all values produced by the expression.
+     * <p>
+     * A singleton result yields a one-element list; an empty result yields empty lists without
+     * throwing.
      *
-     * @return the multi-value representation of the node
+     * @return multi-value accessor for this result
      */
     Multi multi();
 
     /**
-     * Represents a multi-value node in an expression tree.
+     * Sequence of values from a JSONata expression result.
+     * <p>
+     * Used when an expression may produce zero, one, or many values (e.g. path wildcards,
+     * predicates). List accessors coerce each element independently.
      */
     public interface Multi {
 
         /**
-         * Converts the multi-value node to a list of textual representations.
+         * Each sequence element as text.
          *
-         * @return the list of textual representations of the multi-value node
+         * @return one entry per value in the sequence; empty when the result is empty
          */
         List<String> asText();
 
         /**
-         * Converts the multi-value node to a list of integer representations.
+         * Each sequence element coerced to {@code int}.
          *
-         * @return the list of integer representations of the multi-value node
+         * @return one entry per value in the sequence; empty when the result is empty
          */
         List<Integer> asInt();
 
         /**
-         * Converts the multi-value node to a list of boolean representations.
+         * Each sequence element coerced to {@code boolean}.
          *
-         * @return the list of boolean representations of the multi-value node
+         * @return one entry per value in the sequence; empty when the result is empty
          */
         List<Boolean> asBoolean();
 
+        /**
+         * Each sequence element coerced to {@code double}.
+         *
+         * @return one entry per value in the sequence; empty when the result is empty
+         */
         List<Double> asDouble();
     }
 }

@@ -9,8 +9,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.functions.data.Data;
 
+/**
+ * JSONata comparison expression ({@code =}, {@code !=}, ordering, {@code in}).
+ *
+ * @param left     the left-hand operand
+ * @param operator the comparison operator
+ * @param right    the right-hand operand
+ */
 public record CompareValues(Mapping left, CompareOperator operator, Mapping right) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         return booleanValue(compare(left.map(original, current).toJson(),

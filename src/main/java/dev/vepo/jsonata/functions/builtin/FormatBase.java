@@ -8,8 +8,15 @@ import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata built-in {@code $formatBase}. Formats an integer in the given numeric base (default 10).
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record FormatBase(List<Mapping> providers, List<DeclaredFunction> declaredFunctions) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var args = BuiltInArgs.evaluate(providers, 1, 2, false, original, current);

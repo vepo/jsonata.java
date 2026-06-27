@@ -3,10 +3,18 @@ package dev.vepo.jsonata.functions;
 import dev.vepo.jsonata.functions.data.Data;
 
 /**
- * Elvis / default operator: {@code lhs ?: rhs} returns lhs if effective boolean true, else rhs.
+ * JSONata default (Elvis) operator: {@code lhs ?: rhs}.
+ *
+ * <p>Returns {@code lhs} when it is "effectively boolean" true per JSONata rules;
+ * otherwise evaluates and returns {@code rhs}. Differs from {@link Coalesce} which only
+ * checks for empty/null, not truthiness.
+ *
+ * @param left  the primary operand
+ * @param right the fallback operand
  */
 public record DefaultOperator(Mapping left, Mapping right) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var leftValue = left.map(original, current);

@@ -10,8 +10,15 @@ import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata built-in {@code $spread}. Expands an array of objects or a single object for use in object merge/append contexts.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record Spread(List<Mapping> providers, List<DeclaredFunction> declaredFunctions) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var arg = BuiltInArgs.evaluateOne(providers, original, current);

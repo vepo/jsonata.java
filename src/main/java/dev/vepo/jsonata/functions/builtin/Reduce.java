@@ -7,8 +7,15 @@ import dev.vepo.jsonata.functions.FunctionApplicator;
 import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
 
+/**
+ * JSONata built-in {@code $reduce}. Folds an array with a function and optional initial value; uses context as the array when only a function is given.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record Reduce(List<Mapping> providers, List<DeclaredFunction> declaredFunctions) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         Data array;

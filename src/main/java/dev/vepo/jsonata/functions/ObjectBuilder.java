@@ -13,8 +13,18 @@ import org.apache.commons.lang3.tuple.Pair;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
+/**
+ * JSONata object constructor ({@code {"key": value, ...}}).
+ *
+ * <p>Builds a new object from field definitions. When {@code current} is an array, either
+ * maps each element to an object or groups by aggregate field names depending on whether
+ * a field value is an {@link AggregateMapping}.
+ *
+ * @param contents field name, value, and optional merge-flag definitions
+ */
 public record ObjectBuilder(List<FieldContent> contents) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         if (current.isObject()) {

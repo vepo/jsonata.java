@@ -6,8 +6,18 @@ import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata numeric range expansion in array predicates ({@code [start..end]}).
+ *
+ * <p>Produces an array of consecutive integers from the evaluated left bound through the
+ * right bound (inclusive). Both operands must evaluate to integer numbers.
+ *
+ * @param left  unevaluated start bound
+ * @param right unevaluated end bound
+ */
 public record ArrayExpansion(Mapping left, Mapping right) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var leftValue = left.map(original, current);

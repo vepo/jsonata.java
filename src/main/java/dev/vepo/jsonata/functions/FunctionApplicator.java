@@ -9,17 +9,42 @@ import dev.vepo.jsonata.functions.data.GroupedData;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
 /**
- * Applies declared functions to elements (higher-order function support).
+ * Applies declared functions to individual elements (higher-order function support).
+ *
+ * <p>Used by built-ins such as {@code $map}, {@code $filter}, and {@code $reduce} to
+ * invoke block-scoped or anonymous functions with the correct positional/index/length
+ * arguments per the JSONata function signature conventions.
  */
 public final class FunctionApplicator {
 
     private FunctionApplicator() {
     }
 
+    /**
+     * Applies a function to a single element with no index or length arguments.
+     *
+     * @param fn       the declared function
+     * @param original root input document
+     * @param current  current focus
+     * @param element  the element to pass as the first argument
+     * @return the function result for {@code element}
+     */
     public static Data apply(DeclaredFunction fn, Data original, Data current, Data element) {
         return apply(fn, original, current, element, -1, -1);
     }
 
+    /**
+     * Applies a function to a single element, supplying index and array length when the
+     * function signature expects them (2- or 3-parameter forms).
+     *
+     * @param fn          the declared function
+     * @param original    root input document
+     * @param current     current focus
+     * @param element     the element to pass as the first argument
+     * @param index       zero-based index, or {@code -1} to omit
+     * @param arrayLength total array length, or {@code -1} to omit
+     * @return the function result for {@code element}
+     */
     public static Data apply(DeclaredFunction fn, Data original, Data current, Data element,
                              int index, int arrayLength) {
         var names = fn.parameterNames();
@@ -38,6 +63,15 @@ public final class FunctionApplicator {
         return FunctionApplyService.applyDeclared(fn, original, current, argProviders, Optional.empty());
     }
 
+    /**
+     * Maps a function over every element of an array, returning a grouped sequence.
+     *
+     * @param fn       the declared function
+     * @param original root input document
+     * @param current  current focus
+     * @param array    the array to map over
+     * @return a {@link GroupedData} of mapped results
+     */
     public static GroupedData mapArray(DeclaredFunction fn, Data original, Data current, Data array) {
         var results = new ArrayList<Data>();
         for (int i = 0; i < array.length(); i++) {
@@ -46,6 +80,15 @@ public final class FunctionApplicator {
         return new GroupedData(results);
     }
 
+    /**
+     * Filters an array, retaining elements for which the predicate function returns true.
+     *
+     * @param fn       the declared predicate function
+     * @param original root input document
+     * @param current  current focus
+     * @param array    the array to filter
+     * @return a {@link GroupedData} of matching elements (original values, not mapped)
+     */
     public static GroupedData filterArray(DeclaredFunction fn, Data original, Data current, Data array) {
         var results = new ArrayList<Data>();
         for (int i = 0; i < array.length(); i++) {
@@ -58,6 +101,16 @@ public final class FunctionApplicator {
         return new GroupedData(results);
     }
 
+    /**
+     * Reduces an array left-to-right using a declared function and initial accumulator.
+     *
+     * @param fn       the declared reducer (accumulator, item[, index])
+     * @param original root input document
+     * @param current  current focus
+     * @param array    the array to reduce
+     * @param initial  the starting accumulator value
+     * @return the final accumulator
+     */
     public static Data reduceArray(DeclaredFunction fn, Data original, Data current, Data array,
                                    Data initial) {
         Data[] accumulator = { initial };

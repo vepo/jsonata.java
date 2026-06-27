@@ -10,10 +10,17 @@ import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata built-in {@code $join}. Joins array elements into a string with an optional separator. Uses context as the array when no arguments are supplied.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record Join(List<Mapping> providers,
                    List<DeclaredFunction> declaredFunctions)
         implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var args = BuiltInArgs.evaluate(providers, 0, 2, true, original, current);

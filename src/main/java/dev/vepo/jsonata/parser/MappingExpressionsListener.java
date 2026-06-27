@@ -118,6 +118,10 @@ import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.VariableAss
 import dev.vepo.jsonata.functions.generated.MappingExpressionsParser.VariableUsageContext;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * ANTLR parse-tree listener that builds {@link dev.vepo.jsonata.functions.Mapping} domain objects
+ * from {@code MappingExpressions} grammar events.
+ */
 public class MappingExpressionsListener extends MappingExpressionsBaseListener {
     private static final String VARIABLE_NOT_DEFINED_IN_BLOCK = "Variable should only be defined in blocks!";
 
@@ -145,10 +149,18 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
     private final Queue<BlockContext> blocks;
     private final EvaluationEnvironment environment;
 
+    /**
+     * Creates a listener with an empty evaluation environment.
+     */
     public MappingExpressionsListener() {
         this(EvaluationEnvironment.empty());
     }
 
+    /**
+     * Creates a listener seeded with external bindings and registered functions.
+     *
+     * @param environment evaluation environment applied during parsing
+     */
     public MappingExpressionsListener(EvaluationEnvironment environment) {
         this.expressions = new LinkedList<>();
         this.functionsDeclared = new LinkedList<>();
@@ -605,6 +617,11 @@ public class MappingExpressionsListener extends MappingExpressionsBaseListener {
         ;
     }
 
+    /**
+     * Returns the mappings produced by the most recent parse walk.
+     *
+     * @return compiled expression mappings, typically one root mapping
+     */
     public List<Mapping> getExpressions() {
         return expressions.stream().toList();
     }

@@ -8,11 +8,27 @@ import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
+/**
+ * JSONata order-by clause: {@code array^(>key1, <key2, ...)}.
+ *
+ * <p>Sorts the operand array stably by one or more key expressions. Key values must be
+ * numbers or strings; descending order is indicated per key in the {@link OrderKey}.
+ *
+ * @param operand the array (or scalar passed through unchanged) to sort
+ * @param keys    sort key expressions with direction flags
+ */
 public record OrderBy(Mapping operand, List<OrderKey> keys) implements Mapping {
 
+    /**
+     * A single sort key with optional descending order.
+     *
+     * @param expression unevaluated key expression evaluated per array element
+     * @param descending {@code true} for descending sort on this key
+     */
     public record OrderKey(Mapping expression, boolean descending) {
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var value = operand.map(original, current);

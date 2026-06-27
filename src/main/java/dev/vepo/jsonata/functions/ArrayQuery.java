@@ -9,8 +9,19 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
+/**
+ * JSONata array predicate ({@code array[predicate]}).
+ *
+ * <p>Evaluates {@code mapFunction} to obtain the array, then filters or indexes it using
+ * {@code filterFunction}. Supports boolean predicates, index lists, and
+ * {@link ArrayExpansion} ranges.
+ *
+ * @param mapFunction    expression producing the array to query
+ * @param filterFunction predicate, index list, or range selecting elements
+ */
 public record ArrayQuery(Mapping mapFunction, Mapping filterFunction) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var mapped = mapFunction.map(original, current);

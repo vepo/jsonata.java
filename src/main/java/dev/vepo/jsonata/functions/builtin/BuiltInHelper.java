@@ -11,6 +11,11 @@ import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * Shared JSONata type coercion and array helpers for built-in {@link Mapping} implementations.
+ * Centralizes effective-boolean, number, and string conversion so each built-in does not
+ * duplicate spec edge cases ({@link #isUndefined}, empty sequence vs {@code null}).
+ */
 final class BuiltInHelper {
 
     private BuiltInHelper() {

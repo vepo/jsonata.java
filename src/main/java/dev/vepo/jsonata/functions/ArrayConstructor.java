@@ -14,8 +14,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
+/**
+ * JSONata array constructor ({@code [expr1, expr2, ...]}).
+ *
+ * <p>When {@code current} is an array and the constructor has a single element expression,
+ * maps that expression over each element. Otherwise builds an array from evaluated
+ * expressions, flattening nested array results.
+ *
+ * @param arrayBuilder element expressions defining the constructed array
+ */
 public record ArrayConstructor(List<Mapping> arrayBuilder) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         if (current.isArray() && arrayBuilder.size() == 1) {

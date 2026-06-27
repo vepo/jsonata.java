@@ -5,10 +5,19 @@ import java.util.List;
 import dev.vepo.jsonata.functions.data.Data;
 
 /**
- * Resolves a function by name from block scope at evaluation time (supports forward references in blocks).
+ * Resolves a function by name from block scope at evaluation time.
+ *
+ * <p>Deferred resolution supports forward references in blocks: a call may appear
+ * before its {@code $name := function(...)} assignment. Resolution order: path binding,
+ * compound built-in override, declared function, then variable holding a function value.
+ *
+ * @param block        the block scope for name lookup
+ * @param fnName       the function name
+ * @param argProviders unevaluated call-site arguments
  */
 public record RuntimeFunctionCall(BlockContext block, String fnName, List<Mapping> argProviders) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var bound = PathBindings.binding(fnName);

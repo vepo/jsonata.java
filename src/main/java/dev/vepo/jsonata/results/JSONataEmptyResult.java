@@ -6,6 +6,13 @@ import java.util.List;
 
 import dev.vepo.jsonata.JSONataResult;
 
+/**
+ * {@link JSONataResult} for the JSONata empty sequence.
+ * <p>
+ * Layer: <strong>domain</strong>. Created via {@link JSONataResults#empty()}.
+ * {@link #isEmpty()} is {@code true}; scalar accessors throw {@link IllegalStateException}.
+ * {@link #multi()} returns immutable empty lists without throwing.
+ */
 class JSONataEmptyResult implements JSONataResult {
     private static RuntimeException emptyValueException() {
         return new IllegalStateException("Value is empty");
@@ -14,11 +21,21 @@ class JSONataEmptyResult implements JSONataResult {
     JSONataEmptyResult() {
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalStateException always — empty results have no scalar value
+     */
     @Override
     public String asText() {
         throw emptyValueException();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalStateException always — empty results have no scalar value
+     */
     @Override
     public int asInt() {
         throw emptyValueException();
@@ -34,6 +51,11 @@ class JSONataEmptyResult implements JSONataResult {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalStateException always — empty results have no scalar value
+     */
     @Override
     public double asDouble() {
         throw emptyValueException();
@@ -49,6 +71,11 @@ class JSONataEmptyResult implements JSONataResult {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws IllegalStateException always — empty results have no scalar value
+     */
     @Override
     public boolean asBoolean() {
         throw emptyValueException();

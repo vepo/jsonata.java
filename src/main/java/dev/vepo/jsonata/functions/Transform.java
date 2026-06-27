@@ -8,8 +8,21 @@ import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.DataInspector;
 import dev.vepo.jsonata.functions.json.JacksonDataPaths;
 
+/**
+ * JSONata transform operator: {@code input ~> | pattern | update [, delete] |}.
+ *
+ * <p>Finds values matching {@code pattern}, applies {@code update} (object merge) at each
+ * match, and optionally removes fields named by {@code delete}. Uses
+ * {@link EvaluationContext#currentInspector()} to choose mutable in-place updates or
+ * immutable copy-on-write via {@link DataInspector}.
+ *
+ * @param pattern unevaluated pattern expression locating nodes to transform
+ * @param update  unevaluated update object merged into each match
+ * @param delete  optional unevaluated field name(s) to remove from each match
+ */
 public record Transform(Mapping pattern, Mapping update, Optional<Mapping> delete) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data objectToTransform) {
         if (isUndefined(objectToTransform)) {

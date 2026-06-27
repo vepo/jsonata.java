@@ -9,8 +9,15 @@ import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata built-in {@code $formatInteger}. Formats an integer according to an XPath picture string.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record FormatInteger(List<Mapping> providers, List<DeclaredFunction> declaredFunctions) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var args = BuiltInArgs.evaluate(providers, 2, 2, false, original, current);
@@ -25,7 +32,14 @@ public record FormatInteger(List<Mapping> providers, List<DeclaredFunction> decl
         return JsonFactory.stringValue(format(num, picture));
     }
 
-    static String format(BigDecimal num, String picture) {
+    /**
+     * Formats a number using an XPath integer picture string.
+     *
+     * @param num value to format
+     * @param picture XPath picture (supports ordinal {@code ;o} modifier)
+     * @return formatted integer string
+     */
+static String format(BigDecimal num, String picture) {
         var parts = picture.split(";", 2);
         var digitPattern = parts[0];
         var modifier = parts.length > 1 ? parts[1] : "";

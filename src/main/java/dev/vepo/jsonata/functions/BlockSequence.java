@@ -5,10 +5,16 @@ import java.util.List;
 import dev.vepo.jsonata.functions.data.Data;
 
 /**
- * Executes block statements in order and returns the last expression value.
+ * JSONata block: a sequence of statements ending in a value expression.
+ *
+ * <p>Executes each statement in order (assignments produce empty results) and returns
+ * the value of the last statement. An empty block yields {@link Mapping#empty()}.
+ *
+ * @param statements ordered block statements and the final expression
  */
 public record BlockSequence(List<Mapping> statements) implements Mapping {
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         if (statements.isEmpty()) {

@@ -12,13 +12,34 @@ import javax.script.ScriptException;
 
 import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 
+/**
+ * Infrastructure adapter that evaluates JavaScript regular expressions via Nashorn.
+ * <p>
+ * Matches JSONata's regex semantics (including {@code $n} replacement groups) rather
+ * than {@link java.util.regex.Pattern} alone. Instances are immutable and cached by
+ * pattern string through {@link #compile(String)}.
+ */
 public class RegExp {
 
+    /**
+     * Result of a single regex match against input text.
+     *
+     * @param match full matched substring
+     * @param index zero-based start index in the input
+     * @param groups captured groups (index {@code 0} of the match is excluded)
+     */
     public record MatchResult(String match, int index, List<String> groups) {
     }
 
     private static final ConcurrentHashMap<String, RegExp> CACHE = new ConcurrentHashMap<>();
 
+    /**
+     * Returns a compiled regex for {@code pattern}, reusing cached instances.
+     *
+     * @param pattern JavaScript regex literal source (e.g. {@code "/foo/gi"})
+     * @return compiled, immutable {@link RegExp}
+     * @throws IllegalArgumentException if {@code pattern} is not valid JavaScript regex syntax
+     */
     public static RegExp compile(String pattern) {
         return CACHE.computeIfAbsent(pattern, RegExp::new);
     }
@@ -104,22 +125,55 @@ public class RegExp {
         }
     }
 
+    /**
+     * Tests whether {@code content} contains a match for this pattern.
+     *
+     * @param content input string
+     * @return {@code true} if the pattern matches anywhere in {@code content}
+     */
     public Boolean isContainedIn(String content) {
         return isContainedFn.apply(content);
     }
 
+    /**
+     * Splits {@code value} by this pattern (JavaScript {@code String.split} semantics).
+     *
+     * @param value input string
+     * @return array of segments; on engine failure returns a single-element array containing {@code value}
+     */
     public String[] split(String value) {
         return splitFn.apply(value);
     }
 
+    /**
+     * Returns the first match of this pattern in {@code content}, or {@code null} if none.
+     *
+     * @param content input string
+     * @return first {@link MatchResult}, or {@code null} when there is no match
+     */
     public MatchResult match(String content) {
         return matchFn.apply(content);
     }
 
+    /**
+     * Returns all non-overlapping matches (global flag applied when absent from the pattern).
+     *
+     * @param content input string
+     * @return list of matches; empty when there are no matches
+     */
     public List<MatchResult> matchAll(String content) {
         return matchAllFn.apply(content);
     }
 
+    /**
+     * Replaces matches using a string template with {@code $n} and {@code $&} substitutions.
+     *
+     * @param content input string
+     * @param replacement replacement template
+     * @param limit maximum replacements; {@code 0} leaves content unchanged, negative means unlimited
+     * @return string after replacement
+     * @throws IllegalArgumentException if the replacement cannot be evaluated
+     */
     public String replace(String content, String replacement, int limit) {
         try {
             var bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
@@ -133,6 +187,14 @@ public class RegExp {
         }
     }
 
+    /**
+     * Replaces matches by invoking {@code callback} for each {@link MatchResult}.
+     *
+     * @param content input string
+     * @param callback produces replacement text per match
+     * @param limit maximum replacements; negative means unlimited
+     * @return string after replacement; unchanged when there are no matches
+     */
     public String replace(String content, Function<MatchResult, String> callback, int limit) {
         var results = matchAll(content);
         if (results.isEmpty()) {

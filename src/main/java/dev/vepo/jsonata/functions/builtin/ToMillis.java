@@ -13,6 +13,12 @@ import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata built-in {@code $toMillis}. Parses an ISO 8601 timestamp string and returns milliseconds since epoch.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record ToMillis(List<Mapping> providers, List<DeclaredFunction> declaredFunctions) implements Mapping {
 
     private static final DateTimeFormatter ISO_PARSER = new DateTimeFormatterBuilder()
@@ -26,6 +32,7 @@ public record ToMillis(List<Mapping> providers, List<DeclaredFunction> declaredF
             .toFormatter()
             .withZone(ZoneOffset.UTC);
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var args = BuiltInArgs.evaluate(providers, 1, 2, false, original, current);

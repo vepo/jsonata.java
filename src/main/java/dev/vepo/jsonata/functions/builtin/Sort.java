@@ -10,15 +10,40 @@ import dev.vepo.jsonata.functions.PathBindings;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
+/**
+ * JSONata built-in {@code $sort}. Returns a sorted copy of an array, optionally using a comparator function.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param function optional comparator function from the parse tree
+ * @param comparator resolved comparator used during sorting
+ */
 public record Sort(List<Mapping> providers, List<DeclaredFunction> function,
                    SortComparator comparator)
         implements Mapping {
 
+    /**
+     * Compares two array elements during {@code $sort}.
+     */
     @FunctionalInterface
     public interface SortComparator {
+        /**
+         * Compares two array elements for ordering.
+         *
+         * @param original root input data for the expression
+         * @param current evaluation context data
+         * @param left first element
+         * @param right second element
+         * @return negative, zero, or positive as in {@link Comparable#compareTo}
+         */
         int compare(Data original, Data current, Data left, Data right);
     }
 
+    /**
+     * Creates a sort mapping with a comparator derived from an optional declared function.
+     *
+     * @param providers argument expression mappings
+     * @param function optional comparator function
+     */
     public Sort(List<Mapping> providers, List<DeclaredFunction> function) {
         this(providers, function, buildComparator(function));
     }
@@ -64,6 +89,7 @@ public record Sort(List<Mapping> providers, List<DeclaredFunction> function,
                  .orElse(Sort::defaultComparator);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         var sortValue = BuiltInArgs.evaluateOne(providers, original, current);

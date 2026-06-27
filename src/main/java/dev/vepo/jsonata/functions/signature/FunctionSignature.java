@@ -13,7 +13,13 @@ import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.FunctionData;
 
 /**
- * Parses and validates JSONata function signatures such as {@code <a<s>s?:s>}.
+ * Domain value for a JSONata function signature definition and runtime argument coercion.
+ * <p>
+ * Parses signature strings such as {@code <a<s>s?:s>} into a matcher over argument
+ * <em>type symbols</em> ({@code s}, {@code n}, {@code a}, {@code f}, {@code m} for empty, etc.).
+ * {@link #validate(List, Data)} checks call-site arguments, injects context parameters
+ * marked with {@code -}, wraps scalars into arrays when required, and returns the coerced
+ * argument list passed to the callee. Immutable after {@link #parse(String)}.
  */
 public final class FunctionSignature {
 
@@ -27,10 +33,20 @@ public final class FunctionSignature {
         this.regex = regex;
     }
 
+    /**
+     * @return original signature text passed to {@link #parse(String)}
+     */
     public String definition() {
         return definition;
     }
 
+    /**
+     * Parses a JSONata function signature into a coercion plan.
+     *
+     * @param signature signature text including angle brackets, e.g. {@code <s:a<n>>}
+     * @return immutable {@link FunctionSignature} for the definition
+     * @throws JSONataException {@code S0401} for invalid type parameters; {@code S0402} for unsupported choice groups
+     */
     public static FunctionSignature parse(String signature) {
         var params = new ArrayList<ParamSpec>();
         ParamSpec param = new ParamSpec();
@@ -114,6 +130,19 @@ public final class FunctionSignature {
         return new FunctionSignature(signature, params, Pattern.compile(regexStr));
     }
 
+    /**
+     * Validates and coerces call-site arguments to match this signature.
+     * <p>
+     * Context parameters (suffix {@code -} in the definition) consume {@code context} when
+     * omitted from {@code args}. Array parameters may wrap scalars or substitute
+     * {@link dev.vepo.jsonata.functions.Mapping#empty()} for missing optional slots.
+     *
+     * @param args arguments supplied at the call site (may be shorter than arity when context fills gaps)
+     * @param context current evaluation focus ({@code $}) for context-parameter injection
+     * @return new list of coerced arguments in parameter order
+     * @throws JSONataException {@code T0410} on arity/type mismatch; {@code T0411} on context type mismatch;
+     *         {@code T0412} on array element subtype mismatch
+     */
     public List<Data> validate(List<Data> args, Data context) {
         var suppliedSig = new StringBuilder();
         for (var arg : args) {

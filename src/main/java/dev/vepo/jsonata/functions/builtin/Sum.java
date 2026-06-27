@@ -15,11 +15,18 @@ import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
+/**
+ * JSONata built-in {@code $sum}. Returns the numeric sum of an array, or the number itself. Uses context when no argument is supplied.
+ *
+ * @param providers argument expression mappings from the parse tree
+ * @param declaredFunctions function-valued parameters from the parse tree
+ */
 public record Sum(List<Mapping> providers,
                   List<DeclaredFunction> declaredFunctions)
         implements AggregateMapping {
     private static final Logger logger = LoggerFactory.getLogger(Sum.class);
 
+    /** {@inheritDoc} */
     @Override
     public Data operation(Data sumValues) {
         logger.atDebug().log("Executing sum {}", sumValues);
@@ -36,6 +43,11 @@ public record Sum(List<Mapping> providers,
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Uses context as the aggregate input when no explicit argument is provided.
+     */
     @Override
     public Mapping extractor() {
         return BuiltInHelper.contextExtractor(providers);

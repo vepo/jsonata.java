@@ -8,6 +8,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import dev.vepo.jsonata.JSONataResult;
 
+/**
+ * {@link JSONataResult} backed by a Jackson {@link ArrayNode}.
+ * <p>
+ * Layer: <strong>domain</strong>. Created via {@link JSONataResults#array(ArrayNode)}.
+ * {@link #multi()} exposes one list entry per array element; scalar accessors use the array node
+ * as a single Jackson value (typically for array-as-primary results).
+ */
 class JSONataArrayResult implements JSONataResult {
 
     private final ArrayNode element;

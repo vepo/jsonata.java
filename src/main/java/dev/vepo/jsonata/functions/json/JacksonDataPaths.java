@@ -12,24 +12,59 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.functions.data.Data;
 
+/**
+ * Infrastructure helpers for locating and rewriting nodes inside Jackson-backed {@link Data} trees.
+ * <p>
+ * Used by {@link MutableJacksonDataInspector} and {@link ImmutableJacksonDataInspector}
+ * for transform {@code replaceNode} operations. Path steps are expressed in domain
+ * {@link Data} navigation terms ({@link #navigateData}) or directly on {@link JsonNode}.
+ */
 public final class JacksonDataPaths {
 
+    /**
+     * A single step in a path from root to a nested value.
+     */
     public sealed interface Step permits ObjectField, ArrayIndex {
     }
 
+    /**
+     * Object field selection step.
+     *
+     * @param name property name
+     */
     public record ObjectField(String name) implements Step {
     }
 
+    /**
+     * Array index selection step.
+     *
+     * @param index zero-based element index
+     */
     public record ArrayIndex(int index) implements Step {
     }
 
     private JacksonDataPaths() {}
 
+    /**
+     * Locates {@code target} within {@code root} by identity on backing {@link JsonNode}s.
+     *
+     * @param root tree to search
+     * @param target node to locate (same instance as a subtree of {@code root.toJson()})
+     * @return path from root to {@code target}
+     * @throws JSONataException if {@code target} is not found under {@code root}
+     */
     public static List<Step> findPathOrThrow(Data root, Data target) {
         return findPath(root.toJson(), target.toJson())
                 .orElseThrow(() -> new JSONataException("Cannot locate transform match in result"));
     }
 
+    /**
+     * Follows {@code path} through domain {@link Data} navigation ({@link Data#get}, {@link Data#at}).
+     *
+     * @param root starting value
+     * @param path sequence of field and index steps
+     * @return value at the end of {@code path}
+     */
     public static Data navigateData(Data root, List<Step> path) {
         var current = root;
         for (var step : path) {

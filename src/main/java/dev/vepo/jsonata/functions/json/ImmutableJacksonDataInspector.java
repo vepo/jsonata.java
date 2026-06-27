@@ -6,17 +6,28 @@ import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.DataInspector;
 import dev.vepo.jsonata.functions.data.EmptyData;
 
+/**
+ * Immutable {@link DataInspector} adapter for Jackson-backed {@link Data}.
+ * <p>
+ * Infrastructure implementation of the domain port: copy-on-write updates only;
+ * in-place {@link #mergeFields} and {@link #removeFields} throw. Select via
+ * {@link dev.vepo.jsonata.JSONata#jsonata(String, DataInspector)} for evaluations
+ * that must not mutate shared JSON trees.
+ */
 public final class ImmutableJacksonDataInspector implements DataInspector {
 
+    /** Singleton instance for immutable evaluation sessions. */
     public static final ImmutableJacksonDataInspector INSTANCE = new ImmutableJacksonDataInspector();
 
     private ImmutableJacksonDataInspector() {}
 
+    /** {@inheritDoc} */
     @Override
     public boolean mutableValues() {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data copy(Data data) {
         if (data == null || data.isEmpty()) {
@@ -25,21 +36,25 @@ public final class ImmutableJacksonDataInspector implements DataInspector {
         return wrap(data.toJson().deepCopy());
     }
 
+    /** {@inheritDoc} */
     @Override
     public boolean isMutableObject(Data data) {
         return false;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void mergeFields(Data target, Data update) {
         throw new JSONataException("Cannot mutate immutable data");
     }
 
+    /** {@inheritDoc} */
     @Override
     public void removeFields(Data target, Iterable<String> fieldNames) {
         throw new JSONataException("Cannot mutate immutable data");
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data merged(Data target, Data update) {
         var targetNode = target.toJson();
@@ -54,6 +69,7 @@ public final class ImmutableJacksonDataInspector implements DataInspector {
         return wrap(merged);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data withoutFields(Data target, Iterable<String> fieldNames) {
         var targetNode = target.toJson();
@@ -65,6 +81,7 @@ public final class ImmutableJacksonDataInspector implements DataInspector {
         return wrap(copy);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Data replaceNode(Data root, Data current, Data replacement) {
         if (root.toJson() == current.toJson()) {

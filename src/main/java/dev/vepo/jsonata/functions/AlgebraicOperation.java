@@ -13,9 +13,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
+/**
+ * JSONata arithmetic expression ({@code +}, {@code -}, {@code *}, {@code /}, {@code %}, {@code ^}).
+ *
+ * <p>Applies the operator element-wise when either operand is an array, with JSONata
+ * broadcasting rules for mismatched array/scalar combinations. Returns empty when either
+ * operand is null.
+ *
+ * @param left     the left-hand operand
+ * @param operator the arithmetic operator
+ * @param right    the right-hand operand
+ */
 public record AlgebraicOperation(Mapping left, AlgebraicOperator operator, Mapping right) implements Mapping {
 
     private static final Logger logger = LoggerFactory.getLogger(AlgebraicOperation.class);
+
+    /** {@inheritDoc} */
     @Override
     public Data map(Data original, Data current) {
         return execute(left.map(original, current).toJson(), right.map(original, current).toJson());

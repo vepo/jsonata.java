@@ -13,13 +13,31 @@ import dev.vepo.jsonata.functions.signature.FunctionSignature;
 import dev.vepo.jsonata.parser.BuiltInFunction;
 
 /**
- * Unified function application: user functions, partial applications, built-ins, registered functions.
+ * Unified function application for user-defined, partial, built-in, and registered functions.
+ *
+ * <p>All call sites — direct invocation, dynamic resolution, partial merge, and tail-call
+ * trampoline — converge here so argument evaluation, signature validation, closure binding,
+ * and tail-call looping share one path.
+ *
+ * @see FunctionValue
+ * @see PartialApplication
+ * @see RegisteredFunction
  */
 public final class FunctionApplyService {
 
     private FunctionApplyService() {
     }
 
+    /**
+     * Applies a user-defined {@link FunctionValue} with evaluated arguments.
+     *
+     * @param fn           the function to invoke
+     * @param original     root input document
+     * @param current      current focus (or captured context when present)
+     * @param argProviders unevaluated argument expressions
+     * @return the function result, resolving any {@link TailCallData} thunks
+     * @throws JSONataException when guardrails are violated
+     */
     public static Data apply(FunctionValue fn, Data original, Data current, List<Mapping> argProviders) {
         EvaluationContext.checkGuardrails();
         var args = evaluateArgs(argProviders, original, current);
@@ -27,6 +45,17 @@ public final class FunctionApplyService {
         return invokeWithTrampoline(fn, original, focus(fn, current), validated);
     }
 
+    /**
+     * Merges call-site arguments into a {@link PartialApplication}, returning either a
+     * further partial or the final result when all placeholders are filled.
+     *
+     * @param partial      the partially applied function
+     * @param original     root input document
+     * @param current      current focus
+     * @param argProviders arguments for remaining {@code ?} placeholders
+     * @return the result or a new partial wrapped in {@link FunctionData}
+     * @throws JSONataException {@code T1008} when the partial target is not a function
+     */
     public static Data applyPartial(PartialApplication partial, Data original, Data current,
                                     List<Mapping> argProviders) {
         EvaluationContext.checkGuardrails();
@@ -42,6 +71,16 @@ public final class FunctionApplyService {
         throw new JSONataException("T1008", "Attempted to partial-apply a non-function");
     }
 
+    /**
+     * Resolves a dynamic call target (variable or expression) and applies arguments.
+     *
+     * @param targetResolver expression yielding the function value
+     * @param original       root input document
+     * @param current        current focus
+     * @param argProviders   call-site arguments
+     * @return the invocation result
+     * @throws JSONataException {@code T1008} when the resolved value is not a function
+     */
     public static Data applyDynamic(Mapping targetResolver, Data original, Data current,
                                     List<Mapping> argProviders) {
         EvaluationContext.checkGuardrails();
@@ -55,6 +94,16 @@ public final class FunctionApplyService {
         throw new JSONataException("T1008", "Attempted to invoke a non-function");
     }
 
+    /**
+     * Applies a {@link DeclaredFunction} from block scope with optional captured context.
+     *
+     * @param fn           the declared function
+     * @param original     root input document
+     * @param current      current focus
+     * @param argProviders call-site arguments
+     * @param captured     optional captured context from a variable binding
+     * @return the invocation result
+     */
     public static Data applyDeclared(DeclaredFunction fn, Data original, Data current,
                                      List<Mapping> argProviders, Optional<Data> captured) {
         var fv = new FunctionValue(fn, captured, fn.signature());
@@ -105,6 +154,13 @@ public final class FunctionApplyService {
         }
     }
 
+    /**
+     * Resolves a tail-call thunk produced by {@link TailCallFunctionCall}.
+     *
+     * @param thunk deferred call with target, arguments, and evaluation contexts
+     * @return the result of applying the thunk
+     * @throws JSONataException when the tail-call target is not a function
+     */
     public static Data resolveTailCall(TailCallThunk thunk) {
         if (thunk.target() instanceof FunctionValue fv) {
             return apply(fv, thunk.original(), thunk.current(), thunk.args());
@@ -188,6 +244,16 @@ public final class FunctionApplyService {
         return fn.capturedContext().orElse(current);
     }
 
+    /**
+     * Applies a parser-level built-in, supporting partial application via {@link PartialPlaceholder}.
+     *
+     * @param bif                the built-in definition
+     * @param providers          unevaluated argument expressions (may include {@code ?})
+     * @param declaredFunctions  block-scoped function declarations for compound built-ins
+     * @param original           root input document
+     * @param current            current focus
+     * @return the built-in result or a partial application
+     */
     public static Data applyBuiltIn(BuiltInFunction bif, List<Mapping> providers,
                                     List<DeclaredFunction> declaredFunctions, Data original, Data current) {
         if (hasPartialPlaceholder(providers)) {
@@ -222,13 +288,39 @@ public final class FunctionApplyService {
         return bound;
     }
 
+    /**
+     * Adapter that invokes a parser-level built-in with pre-evaluated arguments.
+     *
+     * @param bif                 the built-in definition
+     * @param declaredFunctions   block-scoped declarations for compound built-ins
+     */
     public record BuiltInFunctionWrapper(BuiltInFunction bif, List<DeclaredFunction> declaredFunctions) {
+
+        /**
+         * Invokes the built-in with evaluated argument values.
+         *
+         * @param args     evaluated arguments
+         * @param original root input document
+         * @param current  current focus
+         * @return the built-in result
+         */
         public Data invoke(List<Data> args, Data original, Data current) {
             var providers = args.stream().<Mapping>map(a -> (o, c) -> a).toList();
             return bif.instantiate(providers, declaredFunctions).map(original, current);
         }
     }
 
+    /**
+     * Applies an externally registered function from {@link EvaluationEnvironment}.
+     *
+     * @param name        the registered function name
+     * @param providers   unevaluated argument expressions
+     * @param environment the embedding environment holding registered implementations
+     * @param original    root input document
+     * @param current     current focus
+     * @return the registered function result or a partial application
+     * @throws JSONataException when the function is not registered
+     */
     public static Data applyRegistered(String name, List<Mapping> providers, EvaluationEnvironment environment,
                                        Data original, Data current) {
         if (hasPartialPlaceholder(providers)) {
@@ -248,7 +340,23 @@ public final class FunctionApplyService {
         return impl.apply(new EvaluationEnvironment.MappingCall(original, current, argMappings, List.of()));
     }
 
+    /**
+     * Adapter that invokes a registered function with pre-evaluated arguments.
+     *
+     * @param name        the registered function name
+     * @param environment the embedding environment
+     */
     public record RegisteredFunctionWrapper(String name, EvaluationEnvironment environment) {
+
+        /**
+         * Invokes the registered function with evaluated argument values.
+         *
+         * @param args     evaluated arguments
+         * @param original root input document
+         * @param current  current focus
+         * @return the registered function result
+         * @throws JSONataException when the function is not registered
+         */
         public Data invoke(List<Data> args, Data original, Data current) {
             var impl = environment.functions().get(name);
             if (impl == null) {

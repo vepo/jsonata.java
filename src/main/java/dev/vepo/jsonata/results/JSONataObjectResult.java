@@ -8,6 +8,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.JSONataResult;
 
+/**
+ * {@link JSONataResult} backed by a single Jackson {@link JsonNode}.
+ * <p>
+ * Layer: <strong>domain</strong>. Created via {@link JSONataResults#object(JsonNode)}.
+ * {@link #multi()} wraps the scalar in a one-element list; {@link #isEmpty()} is always
+ * {@code false} for non-null nodes.
+ */
 class JSONataObjectResult implements JSONataResult {
 
     private final JsonNode element;
