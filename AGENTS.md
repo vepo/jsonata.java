@@ -79,6 +79,8 @@ Apply on every production Java change. Document contracts, usage, and local arch
 
 ## Commands
 
+### Shell (build & CI)
+
 ```bash
 git submodule update --init --recursive   # jsonata-js conformance suite
 mvn test                                  # unit tests
@@ -86,6 +88,13 @@ mvn verify                                # full build + coverage (JaCoCo)
 mvn test -Dtest=JsonataConformanceTest#printBaselineReport  # conformance pass rate
 mvn -q test-compile exec:java -Dexec.mainClass=dev.vepo.jsonata.conformance.ConformanceDiagnostics -Dexec.classpathScope=test
 ```
+
+### Cursor slash commands
+
+| Command | File | Purpose |
+|---------|------|---------|
+| **Fix Sonar Rules** | [`.cursor/commands/fix-sonar-rules.md`](.cursor/commands/fix-sonar-rules.md) | Run local SonarCloud analysis (`SONAR_TOKEN`), fetch all open issues, fix each with `mvn verify` gate |
+| **Increase Code Coverage** | [`.cursor/commands/increase-code-coverage.md`](.cursor/commands/increase-code-coverage.md) | JaCoCo report from `mvn verify`, rank uncovered classes, add feature tests for missing use cases and edge conditions |
 
 ## Agent Conventions
 

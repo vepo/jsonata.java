@@ -9,6 +9,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   prepare-release:
@@ -37,6 +38,12 @@ jobs:
         id: release
         run: bash .github/scripts/prepare-release.sh
 
+      - name: Trigger release workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: gh workflow run release.yml --ref "$RELEASE_TAG"
+
       - name: Summary
         run: |
           echo "### Release prepared" >> "$GITHUB_STEP_SUMMARY"
@@ -44,4 +51,4 @@ jobs:
           echo "- Released version: \`${{ steps.release.outputs.release_version }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Main now at: \`${{ steps.release.outputs.next_snapshot }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "The [Release](.github/workflows/release.yml) workflow publishes to Maven Central when the tag is pushed." >> "$GITHUB_STEP_SUMMARY"
+          echo "The [Release](.github/workflows/release.yml) workflow was triggered for the new tag." >> "$GITHUB_STEP_SUMMARY"
