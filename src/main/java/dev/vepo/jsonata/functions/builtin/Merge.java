@@ -2,12 +2,9 @@ package dev.vepo.jsonata.functions.builtin;
 
 import java.util.List;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import dev.vepo.jsonata.functions.DeclaredFunction;
 import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
-import dev.vepo.jsonata.functions.data.ObjectData;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
 /**

@@ -1,0 +1,47 @@
+name: Prepare Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-release:
+    name: Test, tag, and bump snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@c1e323688fd81a25caa38c78aa6df2d33d3e20d9 # v4.8.0
+        with:
+          java-version: '21'
+          distribution: temurin
+          cache: maven
+
+      - name: Run tests
+        run: mvn -B verify
+
+      - name: Bump version, tag, and push
+        id: release
+        run: bash .github/scripts/prepare-release.sh
+
+      - name: Summary
+        run: |
+          echo "### Release prepared" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Tag: \`${{ steps.release.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Released version: \`${{ steps.release.outputs.release_version }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Main now at: \`${{ steps.release.outputs.next_snapshot }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "The [Release](.github/workflows/release.yml) workflow publishes to Maven Central when the tag is pushed." >> "$GITHUB_STEP_SUMMARY"

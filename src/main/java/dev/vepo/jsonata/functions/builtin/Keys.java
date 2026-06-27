@@ -3,11 +3,8 @@ package dev.vepo.jsonata.functions.builtin;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-
 import dev.vepo.jsonata.functions.DeclaredFunction;
 import dev.vepo.jsonata.functions.Mapping;
-import dev.vepo.jsonata.functions.data.ArrayData;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 

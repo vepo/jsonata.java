@@ -1,6 +1,5 @@
 package dev.vepo.jsonata.functions.builtin;
 
-import java.math.BigInteger;
 import java.util.List;
 
 import dev.vepo.jsonata.functions.DeclaredFunction;
