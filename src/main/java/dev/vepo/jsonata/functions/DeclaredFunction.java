@@ -35,16 +35,6 @@ public record DeclaredFunction(List<String> parameterNames, BlockContext closure
         this(parameterNames, closureContext, body, Optional.empty());
     }
 
-    /** @deprecated use {@link #body()} */
-    public Mapping functions() {
-        return body;
-    }
-
-    /** @deprecated use {@link #closureContext()} */
-    public BlockContext context() {
-        return closureContext;
-    }
-
     /**
      * Wraps this declaration as a first-class {@link FunctionValue} without captured context.
      *

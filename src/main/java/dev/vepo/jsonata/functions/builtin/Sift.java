@@ -31,11 +31,11 @@ public record Sift(List<Mapping> providers, List<DeclaredFunction> declaredFunct
         object.toJson().fields().forEachRemaining(entry -> {
             var key = entry.getKey();
             var value = JsonFactory.json2Value(entry.getValue());
-            fn.context().defineVariable(fn.parameterNames().get(0), (o, c) -> value);
+            fn.closureContext().defineVariable(fn.parameterNames().get(0), (o, c) -> value);
             if (fn.parameterNames().size() > 1) {
-                fn.context().defineVariable(fn.parameterNames().get(1), (o, c) -> JsonFactory.stringValue(key));
+                fn.closureContext().defineVariable(fn.parameterNames().get(1), (o, c) -> JsonFactory.stringValue(key));
             }
-            var test = fn.accept(original, current, fn.context());
+            var test = fn.accept(original, current, fn.closureContext());
             if (BuiltInHelper.toBoolean(test)) {
                 builder.set(key, value);
             }

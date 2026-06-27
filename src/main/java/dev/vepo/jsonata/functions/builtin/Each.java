@@ -34,11 +34,11 @@ public record Each(List<Mapping> providers, List<DeclaredFunction> declaredFunct
         } else if (value.toJson().isObject()) {
             value.toJson().fields().forEachRemaining(entry -> {
                 var fieldValue = JsonFactory.json2Value(entry.getValue());
-                fn.context().defineVariable(fn.parameterNames().get(0), (o, c) -> fieldValue);
+                fn.closureContext().defineVariable(fn.parameterNames().get(0), (o, c) -> fieldValue);
                 if (fn.parameterNames().size() > 1) {
-                    fn.context().defineVariable(fn.parameterNames().get(1), (o, c) -> JsonFactory.stringValue(entry.getKey()));
+                    fn.closureContext().defineVariable(fn.parameterNames().get(1), (o, c) -> JsonFactory.stringValue(entry.getKey()));
                 }
-                results.add(fn.accept(original, current, fn.context()));
+                results.add(fn.accept(original, current, fn.closureContext()));
             });
         } else if (!BuiltInHelper.isUndefined(value)) {
             results.add(FunctionApplicator.apply(fn, original, current, value));
