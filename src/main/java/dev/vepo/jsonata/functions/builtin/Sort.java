@@ -6,6 +6,7 @@ import java.util.stream.IntStream;
 import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.functions.DeclaredFunction;
 import dev.vepo.jsonata.functions.Mapping;
+import dev.vepo.jsonata.functions.PathBindings;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
 
@@ -24,15 +25,24 @@ public record Sort(List<Mapping> providers, List<DeclaredFunction> function,
 
     private static SortComparator buildComparator(DeclaredFunction fn) {
         return (original, current, left, right) -> {
-            fn.context().defineVariable(fn.parameterNames().get(0), (o, c) -> left);
-            fn.context().defineVariable(fn.parameterNames().get(1), (o, c) -> right);
-            var result = fn.accept(original, current, fn.context());
-            if (result.toJson().isInt()) {
-                return result.toJson().asInt();
-            } else if (result.toJson().isBoolean()) {
-                return result.toJson().asBoolean() ? 1 : -1;
-            } else {
-                throw new JSONataException(String.format("Cannot compare values!!! left=%s right=%s", left, right));
+            var names = fn.parameterNames();
+            PathBindings.bind(names.get(0), left);
+            PathBindings.bind(names.get(1), right);
+            try {
+                var frame = fn.closureContext().createChildFrame();
+                frame.defineVariable(names.get(0), (o, c) -> left);
+                frame.defineVariable(names.get(1), (o, c) -> right);
+                var result = fn.accept(original, current, frame);
+                if (result.toJson().isInt()) {
+                    return result.toJson().asInt();
+                } else if (result.toJson().isBoolean()) {
+                    return result.toJson().asBoolean() ? 1 : -1;
+                } else {
+                    throw new JSONataException(String.format("Cannot compare values!!! left=%s right=%s", left, right));
+                }
+            } finally {
+                PathBindings.removeBinding(names.get(0));
+                PathBindings.removeBinding(names.get(1));
             }
         };
     }

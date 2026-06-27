@@ -2,6 +2,7 @@ package dev.vepo.jsonata.functions;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
@@ -22,17 +23,19 @@ public final class FunctionApplicator {
     public static Data apply(DeclaredFunction fn, Data original, Data current, Data element,
                              int index, int arrayLength) {
         var names = fn.parameterNames();
-        for (int i = 0; i < names.size(); i++) {
-            var param = names.get(i);
-            Data value = switch (i) {
-                case 0 -> element;
-                case 1 -> index >= 0 ? JsonFactory.numberValue(index) : current;
-                case 2 -> index >= 0 ? JsonFactory.numberValue(arrayLength) : current;
-                default -> current;
-            };
-            fn.context().defineVariable(param, (o, c) -> value);
+        if (names.isEmpty()) {
+            return FunctionApplyService.applyDeclared(fn, original, current, List.of(), Optional.empty());
         }
-        return fn.accept(original, current, fn.context());
+        var args = new ArrayList<Data>();
+        args.add(element);
+        if (names.size() >= 2 && index >= 0) {
+            args.add(JsonFactory.numberValue(index));
+        }
+        if (names.size() >= 3 && index >= 0) {
+            args.add(JsonFactory.numberValue(arrayLength));
+        }
+        var argProviders = args.stream().<Mapping>map(a -> (o, c) -> a).toList();
+        return FunctionApplyService.applyDeclared(fn, original, current, argProviders, Optional.empty());
     }
 
     public static GroupedData mapArray(DeclaredFunction fn, Data original, Data current, Data array) {
@@ -63,12 +66,13 @@ public final class FunctionApplicator {
             var index = i;
             var names = fn.parameterNames();
             if (names.size() >= 2) {
-                fn.context().defineVariable(names.get(0), (o, c) -> accumulator[0]);
-                fn.context().defineVariable(names.get(1), (o, c) -> element);
+                var frame = fn.closureContext().createChildFrame();
+                frame.defineVariable(names.get(0), (o, c) -> accumulator[0]);
+                frame.defineVariable(names.get(1), (o, c) -> element);
                 if (names.size() >= 3) {
-                    fn.context().defineVariable(names.get(2), (o, c) -> JsonFactory.numberValue(index));
+                    frame.defineVariable(names.get(2), (o, c) -> JsonFactory.numberValue(index));
                 }
-                accumulator[0] = fn.accept(original, current, fn.context());
+                accumulator[0] = fn.accept(original, current, frame);
             }
         }
         return accumulator[0];

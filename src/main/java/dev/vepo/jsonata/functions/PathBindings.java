@@ -15,9 +15,16 @@ import dev.vepo.jsonata.functions.json.JsonFactory;
 public final class PathBindings {
 
     private static final ThreadLocal<Deque<Data>> PARENTS = ThreadLocal.withInitial(ArrayDeque::new);
-    private static final ThreadLocal<Map<String, Data>> BINDINGS = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<Deque<Map<String, Data>>> BINDING_SCOPES =
+            ThreadLocal.withInitial(PathBindings::newScopeStack);
 
     private PathBindings() {
+    }
+
+    private static Deque<Map<String, Data>> newScopeStack() {
+        var stack = new ArrayDeque<Map<String, Data>>();
+        stack.push(new HashMap<>());
+        return stack;
     }
 
     public static void pushParent(Data parent) {
@@ -44,8 +51,19 @@ public final class PathBindings {
         return Optional.ofNullable(result);
     }
 
+    public static void pushScope() {
+        BINDING_SCOPES.get().push(new HashMap<>());
+    }
+
+    public static void popScope() {
+        var stack = BINDING_SCOPES.get();
+        if (stack.size() > 1) {
+            stack.pop();
+        }
+    }
+
     public static void bind(String name, Data value) {
-        BINDINGS.get().put(name, value);
+        BINDING_SCOPES.get().peekFirst().put(name, value);
     }
 
     public static void bindIndex(String name, int index) {
@@ -53,15 +71,21 @@ public final class PathBindings {
     }
 
     public static Optional<Data> binding(String name) {
-        return Optional.ofNullable(BINDINGS.get().get(name));
+        for (var scope : BINDING_SCOPES.get()) {
+            var value = scope.get(name);
+            if (value != null) {
+                return Optional.of(value);
+            }
+        }
+        return Optional.empty();
     }
 
     public static void removeBinding(String name) {
-        BINDINGS.get().remove(name);
+        BINDING_SCOPES.get().peekFirst().remove(name);
     }
 
     public static void clearBindings() {
-        BINDINGS.get().clear();
+        BINDING_SCOPES.set(newScopeStack());
     }
 
     public static void clearParents() {

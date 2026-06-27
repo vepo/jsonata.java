@@ -23,9 +23,10 @@ public record ObjectMapper(List<FieldContent> contents) implements Mapping {
         } else if (current.isArray() || current.isList()) {
             var newContents = new ArrayList<JsonNode>();
             range(0, current.length()).forEach(i -> {
+                var item = current.at(i);
                 var builder = JsonFactory.objectBuilder();
-                contents.forEach(content -> builder.set(content.name().map(current, current.at(i)).toJson().asText(),
-                                                        content.value().map(current, current.at(i)),
+                contents.forEach(content -> builder.set(content.name().map(original, item).toJson().asText(),
+                                                        content.value().map(original, item),
                                                         content.merge()));
                 newContents.add(builder.root());
             });

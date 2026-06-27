@@ -44,10 +44,12 @@ Before finishing a PR that touches behavior or structure, confirm:
 
 - Domain terms → `ddd-workflow.mdc`
 - Structure and layers → `architecture.mdc`
+- Type/method contracts and local design rationale → `in-code-documentation.mdc`
 - Tests → `tdd-workflow.mdc`
 
 ## Anti-patterns
 
 - Shipping domain or architectural changes without updating canonical docs
-- Documenting implementation in comments instead of `DOMAIN_LANGUAGE.md` / `ARCHITECTURE.md`
+- Duplicating `DOMAIN_LANGUAGE.md` / `ARCHITECTURE.md` in long comment blocks instead of updating canonical docs
+- Obvious or narration-style comments that restate the code (see `in-code-documentation.mdc`)
 - Updating only one doc when multiple are affected (e.g. new public API without `ARCHITECTURE.md`)

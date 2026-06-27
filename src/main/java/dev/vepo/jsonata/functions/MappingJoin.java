@@ -6,8 +6,10 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import dev.vepo.jsonata.functions.data.ArrayData;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.GroupedData;
+import dev.vepo.jsonata.functions.json.JsonFactory;
 
 public record MappingJoin(Mapping first, Mapping second) implements Mapping {
     private static final Logger logger = LoggerFactory.getLogger(MappingJoin.class);
@@ -23,11 +25,16 @@ public record MappingJoin(Mapping first, Mapping second) implements Mapping {
         } else if (left.focusVariable() != null) {
             result = mapWithFocusBinding(original, current, value, left.focusVariable());
         } else if ((value.isArray() || value.isList()) && !(second instanceof ArrayConstructor)) {
-            result = new GroupedData(value.stream()
-                                          .map(v -> mapWithParent(v, original, v))
-                                          .flatMap(Data::stream)
-                                          .filter(Predicate.not(Data::isEmpty))
-                                          .toList());
+            var mapped = value.stream()
+                                .map(v -> mapWithParent(v, original, v))
+                                .flatMap(Data::stream)
+                                .filter(Predicate.not(Data::isEmpty))
+                                .toList();
+            if (ChainedMapping.terminalObjectMapper(second) != null) {
+                result = new ArrayData(JsonFactory.arrayNode(mapped.stream().map(Data::toJson).toList()));
+            } else {
+                result = new GroupedData(mapped);
+            }
         } else {
             result = mapWithParent(value, original, value);
         }

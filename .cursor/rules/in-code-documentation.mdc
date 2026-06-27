@@ -1,0 +1,93 @@
+---
+description: In-code documentation — Javadoc contracts, usage, and local architecture decisions
+globs: "**/*.java"
+alwaysApply: false
+---
+
+# In-Code Documentation
+
+Production code in `src/main/java` must carry meaningful documentation. Comments explain **why** and **what callers may rely on** — not what the code literally does.
+
+Canonical project docs (`DOMAIN_LANGUAGE.md`, `ARCHITECTURE.md`) cover vocabulary and system-wide structure. In-code docs cover **type and method contracts** at the point of use.
+
+## Requirements
+
+1. **Document production code** — Every public type and public/protected member needs Javadoc. Package-private and private members need a comment when behavior, invariants, or trade-offs are not obvious from the signature alone.
+2. **No obvious comments** — Do not restate the name, parameter list, or control flow. If the comment adds no information beyond reading the code, delete it.
+3. **Contract-first Javadoc** — Describe how to use the API, preconditions, postconditions, return semantics, thrown exceptions, and thread-safety. Call out JSONata-spec alignment when relevant.
+4. **Local architecture decisions** — Class-level Javadoc (or a focused block comment on non-trivial private logic) must explain *why* this type exists, which layer it belongs to, and non-obvious design choices (e.g. why a port/adapter split, why immutability, why delegation).
+
+## What to include
+
+| Element | Document |
+|---------|----------|
+| Public class / interface / record | Purpose, layer role, main usage pattern, invariants |
+| Public method | Parameters, return value (including empty/absent cases), `@throws`, side effects |
+| Factory / builder | Valid inputs, defaults, what is *not* validated here |
+| Domain type | JSONata meaning, mapping to spec terms, immutability |
+| Non-obvious branch | *Why* the branch exists (spec rule, performance, layer boundary) |
+
+Use standard `@param`, `@return`, `@throws` consistently. Link related types with `{@link …}`.
+
+## Examples
+
+```java
+// ❌ Obvious — restates the code
+/** Returns the arity. */
+public int arity() { return function.parameterNames().size(); }
+
+// ✅ Contract — tells callers what the value means
+/**
+ * Number of positional parameters this function accepts before partial application.
+ * Does not include the implicit context argument injected by {@link FunctionApplyService}.
+ */
+public int arity() { ... }
+```
+
+```java
+// ❌ Implementation narration
+// Loop through args and apply signature coercion
+
+// ✅ Architecture + contract
+/**
+ * Adapts call-site arguments to the declared {@link FunctionSignature}.
+ * Lives in the domain layer so built-ins and user functions share one coercion path;
+ * Jackson details stay in infrastructure adapters.
+ */
+```
+
+```java
+// ❌ Duplicates ARCHITECTURE.md
+/**
+ * JSONata.java is the facade. It parses expressions and evaluates them.
+ * See the architecture doc for the full pipeline.
+ */
+
+// ✅ Local decision at the type
+/**
+ * Application entry point for compile-once, evaluate-many usage.
+ * Holds a compiled {@link Mapping} and delegates evaluation to domain types;
+ * parsing stays in {@code parser} and is not repeated per {@link #evaluate(Data)} call.
+ */
+public final class JSONata { ... }
+```
+
+## Scope boundaries
+
+- **Tests** (`src/test/java`) — follow `tdd-workflow.mdc`; Gherkin-style comments on scenarios, not full Javadoc on every helper.
+- **Generated code** (`target/`, ANTLR output) — do not edit; document in `.g4` or listener classes instead.
+- **Project-wide vocabulary and diagrams** — `DOMAIN_LANGUAGE.md` and `ARCHITECTURE.md`, updated per `documentation-workflow.mdc`.
+
+## Anti-patterns
+
+- Commenting every line or every private getter
+- Javadoc that only copies the method name into a sentence
+- Spec behavior documented only in tests with no type-level contract
+- Long essays in comments that belong in canonical docs — summarize locally, link outward when useful
+
+## Checklist (before finishing a Java change)
+
+- [ ] New/changed public API has Javadoc with usage and expectations
+- [ ] Non-obvious logic has a *why* comment, not a *what* comment
+- [ ] Architecture role of new types is clear from class-level Javadoc
+- [ ] No obvious or stale comments left behind

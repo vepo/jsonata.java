@@ -28,7 +28,7 @@ public class MappingParser {
 
         var builder = new MappingExpressionsListener(environment);
         walker.walk(builder, parser.expressions());
-        return builder.getExpressions();
+        return TailCallOptimizer.optimize(builder.getExpressions());
     }
 
     private MappingParser() {

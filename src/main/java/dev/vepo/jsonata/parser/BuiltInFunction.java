@@ -152,7 +152,7 @@ public enum BuiltInFunction {
         this.supplier = supplier;
     }
 
-    Mapping instantiate(List<Mapping> valueProviders, List<DeclaredFunction> functions) {
+    public Mapping instantiate(List<Mapping> valueProviders, List<DeclaredFunction> functions) {
         return supplier.instantiate(valueProviders, functions);
     }
 }

@@ -26,6 +26,12 @@ public class BlockContext {
         this.parentContexts = new ArrayList<>(parentContexts);
     }
 
+    public BlockContext createChildFrame() {
+        var parents = new java.util.LinkedList<>(parentContexts);
+        parents.offerFirst(this);
+        return new BlockContext(parents);
+    }
+
     public void defineVariable(String identifier, Mapping variableExpression) {
         variables.put(identifier, variableExpression);
     }
@@ -59,6 +65,11 @@ public class BlockContext {
             }
         }));
         return builder.build();
+    }
+
+    public void bindVariablesToPathBindings(Data original, Data current) {
+        variables.forEach((key, definition) -> PathBindings.bind(key, definition.map(original, current)));
+        parentContexts.forEach(context -> context.bindVariablesToPathBindings(original, current));
     }
 
     private Optional<DeclaredFunction> findFunctionOnParent(String identifier) {

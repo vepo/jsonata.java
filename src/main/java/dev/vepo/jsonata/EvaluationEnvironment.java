@@ -22,18 +22,21 @@ public final class EvaluationEnvironment {
     private final Map<String, JsonNode> bindings;
     private final Map<String, Function<MappingCall, Data>> functions;
     private final DataInspector dataInspector;
+    private final Guardrails guardrails;
 
     private EvaluationEnvironment(Map<String, JsonNode> bindings,
                                   Map<String, Function<MappingCall, Data>> functions,
-                                  DataInspector dataInspector) {
+                                  DataInspector dataInspector,
+                                  Guardrails guardrails) {
         this.bindings = Map.copyOf(bindings);
         this.functions = Map.copyOf(functions);
         this.dataInspector = dataInspector;
+        this.guardrails = guardrails;
     }
 
     public static EvaluationEnvironment empty() {
         JsonFactory.bootstrap();
-        return new EvaluationEnvironment(Map.of(), Map.of(), DataInspectors.defaultInspector());
+        return new EvaluationEnvironment(Map.of(), Map.of(), DataInspectors.defaultInspector(), Guardrails.none());
     }
 
     public Map<String, JsonNode> bindings() {
@@ -46,6 +49,10 @@ public final class EvaluationEnvironment {
 
     public DataInspector dataInspector() {
         return dataInspector;
+    }
+
+    public Guardrails guardrails() {
+        return guardrails;
     }
 
     public BlockContext rootBlockContext() {
@@ -62,18 +69,22 @@ public final class EvaluationEnvironment {
         var key = name.startsWith("$") ? name.substring(1) : name;
         var next = new HashMap<>(bindings);
         next.put(key, value);
-        return new EvaluationEnvironment(next, functions, dataInspector);
+        return new EvaluationEnvironment(next, functions, dataInspector, guardrails);
     }
 
     public EvaluationEnvironment registerFunction(String name, Function<MappingCall, Data> implementation) {
         var fnName = name.startsWith("$") ? name : "$" + name;
         var next = new HashMap<>(functions);
         next.put(fnName, implementation);
-        return new EvaluationEnvironment(bindings, next, dataInspector);
+        return new EvaluationEnvironment(bindings, next, dataInspector, guardrails);
     }
 
     public EvaluationEnvironment withDataInspector(DataInspector inspector) {
-        return new EvaluationEnvironment(bindings, functions, inspector);
+        return new EvaluationEnvironment(bindings, functions, inspector, guardrails);
+    }
+
+    public EvaluationEnvironment withGuardrails(Guardrails guardrails) {
+        return new EvaluationEnvironment(bindings, functions, dataInspector, guardrails);
     }
 
     public static Builder builder() {
@@ -88,6 +99,7 @@ public final class EvaluationEnvironment {
         private final Map<String, JsonNode> bindings = new HashMap<>();
         private final Map<String, Function<MappingCall, Data>> functions = new HashMap<>();
         private DataInspector dataInspector;
+        private Guardrails guardrails = Guardrails.none();
 
         public Builder bind(String name, JsonNode value) {
             var key = name.startsWith("$") ? name.substring(1) : name;
@@ -106,9 +118,14 @@ public final class EvaluationEnvironment {
             return this;
         }
 
+        public Builder guardrails(Guardrails guardrails) {
+            this.guardrails = guardrails;
+            return this;
+        }
+
         public EvaluationEnvironment build() {
             var inspector = dataInspector != null ? dataInspector : resolvedDefaultInspector();
-            return new EvaluationEnvironment(bindings, functions, inspector);
+            return new EvaluationEnvironment(bindings, functions, inspector, guardrails);
         }
 
         private static DataInspector resolvedDefaultInspector() {

@@ -12,6 +12,6 @@ public interface Mapping {
     }
 
     default Mapping andThen(Mapping after) {
-        return (original, current) -> after.map(original, map(original, current));
+        return new ChainedMapping(this, after);
     }
 }

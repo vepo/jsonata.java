@@ -11,9 +11,7 @@ public final class ConformanceSkipList {
             // Timing benchmarks — not correctness
             "performance/*",
             // Reference-implementation internals
-            "token-conversion/*",
-            // Deferred until required by other groups
-            "tail-recursion/*");
+            "token-conversion/*");
 
     private ConformanceSkipList() {
     }

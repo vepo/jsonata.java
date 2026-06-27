@@ -14,12 +14,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.vepo.jsonata.EvaluationEnvironment;
+import dev.vepo.jsonata.Guardrails;
 import dev.vepo.jsonata.JSONata;
 import dev.vepo.jsonata.exception.JSONataException;
 
 public record ConformanceCase(String group, String caseName, String expr, JsonNode data,
                               JsonNode bindings, JsonNode expectedResult, boolean undefinedResult,
-                              String expectedCode) {
+                              String expectedCode, Long timelimitMs, Integer maxDepth) {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -70,9 +71,11 @@ public record ConformanceCase(String group, String caseName, String expr, JsonNo
                 try {
                     jsonata.evaluateData(data != null ? dev.vepo.jsonata.functions.data.Data.load(data.toString()) :
                                               dev.vepo.jsonata.functions.data.Data.load("{}"));
-                    return false;
-                } catch (JSONataException | IllegalArgumentException | org.antlr.v4.runtime.misc.ParseCancellationException e) {
-                    return true;
+                    return matchesExpectedCode(null);
+                } catch (JSONataException e) {
+                    return matchesExpectedCode(e.code().orElse(null));
+                } catch (IllegalArgumentException | org.antlr.v4.runtime.misc.ParseCancellationException e) {
+                    return matchesExpectedCode(null);
                 }
             }
             var input = data != null ? data.toString() : "{}";
@@ -89,10 +92,24 @@ public record ConformanceCase(String group, String caseName, String expr, JsonNo
         }
     }
 
+    private boolean matchesExpectedCode(String actual) {
+        if (expectedCode == null) {
+            return true;
+        }
+        return expectedCode.equals(actual);
+    }
+
     private EvaluationEnvironment buildEnvironment() {
         var builder = EvaluationEnvironment.builder();
         if (bindings != null && bindings.isObject()) {
             bindings.fields().forEachRemaining(e -> builder.bind(e.getKey(), e.getValue()));
+        }
+        if (timelimitMs != null || maxDepth != null) {
+            var guardrails = new Guardrails(
+                    timelimitMs != null ? java.util.OptionalLong.of(timelimitMs) : java.util.OptionalLong.empty(),
+                    maxDepth != null ? java.util.OptionalInt.of(maxDepth) : java.util.OptionalInt.empty(),
+                    java.util.OptionalInt.empty());
+            builder.guardrails(guardrails);
         }
         return builder.build();
     }
@@ -153,7 +170,9 @@ public record ConformanceCase(String group, String caseName, String expr, JsonNo
                 node.has("bindings") ? node.get("bindings") : null,
                 node.has("result") ? node.get("result") : null,
                 node.has("undefinedResult") && node.get("undefinedResult").asBoolean(),
-                node.has("code") ? node.get("code").asText() : null);
+                node.has("code") ? node.get("code").asText() : null,
+                node.has("timelimit") ? node.get("timelimit").asLong() : null,
+                node.has("depth") ? node.get("depth").asInt() : null);
     }
 
     private static Map<String, JsonNode> loadDatasets(Path datasetsDir) throws IOException {

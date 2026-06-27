@@ -18,13 +18,14 @@ expression:
     | expression ARR_OPEN ARR_CLOSE                                           # toArray
     | expression ARR_OPEN NUMBER ARR_CLOSE                                    # arrayIndexQuery
     | expression ARR_OPEN expression ARR_CLOSE                                  # arrayQuery
+    | expression DOT OBJ_OPEN fieldList OBJ_CLOSE                               # objectMapper
     | expression DOT functionStatement                                          # functionFeed
     | expression DOT expression                                                 # path
-    | expression DOT OBJ_OPEN fieldList OBJ_CLOSE                               # objectMapper
     | expression OBJ_OPEN fieldList OBJ_CLOSE                                   # objectConstructor
     | expression op=('<' | '<=' | '>' | '>=' | '!=' | '=' | 'in') expression  # booleanCompare
     | expression op=('and' | 'or') expression                                   # booleanExpression
     | expression op=('+' | '-' | '*' | '/' | '%' | '^') expression            # algebraicExpression
+    | expression DEFAULT_OP expression                                          # defaultExpression
     | expression '?' expression (':' expression)?                               # inlineIfExpression
     | expression COALESCE_OP expression                                         # coalesceExpression
     | expression '&' expression                                                 # concatValues
@@ -38,6 +39,9 @@ expression:
     | FV_NAME VAR_ASSIGN (expression|functionDeclaration)                       # variableAssignment
     | expression '..' expression                                                # arrayExpansion
     | FV_NAME                                                                   # variableUsage
+    | OBJ_OPEN fieldList? OBJ_CLOSE                                               # objectLiteral
+    | functionDeclaration '(' parameterStatement (',' parameterStatement)* ')'  # lambdaInvocation
+    | functionDeclaration                                                       # functionExpression
     | REGEX                                                                     # regexValue
     | STRING                                                                    # stringValue
     | NUMBER                                                                    # numberValue
@@ -59,25 +63,33 @@ orderKey:
     ('>' | '<')? expression
     ;
 
-functionStatement: FV_NAME (('(' parameterStatement (',' parameterStatement)*  ')') | '()' ) ;
-parameterStatement: expression | functionDeclaration;
-functionDeclaration:
-    'function' '(' FV_NAME (',' FV_NAME)* ')' '{' expression+ '}' # functionDeclarationBuilder
+functionStatement: FV_NAME '(' (parameterStatement (',' parameterStatement)*)? ')' ;
+parameterStatement:
+    functionDeclaration   # parameterFunctionDeclaration
+    | PARTIAL               # parameterPartial
+    | expression              # parameterExpression
     ;
+functionDeclaration:
+    ('function' | LAMBDA) '(' (FV_NAME (',' FV_NAME)*)? ')' signature? '{' expression+ '}' # functionDeclarationBuilder
+    ;
+signature: '<' (~'>')+ '>';
 expressionList: (expression (',' expression)*)?;
-fieldList: expression ':' uniqueObj expOrObject  (',' expression ':' uniqueObj expOrObject)*;
+fieldList: (expression ':' uniqueObj expOrObject (',' expression ':' uniqueObj expOrObject)*)?;
 expOrObject: expression | object;
 
 BOOLEAN: 'true' | 'false';
 ROOT : '$$' ;
 DOLLAR: '$';
 DESCEND: '**';
+DEFAULT_OP: '?:';
 COALESCE_OP: '??';
 ORDER_OP: '^';
 PARENT_REF: '%';
 HASH_BIND: '#';
 AT_BIND: '@';
 PIPE: '|';
+PARTIAL: '?';
+LAMBDA: '\u03BB' | 'λ';
 ARR_OPEN: '[';
 ARR_CLOSE: ']';
 OBJ_OPEN: '{';

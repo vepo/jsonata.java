@@ -47,12 +47,13 @@ public class JSONata {
     }
 
     public JSONataResult evaluate(String contents) {
-        var data = EvaluationContext.call(environment.dataInspector(), () -> JsonFactory.fromString(contents));
+        var data = EvaluationContext.call(environment.dataInspector(), environment.guardrails(),
+                () -> JsonFactory.fromString(contents));
         return evaluateData(data);
     }
 
     public JSONataResult evaluateData(Data data) {
-        return EvaluationContext.call(environment.dataInspector(), () -> {
+        return EvaluationContext.call(environment.dataInspector(), environment.guardrails(), () -> {
             PathBindings.clearBindings();
             PathBindings.clearParents();
             try {
