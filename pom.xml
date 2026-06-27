@@ -23,6 +23,20 @@
     <name>JSONata.java</name>
     <description>Native JSONata query and transformation language for Java 21</description>
 
+    <developers>
+        <developer>
+            <id>vepo</id>
+            <name>Victor Osório</name>
+            <email>victor.perticarrari@gmail.com</email>
+            <url>https://vepo.dev</url>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+            <timezone>America/Sao_Paulo</timezone>
+        </developer>
+    </developers>
+
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

@@ -112,11 +112,11 @@ public record MappingJoin(Mapping first, Mapping second) implements Mapping {
     }
 
     private static BindInfo unwrapBind(Mapping mapping) {
-        if (mapping instanceof PositionalBind positional) {
-            return new BindInfo(positional.operand(), positional.variableName(), null);
+        if (mapping instanceof PositionalBind(var operand, var variableName)) {
+            return new BindInfo(operand, variableName, null);
         }
-        if (mapping instanceof ContextBind context) {
-            return new BindInfo(context.operand(), null, context.variableName());
+        if (mapping instanceof ContextBind(var operand, var variableName)) {
+            return new BindInfo(operand, null, variableName);
         }
         return new BindInfo(mapping, null, null);
     }
