@@ -4,10 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.DataInspector;
+import dev.vepo.jsonata.functions.json.JacksonDataPaths;
 
 public record Transform(Mapping pattern, Mapping update, Optional<Mapping> delete) implements Mapping {
 
@@ -30,13 +29,15 @@ public record Transform(Mapping pattern, Mapping update, Optional<Mapping> delet
             }
             return result;
         }
-        var paths = matchList.stream().map(match -> findDataPath(result, match)).toList();
+        var paths = matchList.stream()
+                             .map(match -> JacksonDataPaths.findPathOrThrow(result, match))
+                             .toList();
         var currentResult = result;
         for (var path : paths) {
-            var match = navigate(currentResult, path);
+            var match = JacksonDataPaths.navigateData(currentResult, path);
             currentResult = applyUpdateImmutable(original, currentResult, match, inspector);
             if (delete.isPresent()) {
-                match = navigate(currentResult, path);
+                match = JacksonDataPaths.navigateData(currentResult, path);
                 currentResult = applyDeleteImmutable(original, currentResult, match, delete.get(), inspector);
             }
         }
@@ -74,50 +75,6 @@ public record Transform(Mapping pattern, Mapping update, Optional<Mapping> delet
             return result;
         }
         return inspector.replaceNode(result, match, inspector.withoutFields(match, deletionNames(deletion)));
-    }
-
-    private static List<PathStep> findDataPath(Data root, Data target) {
-        return findJsonPath(root.toJson(), target.toJson(), List.of())
-                .orElseThrow(() -> new dev.vepo.jsonata.exception.JSONataException("Cannot locate transform match in result"));
-    }
-
-    private static Optional<List<PathStep>> findJsonPath(JsonNode root, JsonNode target, List<PathStep> prefix) {
-        if (root == target) {
-            return Optional.of(prefix);
-        }
-        if (root.isObject()) {
-            var fields = root.fields();
-            while (fields.hasNext()) {
-                var entry = fields.next();
-                var path = new ArrayList<>(prefix);
-                path.add(new PathStep(entry.getKey(), -1));
-                var found = findJsonPath(entry.getValue(), target, path);
-                if (found.isPresent()) {
-                    return found;
-                }
-            }
-        } else if (root.isArray()) {
-            for (int i = 0; i < root.size(); i++) {
-                var path = new ArrayList<>(prefix);
-                path.add(new PathStep(null, i));
-                var found = findJsonPath(root.get(i), target, path);
-                if (found.isPresent()) {
-                    return found;
-                }
-            }
-        }
-        return Optional.empty();
-    }
-
-    private static Data navigate(Data root, List<PathStep> path) {
-        var current = root;
-        for (var step : path) {
-            current = step.fieldName() != null ? current.get(step.fieldName()) : current.at(step.index());
-        }
-        return current;
-    }
-
-    private record PathStep(String fieldName, int index) {
     }
 
     private static List<String> deletionNames(Data deletion) {

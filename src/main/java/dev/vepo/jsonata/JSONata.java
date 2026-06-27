@@ -19,11 +19,19 @@ import dev.vepo.jsonata.functions.json.JsonFactory;
 public class JSONata {
 
     private final List<Mapping> mappings;
+    private final Mapping composedMapping;
     private final EvaluationEnvironment environment;
 
     private JSONata(List<Mapping> mappings, EvaluationEnvironment environment) {
         this.mappings = mappings;
+        this.composedMapping = compose(mappings);
         this.environment = environment;
+    }
+
+    private static Mapping compose(List<Mapping> mappings) {
+        return mappings.stream()
+                       .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                       .orElse(null);
     }
 
     public static JSONata jsonata(String content) {
@@ -48,10 +56,10 @@ public class JSONata {
             PathBindings.clearBindings();
             PathBindings.clearParents();
             try {
-                return mappings.stream()
-                               .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                               .map(f -> f.map(data, data).toNode())
-                               .orElse(data.toNode());
+                if (composedMapping == null) {
+                    return data.toNode();
+                }
+                return composedMapping.map(data, data).toNode();
             } finally {
                 PathBindings.clearBindings();
                 PathBindings.clearParents();

@@ -24,7 +24,7 @@ public final class MutableJacksonDataInspector implements DataInspector {
         if (data == null || data.isEmpty()) {
             return new EmptyData();
         }
-        return JsonFactory.fromString(data.toJson().toString());
+        return wrap(data.toJson().deepCopy());
     }
 
     @Override

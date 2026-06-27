@@ -14,7 +14,7 @@ public record MappingJoin(Mapping first, Mapping second) implements Mapping {
 
     @Override
     public Data map(Data original, Data current) {
-        logger.atInfo().log("MappingJoin: first={} second={} current={}", first, second, current);
+        logger.atDebug().log("MappingJoin: first={} second={} current={}", first, second, current);
         var left = unwrapBind(first);
         var value = left.mapping().map(original, current);
         Data result;
@@ -31,7 +31,7 @@ public record MappingJoin(Mapping first, Mapping second) implements Mapping {
         } else {
             result = mapWithParent(value, original, value);
         }
-        logger.atInfo().log("MappingJoin: result={}", result);
+        logger.atDebug().log("MappingJoin: result={}", result);
         return result;
     }
 

@@ -9,18 +9,37 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-final class JacksonDataPaths {
+import dev.vepo.jsonata.exception.JSONataException;
+import dev.vepo.jsonata.functions.data.Data;
 
-    sealed interface Step permits ObjectField, ArrayIndex {
+public final class JacksonDataPaths {
+
+    public sealed interface Step permits ObjectField, ArrayIndex {
     }
 
-    record ObjectField(String name) implements Step {
+    public record ObjectField(String name) implements Step {
     }
 
-    record ArrayIndex(int index) implements Step {
+    public record ArrayIndex(int index) implements Step {
     }
 
     private JacksonDataPaths() {}
+
+    public static List<Step> findPathOrThrow(Data root, Data target) {
+        return findPath(root.toJson(), target.toJson())
+                .orElseThrow(() -> new JSONataException("Cannot locate transform match in result"));
+    }
+
+    public static Data navigateData(Data root, List<Step> path) {
+        var current = root;
+        for (var step : path) {
+            current = switch (step) {
+                case ObjectField(var name) -> current.get(name);
+                case ArrayIndex(var index) -> current.at(index);
+            };
+        }
+        return current;
+    }
 
     static Optional<List<Step>> findPath(JsonNode root, JsonNode target) {
         if (root == target) {

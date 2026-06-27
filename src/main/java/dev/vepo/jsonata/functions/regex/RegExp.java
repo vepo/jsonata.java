@@ -2,6 +2,7 @@ package dev.vepo.jsonata.functions.regex;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import javax.script.ScriptContext;
@@ -14,6 +15,12 @@ import org.openjdk.nashorn.api.scripting.ScriptObjectMirror;
 public class RegExp {
 
     public record MatchResult(String match, int index, List<String> groups) {
+    }
+
+    private static final ConcurrentHashMap<String, RegExp> CACHE = new ConcurrentHashMap<>();
+
+    public static RegExp compile(String pattern) {
+        return CACHE.computeIfAbsent(pattern, RegExp::new);
     }
 
     private static ScriptEngine loadEngine() {
@@ -32,7 +39,7 @@ public class RegExp {
     private final ScriptEngine engine;
     private final String pattern;
 
-    public RegExp(String pattern) {
+    private RegExp(String pattern) {
         this.pattern = pattern;
         engine = loadEngine();
         try {

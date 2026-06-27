@@ -11,6 +11,7 @@ import dev.vepo.jsonata.functions.regex.RegExp;
 public class RegexData implements Data {
 
     private final JsonNode node;
+    private volatile RegExp compiled;
 
     public RegexData(JsonNode node) {
         this.node = node;
@@ -63,7 +64,12 @@ public class RegexData implements Data {
 
     @Override
     public RegExp asRegex() {
-        return new RegExp(node.asText());
+        var local = compiled;
+        if (local == null) {
+            local = RegExp.compile(node.asText());
+            compiled = local;
+        }
+        return local;
     }
 
     @Override
