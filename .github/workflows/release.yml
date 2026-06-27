@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Tag to release (e.g. v0.1.0)'
-        required: true
+        description: 'Tag to release (e.g. v0.1.0); defaults to the selected workflow ref'
+        required: false
         type: string
 
 concurrency:
@@ -28,17 +28,13 @@ jobs:
       - name: Checkout tag
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.ref }}
+          ref: ${{ inputs.ref || github.ref }}
           submodules: recursive
 
       - name: Resolve version
         id: version
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            TAG="${{ inputs.ref }}"
-          else
-            TAG="${GITHUB_REF_NAME}"
-          fi
+          TAG="${{ inputs.ref || github.ref_name }}"
           VERSION="${TAG#v}"
           POM_VERSION="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)"
           if [[ "${POM_VERSION}" != "${VERSION}" ]]; then
