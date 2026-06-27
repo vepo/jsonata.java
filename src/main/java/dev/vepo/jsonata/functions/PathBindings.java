@@ -18,14 +18,18 @@ import dev.vepo.jsonata.functions.json.JsonFactory;
  * (array mapping, function invocation) does not leak state.
  *
  * <p>Not thread-safe across threads — each evaluation thread maintains its own stacks.
+ * Call {@link #clear()} when evaluation completes so pooled threads do not retain state.
  */
 public final class PathBindings {
 
-    private static final ThreadLocal<Deque<Data>> PARENTS = ThreadLocal.withInitial(ArrayDeque::new);
-    private static final ThreadLocal<Deque<Map<String, Data>>> BINDING_SCOPES =
-            ThreadLocal.withInitial(PathBindings::newScopeStack);
+    private static final ThreadLocal<State> CURRENT = ThreadLocal.withInitial(State::new);
 
     private PathBindings() {
+    }
+
+    private static final class State {
+        private final Deque<Data> parents = new ArrayDeque<>();
+        private final Deque<Map<String, Data>> bindingScopes = newScopeStack();
     }
 
     private static Deque<Map<String, Data>> newScopeStack() {
@@ -34,20 +38,24 @@ public final class PathBindings {
         return stack;
     }
 
+    private static State state() {
+        return CURRENT.get();
+    }
+
     /**
      * Pushes a parent value onto the parent stack for {@code %} references.
      *
      * @param parent the parent context to expose
      */
     public static void pushParent(Data parent) {
-        PARENTS.get().push(parent);
+        state().parents.push(parent);
     }
 
     /**
      * Removes the most recently pushed parent from the stack.
      */
     public static void popParent() {
-        var stack = PARENTS.get();
+        var stack = state().parents;
         if (!stack.isEmpty()) {
             stack.pop();
         }
@@ -60,7 +68,7 @@ public final class PathBindings {
      * @return the parent value, or empty when the stack is too shallow
      */
     public static Optional<Data> parent(int levels) {
-        var stack = PARENTS.get();
+        var stack = state().parents;
         if (stack.size() < levels) {
             return Optional.empty();
         }
@@ -76,14 +84,14 @@ public final class PathBindings {
      * Pushes a new binding scope (e.g. at function invocation).
      */
     public static void pushScope() {
-        BINDING_SCOPES.get().push(new HashMap<>());
+        state().bindingScopes.push(new HashMap<>());
     }
 
     /**
      * Pops the innermost binding scope, preserving at least one scope on the stack.
      */
     public static void popScope() {
-        var stack = BINDING_SCOPES.get();
+        var stack = state().bindingScopes;
         if (stack.size() > 1) {
             stack.pop();
         }
@@ -96,7 +104,7 @@ public final class PathBindings {
      * @param value the bound value
      */
     public static void bind(String name, Data value) {
-        BINDING_SCOPES.get().peekFirst().put(name, value);
+        state().bindingScopes.peekFirst().put(name, value);
     }
 
     /**
@@ -116,7 +124,7 @@ public final class PathBindings {
      * @return the bound value, or empty when not found
      */
     public static Optional<Data> binding(String name) {
-        for (var scope : BINDING_SCOPES.get()) {
+        for (var scope : state().bindingScopes) {
             var value = scope.get(name);
             if (value != null) {
                 return Optional.of(value);
@@ -131,16 +139,26 @@ public final class PathBindings {
      * @param name the variable name to unbind
      */
     public static void removeBinding(String name) {
-        BINDING_SCOPES.get().peekFirst().remove(name);
+        state().bindingScopes.peekFirst().remove(name);
     }
 
-    /** Resets all binding scopes to a single empty scope. */
+    /**
+     * Discards all path binding state for the current thread.
+     *
+     * <p>Prefer this over clearing individual stacks so pooled threads do not retain
+     * {@link ThreadLocal} entries after evaluation.
+     */
+    public static void clear() {
+        CURRENT.remove();
+    }
+
+    /** @see #clear() */
     public static void clearBindings() {
-        BINDING_SCOPES.set(newScopeStack());
+        clear();
     }
 
-    /** Clears the parent stack. */
+    /** @see #clear() */
     public static void clearParents() {
-        PARENTS.get().clear();
+        clear();
     }
 }

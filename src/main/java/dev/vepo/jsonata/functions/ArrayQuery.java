@@ -1,7 +1,6 @@
 package dev.vepo.jsonata.functions;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
