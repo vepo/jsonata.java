@@ -38,11 +38,12 @@ If code and the document disagree, fix the mismatch in the same PR (prefer updat
 ## Feature Checklist
 
 1. Update `DOMAIN_LANGUAGE.md` if vocabulary is new or changed.
-2. Domain model or behavior (`functions/` or `results/`).
-3. Wire through domain abstractions (`MappingParser`, `BuiltInSupplier`) — no bypassing.
-4. Infrastructure only for grammar, JSON loading, or regex changes.
-5. Thin facade update in `JSONata` if public API changes.
-6. Feature tests named in domain language (see `tdd-workflow.mdc`).
+2. Update `ARCHITECTURE.md` if structure, eval flow, or public API changed (see `documentation-workflow.mdc`).
+3. Domain model or behavior (`functions/` or `results/`).
+4. Wire through domain abstractions (`MappingParser`, `BuiltInSupplier`) — no bypassing.
+5. Infrastructure only for grammar, JSON loading, or regex changes.
+6. Thin facade update in `JSONata` if public API changes.
+7. Feature tests named in domain language (see `tdd-workflow.mdc`).
 
 ## Anti-patterns
 

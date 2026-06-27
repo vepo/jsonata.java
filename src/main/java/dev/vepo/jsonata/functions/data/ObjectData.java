@@ -12,14 +12,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import dev.vepo.jsonata.JSONataResult;
 import dev.vepo.jsonata.functions.Mapping;
+import dev.vepo.jsonata.functions.data.DataInspector;
+import dev.vepo.jsonata.functions.data.DataInspectors;
 import dev.vepo.jsonata.results.JSONataResults;
 
 public class ObjectData implements Data {
 
-    private JsonNode element;
+    private final JsonNode element;
+    private final DataInspector inspector;
 
     public ObjectData(JsonNode element) {
+        this(element, DataInspectors.defaultInspector());
+    }
+
+    public ObjectData(JsonNode element, DataInspector inspector) {
         this.element = element;
+        this.inspector = inspector;
     }
 
     @Override
@@ -27,7 +35,7 @@ public class ObjectData implements Data {
         if (element.isObject()) {
             return new GroupedData(StreamSupport.stream(spliteratorUnknownSize(element.fields(), 0), false)
                                                 .map(Entry::getValue)
-                                                .map(ObjectData::new)
+                                                .map(node -> new ObjectData(node, inspector))
                                                 .map(v -> (Data) v)
                                                 .toList());
         } else {
@@ -45,13 +53,13 @@ public class ObjectData implements Data {
         StreamSupport.stream(spliteratorUnknownSize(element.fields(), 0), false)
                      .map(Entry::getValue)
                      .filter(JsonNode::isObject)
-                     .map(ObjectData::new)
+                     .map(node -> new ObjectData(node, inspector))
                      .forEach(action);
     }
 
     @Override
     public Data get(String fieldName) {
-        return json2Value(element.get(fieldName));
+        return json2Value(element.get(fieldName), inspector);
     }
 
     @Override
@@ -82,6 +90,11 @@ public class ObjectData implements Data {
     @Override
     public Data map(Function<JsonNode, Data> function) {
         return function.apply(element);
+    }
+
+    @Override
+    public DataInspector inspector() {
+        return inspector;
     }
 
     @Override

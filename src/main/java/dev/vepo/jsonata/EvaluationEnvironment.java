@@ -10,6 +10,8 @@ import dev.vepo.jsonata.functions.BlockContext;
 import dev.vepo.jsonata.functions.DeclaredFunction;
 import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.data.Data;
+import dev.vepo.jsonata.functions.data.DataInspector;
+import dev.vepo.jsonata.functions.data.DataInspectors;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
 /**
@@ -19,15 +21,19 @@ public final class EvaluationEnvironment {
 
     private final Map<String, JsonNode> bindings;
     private final Map<String, Function<MappingCall, Data>> functions;
+    private final DataInspector dataInspector;
 
     private EvaluationEnvironment(Map<String, JsonNode> bindings,
-                                  Map<String, Function<MappingCall, Data>> functions) {
+                                  Map<String, Function<MappingCall, Data>> functions,
+                                  DataInspector dataInspector) {
         this.bindings = Map.copyOf(bindings);
         this.functions = Map.copyOf(functions);
+        this.dataInspector = dataInspector;
     }
 
     public static EvaluationEnvironment empty() {
-        return new EvaluationEnvironment(Map.of(), Map.of());
+        JsonFactory.bootstrap();
+        return new EvaluationEnvironment(Map.of(), Map.of(), DataInspectors.defaultInspector());
     }
 
     public Map<String, JsonNode> bindings() {
@@ -36,6 +42,10 @@ public final class EvaluationEnvironment {
 
     public Map<String, Function<MappingCall, Data>> functions() {
         return functions;
+    }
+
+    public DataInspector dataInspector() {
+        return dataInspector;
     }
 
     public BlockContext rootBlockContext() {
@@ -52,14 +62,18 @@ public final class EvaluationEnvironment {
         var key = name.startsWith("$") ? name.substring(1) : name;
         var next = new HashMap<>(bindings);
         next.put(key, value);
-        return new EvaluationEnvironment(next, functions);
+        return new EvaluationEnvironment(next, functions, dataInspector);
     }
 
     public EvaluationEnvironment registerFunction(String name, Function<MappingCall, Data> implementation) {
         var fnName = name.startsWith("$") ? name : "$" + name;
         var next = new HashMap<>(functions);
         next.put(fnName, implementation);
-        return new EvaluationEnvironment(bindings, next);
+        return new EvaluationEnvironment(bindings, next, dataInspector);
+    }
+
+    public EvaluationEnvironment withDataInspector(DataInspector inspector) {
+        return new EvaluationEnvironment(bindings, functions, inspector);
     }
 
     public static Builder builder() {
@@ -73,6 +87,7 @@ public final class EvaluationEnvironment {
     public static final class Builder {
         private final Map<String, JsonNode> bindings = new HashMap<>();
         private final Map<String, Function<MappingCall, Data>> functions = new HashMap<>();
+        private DataInspector dataInspector;
 
         public Builder bind(String name, JsonNode value) {
             var key = name.startsWith("$") ? name.substring(1) : name;
@@ -86,8 +101,19 @@ public final class EvaluationEnvironment {
             return this;
         }
 
+        public Builder dataInspector(DataInspector inspector) {
+            this.dataInspector = inspector;
+            return this;
+        }
+
         public EvaluationEnvironment build() {
-            return new EvaluationEnvironment(bindings, functions);
+            var inspector = dataInspector != null ? dataInspector : resolvedDefaultInspector();
+            return new EvaluationEnvironment(bindings, functions, inspector);
+        }
+
+        private static DataInspector resolvedDefaultInspector() {
+            JsonFactory.bootstrap();
+            return DataInspectors.defaultInspector();
         }
     }
 }

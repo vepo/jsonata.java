@@ -33,6 +33,7 @@ If implementation and the document diverge, reconcile in the same PR (update cod
 - New domain terms → update `DOMAIN_LANGUAGE.md` (`ddd-workflow.mdc`)
 - New features → feature tests per `tdd-workflow.mdc`
 - Structural changes → update `ARCHITECTURE.md` first or alongside code
+- Any change requiring doc updates → `documentation-workflow.mdc` checklist
 
 ## Anti-patterns
 

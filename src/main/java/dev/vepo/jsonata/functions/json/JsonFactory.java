@@ -15,8 +15,11 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import dev.vepo.jsonata.exception.JSONataException;
+import dev.vepo.jsonata.functions.EvaluationContext;
 import dev.vepo.jsonata.functions.data.ArrayData;
 import dev.vepo.jsonata.functions.data.Data;
+import dev.vepo.jsonata.functions.data.DataInspector;
+import dev.vepo.jsonata.functions.data.DataInspectors;
 import dev.vepo.jsonata.functions.data.ObjectData;
 import dev.vepo.jsonata.functions.data.RegexData;
 
@@ -24,11 +27,27 @@ public class JsonFactory {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    static {
+        DataInspectors.setDefault(MutableJacksonDataInspector.INSTANCE);
+    }
+
+    public static void bootstrap() {
+        // Triggers static initialization of default DataInspector registration.
+    }
+
+    private static DataInspector inspector() {
+        return EvaluationContext.currentInspector();
+    }
+
     public static Data json2Value(JsonNode node) {
+        return json2Value(node, inspector());
+    }
+
+    public static Data json2Value(JsonNode node, DataInspector dataInspector) {
         if (node.isArray()) {
-            return new ArrayData((ArrayNode) node);
+            return new ArrayData((ArrayNode) node, dataInspector);
         } else {
-            return new ObjectData(node);
+            return new ObjectData(node, dataInspector);
         }
     }
 
@@ -41,15 +60,15 @@ public class JsonFactory {
     }
 
     public static Data stringValue(String value) {
-        return new ObjectData(mapper.getNodeFactory().textNode(value));
+        return new ObjectData(mapper.getNodeFactory().textNode(value), inspector());
     }
 
     public static Stream<Data> planify(JsonNode value) {
         if (!value.isArray()) {
-            return Stream.of(new ObjectData(value));
+            return Stream.of(new ObjectData(value, inspector()));
         } else {
             return StreamSupport.stream(spliteratorUnknownSize(((ArrayNode) value).elements(), 0), false)
-                                .map(ObjectData::new);
+                                .map(node -> new ObjectData(node, inspector()));
         }
     }
 
@@ -57,43 +76,42 @@ public class JsonFactory {
         var array = mapper.createArrayNode();
         Stream.of(values)
               .forEach(array::add);
-        return new ArrayData(array);
+        return new ArrayData(array, inspector());
     }
-    
 
     public static Data arrayValue(int[] values) {
         var array = mapper.createArrayNode();
         IntStream.of(values)
               .forEach(array::add);
-        return new ArrayData(array);
+        return new ArrayData(array, inspector());
     }
 
     public static Data numberValue(Integer value) {
-        return new ObjectData(mapper.getNodeFactory().numberNode(value));
+        return new ObjectData(mapper.getNodeFactory().numberNode(value), inspector());
     }
 
     public static Data numberValue(BigDecimal value) {
-        return new ObjectData(mapper.getNodeFactory().numberNode(value));
+        return new ObjectData(mapper.getNodeFactory().numberNode(value), inspector());
     }
 
     public static Data numberValue(Long value) {
-        return new ObjectData(mapper.getNodeFactory().numberNode(value));
+        return new ObjectData(mapper.getNodeFactory().numberNode(value), inspector());
     }
 
     public static Data numberValue(Float value) {
-        return new ObjectData(mapper.getNodeFactory().numberNode(value));
+        return new ObjectData(mapper.getNodeFactory().numberNode(value), inspector());
     }
 
     public static Data numberValue(Double value) {
-        return new ObjectData(mapper.getNodeFactory().numberNode(value));
+        return new ObjectData(mapper.getNodeFactory().numberNode(value), inspector());
     }
 
     public static Data booleanValue(Boolean value) {
-        return new ObjectData(mapper.getNodeFactory().booleanNode(value));
+        return new ObjectData(mapper.getNodeFactory().booleanNode(value), inspector());
     }
 
     public static Data booleanValue(boolean value) {
-        return new ObjectData(mapper.getNodeFactory().booleanNode(value));
+        return new ObjectData(mapper.getNodeFactory().booleanNode(value), inspector());
     }
 
     public static Data regex(String text) {
@@ -115,7 +133,7 @@ public class JsonFactory {
         }
 
         public Data build() {
-            return new ObjectData(root);
+            return new ObjectData(root, inspector());
         }
 
         public void set(String field, Data value) {

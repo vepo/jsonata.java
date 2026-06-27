@@ -13,14 +13,22 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import dev.vepo.jsonata.JSONataResult;
+import dev.vepo.jsonata.functions.data.DataInspector;
+import dev.vepo.jsonata.functions.data.DataInspectors;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
 public class ArrayData implements Data {
 
     private final ArrayNode element;
+    private final DataInspector inspector;
 
     public ArrayData(ArrayNode element) {
+        this(element, DataInspectors.defaultInspector());
+    }
+
+    public ArrayData(ArrayNode element, DataInspector inspector) {
         this.element = element;
+        this.inspector = inspector;
     }
 
     @Override
@@ -30,13 +38,13 @@ public class ArrayData implements Data {
 
     @Override
     public Data at(int index) {
-        return json2Value(element.get(index));
+        return json2Value(element.get(index), inspector);
     }
 
     @Override
     public void forEachChild(Consumer<Data> action) {
         for (int i = 0; i < element.size(); ++i) {
-            action.accept(json2Value(element.get(i)));
+            action.accept(json2Value(element.get(i), inspector));
         }
     }
 
@@ -50,7 +58,7 @@ public class ArrayData implements Data {
         return new GroupedData(toStream(element).map(node -> node.get(fieldName))
                                                 .filter(Objects::nonNull)
                                                 .flatMap(node -> node.isArray() ? toStream((ArrayNode) node) : Stream.of(node))
-                                                .map(JsonFactory::json2Value)
+                                                .map(node -> json2Value(node, inspector))
                                                 .toList());
     }
 
@@ -88,7 +96,12 @@ public class ArrayData implements Data {
 
     @Override
     public Stream<Data> stream() {
-        return toStream(element).map(JsonFactory::json2Value);
+        return toStream(element).map(node -> json2Value(node, inspector));
+    }
+
+    @Override
+    public DataInspector inspector() {
+        return inspector;
     }
 
     @Override

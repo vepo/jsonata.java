@@ -1,0 +1,53 @@
+---
+description: Documentation workflow — update canonical docs in the same change when behavior or structure changes
+alwaysApply: true
+---
+
+# Documentation Workflow
+
+## Canonical documents
+
+| Document | Purpose | Update when |
+|----------|---------|-------------|
+| [`DOMAIN_LANGUAGE.md`](../../DOMAIN_LANGUAGE.md) | Domain vocabulary and term → code mapping | New/renamed domain concepts, constructs, `Data` subtypes, public evaluation terms |
+| [`ARCHITECTURE.md`](../../ARCHITECTURE.md) | System structure, layers, parse/eval flow, public API | Layer boundaries, evaluation pipeline, extension points, dependencies, embedding API |
+| [`AGENTS.md`](../../AGENTS.md) | Agent workflows and rule index | New agent workflows, commands, or Cursor rules |
+
+Do **not** add ad-hoc markdown unless the user requests it. Prefer updating the canonical documents above.
+
+## Agent obligations
+
+1. **Read** the relevant canonical doc(s) before structural, domain, or public API work.
+2. **Update** every affected canonical doc in the **same change** as the code — not in a follow-up.
+3. **Cross-check** — if `DOMAIN_LANGUAGE.md` gains a term, `ARCHITECTURE.md` should reference it when the term affects structure or flow; if the public API changes, update `ARCHITECTURE.md` embedding section.
+
+## Change checklist
+
+Before finishing a PR that touches behavior or structure, confirm:
+
+- [ ] New domain term? → `DOMAIN_LANGUAGE.md` table entry
+- [ ] New/changed evaluation flow, port, adapter, or facade API? → `ARCHITECTURE.md`
+- [ ] New Cursor rule or agent workflow? → `AGENTS.md` rules index
+- [ ] Code names and error messages match `DOMAIN_LANGUAGE.md`
+
+## Examples
+
+| Change | Required doc updates |
+|--------|---------------------|
+| Add `DataInspector` port + Jackson adapters | `DOMAIN_LANGUAGE.md` (terms), `ARCHITECTURE.md` (eval flow, extension point) |
+| Add `JSONata.jsonata(expr, DataInspector)` | `ARCHITECTURE.md` (public API, embedding) |
+| Rename `JacksonDataInspector` → `MutableJacksonDataInspector` | `DOMAIN_LANGUAGE.md` (code anchor column) |
+| New built-in following existing pattern | Tests only; update `DOMAIN_LANGUAGE.md` if new vocabulary |
+| Pure refactor, same meaning | No doc update |
+
+## Coordination
+
+- Domain terms → `ddd-workflow.mdc`
+- Structure and layers → `architecture.mdc`
+- Tests → `tdd-workflow.mdc`
+
+## Anti-patterns
+
+- Shipping domain or architectural changes without updating canonical docs
+- Documenting implementation in comments instead of `DOMAIN_LANGUAGE.md` / `ARCHITECTURE.md`
+- Updating only one doc when multiple are affected (e.g. new public API without `ARCHITECTURE.md`)

@@ -62,4 +62,8 @@ public interface Data {
     default Stream<Data> stream() {
         return Stream.of(this);
     }
+
+    default DataInspector inspector() {
+        return DataInspectors.defaultInspector();
+    }
 }

@@ -63,6 +63,16 @@ Apply on every Java change. Rules distill *Effective Java* into actionable check
 
 Apply when designing types, hierarchies, and APIs. See `.cursor/rules/oop-principles.mdc`.
 
+### 5. Documentation
+
+Update canonical docs in the **same change** when behavior, domain vocabulary, or structure changes. See `.cursor/rules/documentation-workflow.mdc`.
+
+| Document | Update when |
+|----------|-------------|
+| `DOMAIN_LANGUAGE.md` | New/changed domain terms |
+| `ARCHITECTURE.md` | Layers, eval flow, public API, extension points |
+| `AGENTS.md` | New workflows or Cursor rules |
+
 ## Commands
 
 ```bash
@@ -79,13 +89,14 @@ mvn -q test-compile exec:java -Dexec.mainClass=dev.vepo.jsonata.conformance.Conf
 - Do not edit generated ANTLR output under `target/`; change `.g4` and rebuild.
 - Prefer small, focused diffs. One concern per commit when the user asks to commit.
 - Run tests after substantive changes.
-- Do not add markdown docs unless requested.
+- Update canonical documentation when the change requires it (see Documentation workflow above).
 
 ## Cursor Rules Index
 
 | Rule | Scope | Purpose |
 |------|-------|---------|
 | `architecture.mdc` | Always | Structure, conformance harness, embedding API |
+| `documentation-workflow.mdc` | Always | When and how to update canonical docs |
 | `ddd-workflow.mdc` | Always | Layer boundaries, domain language document |
 | `tdd-workflow.mdc` | Always | Feature-focused TDD, Gherkin scenarios |
 | `java-effective-java.mdc` | `**/*.java` | Java idioms and quality checklist |

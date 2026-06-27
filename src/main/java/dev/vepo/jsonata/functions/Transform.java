@@ -4,11 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.functions.data.Data;
-import dev.vepo.jsonata.functions.json.JsonFactory;
+import dev.vepo.jsonata.functions.data.DataInspector;
 
 public record Transform(Mapping pattern, Mapping update, Optional<Mapping> delete) implements Mapping {
 
@@ -17,41 +16,108 @@ public record Transform(Mapping pattern, Mapping update, Optional<Mapping> delet
         if (isUndefined(objectToTransform)) {
             return Mapping.empty();
         }
-        var result = deepCopy(objectToTransform);
+        var inspector = EvaluationContext.currentInspector();
+        var result = inspector.copy(objectToTransform);
         var matches = pattern.map(original, result);
         if (isUndefined(matches)) {
             return result;
         }
         var matchList = toList(matches);
-        for (var match : matchList) {
-            applyUpdate(original, match);
-            delete.ifPresent(del -> applyDelete(original, match, del));
+        if (inspector.mutableValues()) {
+            for (var match : matchList) {
+                applyUpdateMutable(original, match, inspector);
+                delete.ifPresent(del -> applyDeleteMutable(original, match, del, inspector));
+            }
+            return result;
         }
-        return result;
+        var paths = matchList.stream().map(match -> findDataPath(result, match)).toList();
+        var currentResult = result;
+        for (var path : paths) {
+            var match = navigate(currentResult, path);
+            currentResult = applyUpdateImmutable(original, currentResult, match, inspector);
+            if (delete.isPresent()) {
+                match = navigate(currentResult, path);
+                currentResult = applyDeleteImmutable(original, currentResult, match, delete.get(), inspector);
+            }
+        }
+        return currentResult;
     }
 
-    private void applyUpdate(Data original, Data match) {
+    private void applyUpdateMutable(Data original, Data match, DataInspector inspector) {
         var updateValue = update.map(original, match);
         if (isUndefined(updateValue) || !updateValue.isObject()) {
             return;
         }
-        var targetNode = match.toJson();
-        if (!(targetNode instanceof ObjectNode objectNode)) {
-            throw new JSONataException("Transform update target must be an object");
-        }
-        updateValue.toJson().fields().forEachRemaining(entry -> objectNode.set(entry.getKey(), entry.getValue()));
+        inspector.mergeFields(match, updateValue);
     }
 
-    private void applyDelete(Data original, Data match, Mapping deleteMapping) {
+    private void applyDeleteMutable(Data original, Data match, Mapping deleteMapping, DataInspector inspector) {
         var deletion = deleteMapping.map(original, match);
         if (isUndefined(deletion)) {
             return;
         }
-        var names = deletionNames(deletion);
-        var targetNode = match.toJson();
-        if (targetNode instanceof ObjectNode objectNode) {
-            names.forEach(objectNode::remove);
+        inspector.removeFields(match, deletionNames(deletion));
+    }
+
+    private Data applyUpdateImmutable(Data original, Data result, Data match, DataInspector inspector) {
+        var updateValue = update.map(original, match);
+        if (isUndefined(updateValue) || !updateValue.isObject()) {
+            return result;
         }
+        return inspector.replaceNode(result, match, inspector.merged(match, updateValue));
+    }
+
+    private Data applyDeleteImmutable(Data original, Data result, Data match, Mapping deleteMapping,
+                                    DataInspector inspector) {
+        var deletion = deleteMapping.map(original, match);
+        if (isUndefined(deletion)) {
+            return result;
+        }
+        return inspector.replaceNode(result, match, inspector.withoutFields(match, deletionNames(deletion)));
+    }
+
+    private static List<PathStep> findDataPath(Data root, Data target) {
+        return findJsonPath(root.toJson(), target.toJson(), List.of())
+                .orElseThrow(() -> new dev.vepo.jsonata.exception.JSONataException("Cannot locate transform match in result"));
+    }
+
+    private static Optional<List<PathStep>> findJsonPath(JsonNode root, JsonNode target, List<PathStep> prefix) {
+        if (root == target) {
+            return Optional.of(prefix);
+        }
+        if (root.isObject()) {
+            var fields = root.fields();
+            while (fields.hasNext()) {
+                var entry = fields.next();
+                var path = new ArrayList<>(prefix);
+                path.add(new PathStep(entry.getKey(), -1));
+                var found = findJsonPath(entry.getValue(), target, path);
+                if (found.isPresent()) {
+                    return found;
+                }
+            }
+        } else if (root.isArray()) {
+            for (int i = 0; i < root.size(); i++) {
+                var path = new ArrayList<>(prefix);
+                path.add(new PathStep(null, i));
+                var found = findJsonPath(root.get(i), target, path);
+                if (found.isPresent()) {
+                    return found;
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static Data navigate(Data root, List<PathStep> path) {
+        var current = root;
+        for (var step : path) {
+            current = step.fieldName() != null ? current.get(step.fieldName()) : current.at(step.index());
+        }
+        return current;
+    }
+
+    private record PathStep(String fieldName, int index) {
     }
 
     private static List<String> deletionNames(Data deletion) {
@@ -78,13 +144,6 @@ public record Transform(Mapping pattern, Mapping update, Optional<Mapping> delet
             return data.stream().toList();
         }
         return List.of(data);
-    }
-
-    private static Data deepCopy(Data data) {
-        if (isUndefined(data)) {
-            return Mapping.empty();
-        }
-        return JsonFactory.fromString(data.toJson().toString());
     }
 
     private static boolean isUndefined(Data data) {

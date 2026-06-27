@@ -37,7 +37,11 @@ Reference: [JSONata documentation](https://docs.jsonata.org)
 | **Parent reference** | Enclosing object with `%` | `ParentReference`, `PathBindings` |
 | **Positional bind** | Index variable with `#$var` | `PositionalBind` |
 | **Context bind** | Focus variable with `@$var` | `ContextBind` |
-| **Transform** | In-place update via `\|path\|update\|` | `Transform` |
+| **Transform** | Object update via `\|path\|update\|` (copy, then merge/delete matched nodes) | `Transform` |
+| **Data inspector** | Jackson-free domain port for copy, merge, remove, and functional replace on `Data` | `DataInspector` |
+| **Evaluation context** | Thread-local session holding the active `DataInspector` during evaluate | `EvaluationContext` |
+| **Data backing** | Underlying representation of a `Data` value (e.g. Jackson `JsonNode`, map, POJO) | `Data.inspector()` |
+| **Default data inspector** | Registry for the fallback inspector when no session is active | `DataInspectors` |
 | **Binding** | External variable at evaluate time | `EvaluationEnvironment` |
 | **Group / reduce** | Aggregate into object with `{ key: value }` | `AggregateMapping`, `JSONataGroupResult` |
 | **Object constructor** | Build object `{ "field": expr }` | `ObjectBuilder` |
@@ -51,6 +55,21 @@ Reference: [JSONata documentation](https://docs.jsonata.org)
 | **Array data** | JSON array value | `ArrayData` |
 | **Grouped data** | Sequence of values from multi-match navigation | `GroupedData` |
 | **Regex value** | Regular expression literal | `RegexData`, `RegExp` |
+| **Jackson data inspector** | Default mutable `DataInspector` adapter for Jackson-backed `Data` | `MutableJacksonDataInspector` |
+| **Immutable Jackson data inspector** | Functional-update `DataInspector` for immutable Jackson-backed `Data` | `ImmutableJacksonDataInspector` |
+
+## DataInspector contract
+
+`DataInspector` is a **domain port** (JDK + `Data` only). It does **not** load JSON or reference Jackson types. Data creation stays in `JsonFactory` (infrastructure), which tags new `Data` with `EvaluationContext.currentInspector()`.
+
+| Method | Mutable inspector | Immutable inspector |
+|--------|-------------------|---------------------|
+| `mutableValues()` | `true` | `false` |
+| `copy` | Deep working copy | Deep copy (new `Data` instances) |
+| `mergeFields` / `removeFields` | In-place update | Throws `JSONataException` |
+| `merged` / `withoutFields` / `replaceNode` | Delegates to in-place ops | Builds new `Data`; `replaceNode` re-roots updated subtrees |
+
+Session wiring: `JSONata.jsonata(expr, inspector)` → `EvaluationEnvironment.withDataInspector` → `EvaluationContext.call` during `evaluate` / `evaluateData`.
 
 ## Layers (Bounded Context)
 
@@ -74,5 +93,8 @@ Update in the **same change** when you:
 - Introduce a JSONata language construct not yet listed
 - Rename a domain type or change its meaning
 - Discover a spec term that maps to an existing type (add to table)
+- Add or change `DataInspector` methods or evaluation-scoped wiring terms
+
+See `.cursor/rules/documentation-workflow.mdc` for the full documentation checklist.
 
 Do **not** update for pure refactors that preserve meaning, or infrastructure-only changes with no new domain vocabulary.

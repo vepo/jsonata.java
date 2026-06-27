@@ -19,7 +19,10 @@ JSONata jsonata = JSONata.jsonata(expr)
 jsonata.evaluate(jsonString);
 ```
 
-Also: `JSONata.jsonata(expr, EvaluationEnvironment)` for bindings at parse time.
+Also:
+
+- `JSONata.jsonata(expr, EvaluationEnvironment)` — bindings and functions at compile time
+- `JSONata.jsonata(expr, DataInspector)` — evaluation-scoped data backing (mutable or immutable)
 
 ---
 
@@ -34,8 +37,9 @@ flowchart LR
     end
 
     subgraph runtime [Runtime]
-        E[JSON input text] --> F[Data.load]
-        F --> G[Mapping.map]
+        E[JSON input text] --> F[JsonFactory.fromString]
+        F --> EC[EvaluationContext]
+        EC --> G[Mapping.map]
         G --> H[Data]
         H --> I[Data.toNode]
         I --> J[JSONataResult]
@@ -45,10 +49,10 @@ flowchart LR
 ```
 
 1. **Parse** — Expression string → ANTLR parse tree → listener builds `Mapping` objects (compile to evaluators).
-2. **Load** — JSON string → `Data` domain model via `JsonFactory`.
-3. **Evaluate** — `Mapping.map(original, context)` walks/transforms `Data`; facade converts to `JSONataResult`.
+2. **Load** — JSON string → `Data` domain model via `JsonFactory` (infrastructure), tagged with the session `DataInspector`.
+3. **Evaluate** — `EvaluationContext` sets the active inspector; `Mapping.map(original, context)` walks/transforms `Data`; facade converts to `JSONataResult`.
 
-Multi-statement expressions are composed by reducing the mapping list in `JSONata.evaluate`.
+Multi-statement expressions are composed by reducing the mapping list in `JSONata.evaluateData`.
 
 ---
 
@@ -74,11 +78,12 @@ Triggered by `evaluate()` / `evaluateData()`.
 
 | What happens | What does *not* happen |
 |--------------|------------------------|
-| Input JSON loaded via `Data.load()` (Jackson) | No ANTLR / `MappingParser` (except documented exceptions below) |
-| `Mapping.map(original, context)` walks the compiled tree | Expression text is not tokenized again |
-| `Data.toNode()` produces `JSONataResult` | Parse tree is not retained or re-walked |
+| Input JSON loaded via `JsonFactory.fromString` under `EvaluationContext` | No ANTLR / `MappingParser` (except documented exceptions below) |
+| `EvaluationContext` exposes session `DataInspector` to mappings and `JsonFactory` | Expression text is not tokenized again |
+| `Mapping.map(original, context)` walks the compiled tree | Parse tree is not retained or re-walked |
+| `Data.toNode()` produces `JSONataResult` | |
 
-Entry point: `JSONata.evaluateData()` — only invokes pre-built mappings.
+Entry point: `JSONata.evaluateData()` — wraps evaluation in `EvaluationContext.call(environment.dataInspector(), …)`.
 
 ### Evaluation strategy
 
@@ -98,10 +103,10 @@ These are intentional departures from strict compile-once. Each is justified.
 | Violation | Location | Justification |
 |-----------|----------|---------------|
 | **`$eval` re-parses JSONata** | `Eval.map()` calls `MappingParser.parse(expr)` | JSONata spec requires dynamic evaluation of expression strings only known at runtime. The argument is data-dependent; it cannot be compiled when the outer expression is parsed. |
-| **Input JSON parsing** | `Data.load()` in `evaluate()` | Input document is external data, not part of the expression AST. Must be read when evaluation runs (and may change between calls on the same compiled `JSONata`). |
+| **Input JSON parsing** | `JsonFactory.fromString` in `evaluate()` | Input document is external data, not part of the expression AST. Must be read when evaluation runs (and may change between calls on the same compiled `JSONata`). |
 | **Regex engine init** | `RegExp` constructor (Nashorn) on first use of a regex literal | Compiles the regex *pattern* for matching, not JSONata syntax. Pattern text is fixed at expression parse time; engine setup is deferred until the literal is evaluated. |
 | **Value parsing** | `ToMillis`, `ParseInteger`, etc. | Parses date/number *values* at execute time, not JSONata expressions. |
-| **Deep copy via JSON** | `Transform` uses `JsonFactory.fromString` for copy semantics | Serializes/deserializes `Data` to clone structure during transform; not expression re-parsing. |
+| **Transform copy** | `DataInspector.copy()` (Jackson adapters may serialize/deserialize) | Clones structure for `\|path\|update\|`; delegated to the session inspector, not expression re-parsing. |
 
 **Single ANTLR entry point:** `MappingParser` — called from `JSONata.jsonata()` and from `$eval` only.
 
@@ -143,6 +148,9 @@ dev.vepo.jsonata/
 │   ├── MappingJoin.java         # Path composition (.)
 │   ├── BlockContext.java        # Variables & functions in blocks
 │   ├── data/                    # JSON value model during eval
+│   │   ├── DataInspector.java   # Port — copy / merge / replace (no Jackson)
+│   │   └── DataInspectors.java  # Default inspector registry
+│   ├── EvaluationContext.java   # Thread-local session inspector
 │   ├── builtin/                 # Built-in function implementations
 │   ├── json/                    # Jackson adapter (infra)
 │   └── regex/                   # Regex engine adapter (infra)
@@ -176,8 +184,31 @@ Mappings compose via `andThen`, `MappingJoin` (paths), and nested structures (bl
 
 In-memory JSON value during evaluation. Subtypes: `ObjectData`, `ArrayData`, `GroupedData` (multi-match sequences), `EmptyData`, `RegexData`.
 
-- **Inbound:** `Data.load(String)` → Jackson parse → domain types
+- **Inbound:** `JsonFactory.fromString` (infrastructure) → `ObjectData` / `ArrayData` tagged with session `DataInspector`
 - **Outbound:** `Data.toNode()` → `JSONataResult`
+- **Inspector:** `Data.inspector()` returns the backing-store adapter for this value
+
+### DataInspector
+
+Domain port for structural operations on `Data` during evaluation (especially transform). **Jackson-free** — lives in `functions/data/`; adapters in `functions/json/`.
+
+| Method | Role |
+|--------|------|
+| `mutableValues()` | Whether in-place field updates are supported |
+| `copy` | Deep copy for transform |
+| `mergeFields` / `removeFields` | In-place update (mutable inspectors) |
+| `merged` / `withoutFields` / `replaceNode` | Functional update (immutable inspectors) |
+
+Implementations:
+
+- `MutableJacksonDataInspector` — default; in-place mutation on Jackson-backed `Data`
+- `ImmutableJacksonDataInspector` — functional updates; rejects in-place mutation
+
+`JsonFactory` attaches `EvaluationContext.currentInspector()` to every `ObjectData` / `ArrayData` it creates. `Transform` uses the session inspector for copy and update/delete.
+
+### EvaluationContext
+
+Thread-local holder for the active `DataInspector` during `evaluate` / `evaluateData`. Set via `EvaluationContext.call(inspector, …)`. Falls back to `DataInspectors.defaultInspector()` when no session is active.
 
 ### JSONataResult
 
@@ -248,17 +279,24 @@ Current baseline: ~46% of cases pass (tracked via `printBaselineReport`).
 
 ## Embedding API
 
-`EvaluationEnvironment` supports external bindings and registered functions:
+`EvaluationEnvironment` supports external bindings, registered functions, and an optional `DataInspector`:
 
 ```java
 var env = EvaluationEnvironment.builder()
     .bind("price", mapper.readTree("{ \"foo\": { \"bar\": 45 } }"))
     .registerFunction("double", call -> ...)
+    .dataInspector(ImmutableJacksonDataInspector.INSTANCE)
     .build();
 JSONata.jsonata("$price.foo.bar", env).evaluate(input);
 ```
 
-`JSONata.bind()` / `registerFunction()` return new instances with merged environment (immutable-style).
+Or pass an inspector directly at compile time:
+
+```java
+JSONata.jsonata("Address.*", MutableJacksonDataInspector.INSTANCE).evaluate(input);
+```
+
+`JSONata.bind()` / `registerFunction()` return new instances with merged environment (immutable-style). The `DataInspector` is fixed at compile time via `EvaluationEnvironment` and applied at evaluate time through `EvaluationContext`.
 
 ---
 
@@ -297,7 +335,8 @@ CI (`.github/workflows/build.yml`): JDK 21, `mvn verify` + SonarCloud analysis o
 | New expression syntax | Edit `MappingExpressions.g4`, listener handler, domain `Mapping` |
 | New built-in | `builtin/` + `BuiltInFunction` enum |
 | New value shape | `Data` subtype + `JsonFactory` / `toNode` wiring |
-| Public API | `JSONata`, `JSONataResult`, `EvaluationEnvironment` (module exports `dev.vepo.jsonata` only) |
+| New data backing | Implement `DataInspector`; wire via `EvaluationEnvironment` / `JSONata.jsonata(expr, inspector)` |
+| Public API | `JSONata`, `JSONataResult`, `EvaluationEnvironment`, `DataInspector` (module exports `dev.vepo.jsonata` only) |
 
 ---
 
@@ -320,5 +359,7 @@ Update in the **same change** when you:
 - Add a new extension point or public API entry
 - Introduce/remove a major dependency
 - Change build, CI, or module exports
+
+See `.cursor/rules/documentation-workflow.mdc` for the full documentation checklist.
 
 Do **not** update for: single-class refactors within an existing package, new built-ins that follow existing patterns, or test-only changes.

@@ -1,15 +1,16 @@
 package dev.vepo.jsonata;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import dev.vepo.jsonata.functions.EvaluationContext;
 import dev.vepo.jsonata.functions.Mapping;
 import dev.vepo.jsonata.functions.MappingParser;
 import dev.vepo.jsonata.functions.PathBindings;
 import dev.vepo.jsonata.functions.data.Data;
+import dev.vepo.jsonata.functions.data.DataInspector;
 import dev.vepo.jsonata.functions.json.JsonFactory;
 
 /**
@@ -29,27 +30,33 @@ public class JSONata {
         return jsonata(content, EvaluationEnvironment.empty());
     }
 
+    public static JSONata jsonata(String content, DataInspector inspector) {
+        return jsonata(content, EvaluationEnvironment.empty().withDataInspector(inspector));
+    }
+
     public static JSONata jsonata(String content, EvaluationEnvironment environment) {
         return new JSONata(MappingParser.parse(content, environment), environment);
     }
 
     public JSONataResult evaluate(String contents) {
-        var data = Data.load(contents);
+        var data = EvaluationContext.call(environment.dataInspector(), () -> JsonFactory.fromString(contents));
         return evaluateData(data);
     }
 
     public JSONataResult evaluateData(Data data) {
-        PathBindings.clearBindings();
-        PathBindings.clearParents();
-        try {
-            return mappings.stream()
-                           .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
-                           .map(f -> f.map(data, data).toNode())
-                           .orElse(data.toNode());
-        } finally {
+        return EvaluationContext.call(environment.dataInspector(), () -> {
             PathBindings.clearBindings();
             PathBindings.clearParents();
-        }
+            try {
+                return mappings.stream()
+                               .reduce((f1, f2) -> (o, v) -> f2.map(o, f1.map(o, v)))
+                               .map(f -> f.map(data, data).toNode())
+                               .orElse(data.toNode());
+            } finally {
+                PathBindings.clearBindings();
+                PathBindings.clearParents();
+            }
+        });
     }
 
     public JSONata bind(String name, JsonNode value) {
