@@ -56,9 +56,6 @@ public record DefaultOperator(Mapping left, Mapping right) implements Mapping {
         if (data.isObject()) {
             return json.size() > 0;
         }
-        if (FunctionValues.isFunction(data)) {
-            return false;
-        }
-        return true;
+        return !FunctionValues.isFunction(data);
     }
 }

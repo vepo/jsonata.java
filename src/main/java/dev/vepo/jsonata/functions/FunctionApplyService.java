@@ -9,7 +9,6 @@ import dev.vepo.jsonata.exception.JSONataException;
 import dev.vepo.jsonata.functions.data.Data;
 import dev.vepo.jsonata.functions.data.FunctionData;
 import dev.vepo.jsonata.functions.data.TailCallData;
-import dev.vepo.jsonata.functions.signature.FunctionSignature;
 import dev.vepo.jsonata.parser.BuiltInFunction;
 
 /**
@@ -178,10 +177,6 @@ public final class FunctionApplyService {
             result = tailCall.execute();
         }
         return result;
-    }
-
-    private static Data resolveThunk(TailCallThunk thunk) {
-        return resolveTailCall(thunk);
     }
 
     private static Data invokeWithBoundArgs(FunctionValue fn, Data original, Data focus, List<Object> bound) {

@@ -13,12 +13,11 @@ import dev.vepo.jsonata.functions.regex.RegExp;
  * <p>
  * Only {@link #asRegex()} and {@link #isRegex()} are supported; general navigation
  * throws {@link UnsupportedOperationException}. The pattern text is held as a Jackson
- * text node; {@link RegExp} is compiled lazily and cached on first use.
+ * text node; {@link RegExp#compile(String)} provides a shared, thread-safe cache.
  */
 public class RegexData implements Data {
 
     private final JsonNode node;
-    private volatile RegExp compiled;
 
     /**
      * @param node text node containing the regex literal source (including delimiters/flags)
@@ -84,17 +83,12 @@ public class RegexData implements Data {
     /**
      * {@inheritDoc}
      *
-     * @return compiled {@link RegExp}, created on first call and reused thereafter
+     * @return compiled {@link RegExp} from the global pattern cache
      * @throws IllegalArgumentException if the pattern text is not a valid JavaScript regex
      */
     @Override
     public RegExp asRegex() {
-        var local = compiled;
-        if (local == null) {
-            local = RegExp.compile(node.asText());
-            compiled = local;
-        }
-        return local;
+        return RegExp.compile(node.asText());
     }
 
     /** {@inheritDoc} */

@@ -37,7 +37,7 @@ public record MappingJoin(Mapping first, Mapping second) implements Mapping {
         var value = left.mapping().map(original, current);
         Data result;
         if (left.indexVariable() != null) {
-            result = mapWithIndexBinding(original, current, value, left.indexVariable());
+            result = mapWithIndexBinding(original, value, left.indexVariable());
         } else if (left.focusVariable() != null) {
             result = mapWithFocusBinding(original, current, value, left.focusVariable());
         } else if ((value.isArray() || value.isList()) && !(second instanceof ArrayConstructor)) {
@@ -58,7 +58,7 @@ public record MappingJoin(Mapping first, Mapping second) implements Mapping {
         return result;
     }
 
-    private Data mapWithIndexBinding(Data original, Data current, Data value, String indexVariable) {
+    private Data mapWithIndexBinding(Data original, Data value, String indexVariable) {
         if (!value.isArray() && !value.isList()) {
             PathBindings.bindIndex(indexVariable, 0);
             try {
